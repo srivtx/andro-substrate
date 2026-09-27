@@ -1,0 +1,15 @@
+[package]
+name = "dexinterp"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+description = "A Dalvik/DEX interpreter for andro-substrate: executes decoded DEX bytecode with typed values, a real heap, virtual dispatch, exception handling and a framework shim boundary"
+license = "Apache-2.0"
+publish = false
+
+[lib]
+name = "dexinterp"
+path = "src/lib.rs"
+
+[dependencies]
+dexcore = { path = "../dexcore" }

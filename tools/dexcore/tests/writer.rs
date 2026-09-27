@@ -14,7 +14,7 @@
 use dexcore::asm::Assembler;
 use dexcore::model::map_type;
 use dexcore::writer::{CatchHandler, ClassDef, CodeBody, DexWriter, FieldDef, MethodDef, TryCatch};
-use dexcore::{decode_all, Error, DexReader};
+use dexcore::{decode_all, decode_one, Error, DexReader};
 
 /// Build a small but non-trivial DEX: a root class, a subclass that implements an
 /// interface, static and instance fields, concrete and abstract methods, code
@@ -967,5 +967,43 @@ impl TypeNameIndex for DexReader<'_> {
         (0..self.type_count())
             .find(|&i| self.type_name(i).map(|d| d == descriptor).unwrap_or(false))
             .expect("descriptor must be in the pool")
+    }
+}
+
+/// A switch payload's advance must equal the span of the 32-bit words the
+/// decoder actually reads for it. This is checkable without consulting the
+/// format specification, and it is the invariant that the previous
+/// implementation violated: both switch payloads advanced as though each
+/// array element were 16 bits while the decoder read 32-bit words. A linear
+/// sweep still tiled, so the fixture tests passed and the bug only surfaced
+/// as wrong branch-target fixups.
+#[test]
+fn switch_payload_advance_matches_the_words_it_reads() {
+    for n in 0..8usize {
+        // packed-switch-payload: ident(1w) size(1w) first_key(1w) targets(nw)
+        let mut b = Vec::new();
+        b.extend_from_slice(&0x0100u16.to_le_bytes());
+        b.extend_from_slice(&(n as u16).to_le_bytes());
+        for v in 0..=n as i32 {
+            b.extend_from_slice(&v.to_le_bytes());
+        }
+        let words: Vec<u16> = b.chunks_exact(2).map(|c| u16::from_le_bytes([c[0], c[1]])).collect();
+        let (i, units) = decode_one(&words, 0).expect("packed switch must decode");
+        // ident(1u) + size(1u) + first_key(2u) + targets(2n u) = 4 + 2n units.
+        assert_eq!(units, 4 + 2 * n, "packed n={n}");
+        assert_eq!(i.width() as usize, units * 2, "packed width vs advance n={n}");
+
+        // sparse-switch-payload: ident(1w) size(1w) keys(nw) targets(nw)
+        let mut b = Vec::new();
+        b.extend_from_slice(&0x0200u16.to_le_bytes());
+        b.extend_from_slice(&(n as u16).to_le_bytes());
+        for v in 0..2 * n as i32 {
+            b.extend_from_slice(&v.to_le_bytes());
+        }
+        let words: Vec<u16> = b.chunks_exact(2).map(|c| u16::from_le_bytes([c[0], c[1]])).collect();
+        let (i, units) = decode_one(&words, 0).expect("sparse switch must decode");
+        // ident(1u) + size(1u) + keys(2n u) + targets(2n u) = 2 + 4n units.
+        assert_eq!(units, 2 + 4 * n, "sparse n={n}");
+        assert_eq!(i.width() as usize, units * 2, "sparse width vs advance n={n}");
     }
 }

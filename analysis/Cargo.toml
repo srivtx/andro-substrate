@@ -1,0 +1,27 @@
+[package]
+name = "substrate-predictor"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+description = "Static substrate-dependency predictor for Android APKs, consuming dexcore, for andro-substrate"
+license = "Apache-2.0"
+publish = false
+
+[lib]
+name = "substrate_predictor"
+path = "src/lib.rs"
+
+[[bin]]
+name = "predict"
+path = "src/bin/predict.rs"
+
+[dependencies]
+dexcore = { path = "../tools/dexcore" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# `rust_backend` keeps the dependency pure Rust with no C toolchain, and the
+# whole toolchain already has to build to wasm32-unknown-unknown.
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
+
+[dev-dependencies]
+serde_json = "1"

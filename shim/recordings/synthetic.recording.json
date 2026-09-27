@@ -1,0 +1,1955 @@
+{
+  "record_format": "andro-substrate.ground-truth/1",
+  "synthetic": true,
+  "capture_id": "pro.rudloff.search_to_browser__8dcc801faed47a1d__synthetic_substrate__run0001",
+  "provenance": {
+    "execution_performed": false,
+    "synthetic_reason": "Produced by shim::scenario::run() driving the shim directly. No APK was installed, no interpreter executed any bytecode, and no Android device or container was involved. The static fields are true of the fixture APK named in shim/CONFORMANCE.md; every dynamic field is invented by the scenario script and describes no real execution.",
+    "toolchain_revision": "n/a (synthetic fixture; no execution performed)",
+    "capture_script_sha256": null,
+    "authored_by": "andro-substrate shim recorder (shim/src/bin/shim-record.rs)",
+    "host_os": "any; the shim performs no host I/O",
+    "notes": "No APK was installed and no bytecode was executed. The 'execution' was a scripted sequence of calls into the shim's observation layer, which is why every dynamic field here describes the shim's behaviour rather than an app's."
+  },
+  "recorder": {
+    "name": "shim-recorder",
+    "version": "0.1.0",
+    "implementation": "synthetic",
+    "options": {
+      "path_policy": "path=full",
+      "text_policy": "shape-only",
+      "egress": "denied",
+      "vfs": "in-memory",
+      "shim_dex_sha256": "c6b616f83349b6c89c2346fd56d0c89c003ee01f88b11a583136228941f8bfd4",
+      "toolchain": "andro-substrate-shim"
+    },
+    "adb_version": null,
+    "notes": "Emits a ground-truth/1 document so a substrate capture and a device capture are the same shape and can be diffed directly."
+  },
+  "capture": {
+    "started_utc": "2026-09-28T00:00:00.000Z",
+    "ended_utc": "2026-09-28T00:00:04.000Z",
+    "duration_ms": 4001,
+    "observation_window_ms": 4001,
+    "boot_wait_ms": 0,
+    "install": {
+      "method": "not_applicable_synthetic",
+      "succeeded": true,
+      "flags": [],
+      "apks_replaced_existing": null,
+      "install_source": null,
+      "error": null
+    },
+    "launch": {
+      "method": "not_applicable_synthetic",
+      "component": null,
+      "requested_activity_resolved_by": null,
+      "succeeded": true,
+      "error": null
+    },
+    "device_serial": "none",
+    "shell_uid": null,
+    "root_shell": true,
+    "snapshot_at_ms": null,
+    "clock": {
+      "monotonic_source": "synthetic_fixture",
+      "monotonic_resolution_ms": 1,
+      "wall_clock_source": "none",
+      "monotonic_epoch_ref": null,
+      "t_zero_definition": "t=0 is the substrate's virtual clock origin, set at Shim::new. The clock is virtual and advances only when the scenario advances it or a shim method advances it, so the timeline is exactly reproducible. It is NOT substrate_instrumentation: a real run would use that, and claiming it here would overstate what a fixture knows.",
+      "notes": "Relative intervals are exact; absolute wall-clock latency is meaningless in a fixture and is deliberately not reported."
+    },
+    "observer_effects": [
+      {
+        "kind": "debug_attach",
+        "applied": true,
+        "detail": "The substrate is the process. It denies egress, substitutes a synthetic device identity, has no /proc or /sys, has no display, and answers every PackageManager query about another app with 'not installed'. Each of these is an observer effect in the oracle's sense and each plausibly changes app behaviour, so all are declared here rather than discovered by an analyst.",
+        "expected_to_change_behaviour": true
+      },
+      {
+        "kind": "none",
+        "applied": false,
+        "detail": "No MITM proxy and no user CA: the substrate has no network to intercept, which is strictly stronger than proxying and needs no trust-store change.",
+        "expected_to_change_behaviour": false
+      }
+    ],
+    "interventions_during_run": []
+  },
+  "app": {
+    "package": "pro.rudloff.search_to_browser",
+    "apk_sha256": "8dcc801faed47a1d8043083117a09eeee972e0d1affabcacb88eee286e4df0a5",
+    "apk_size_bytes": 0,
+    "apk_paths": [],
+    "apk_digest_on_device": null,
+    "version_code": 2,
+    "version_name": "2",
+    "min_sdk": 21,
+    "target_sdk": 34,
+    "shared_user_id": null,
+    "user_id": 10123,
+    "install_flags": [],
+    "private_flags": [],
+    "debuggable": false,
+    "declared_permissions": [
+      "android.permission.INTERNET",
+      "android.permission.QUERY_ALL_PACKAGES"
+    ],
+    "granted_permissions": [],
+    "requested_features": [],
+    "split_apks": [],
+    "main_activity": "pro.rudloff.search_to_browser.MainActivity",
+    "activities": [
+      "pro.rudloff.search_to_browser.MainActivity"
+    ],
+    "services": [],
+    "receivers": [],
+    "providers": [],
+    "native_libs_declared": [],
+    "uses_non_sdk_api": null,
+    "signature_sha256": [],
+    "data_dir": "/data/data/pro.rudloff.search_to_browser",
+    "code_path": null,
+    "device_protected_data_dir": null,
+    "is_synthetic": true
+  },
+  "environment": {
+    "kind": "synthetic",
+    "android_release": "14",
+    "security_patch": null,
+    "sdk_int": 34,
+    "build_fingerprint": "andro-substrate/shim/0.1.0:substrate/0.1.0:user/release-keys",
+    "build_id": null,
+    "build_type": null,
+    "build_tags": "release-keys",
+    "model": "Substrate",
+    "manufacturer": "andro-substrate",
+    "brand": "substrate",
+    "product": "substrate",
+    "device": "substrate",
+    "hardware": "substrate",
+    "board": "substrate",
+    "serial": null,
+    "bootloader": null,
+    "abis": [
+      "wasm32"
+    ],
+    "cpu_count": 4,
+    "total_ram_bytes": 1073741824,
+    "low_ram_device": true,
+    "is_emulator": false,
+    "is_physical_device": false,
+    "bootloader_unlocked": null,
+    "ro_secure": null,
+    "verified_boot_state": null,
+    "selinux": null,
+    "selinux_enforcing": null,
+    "verified_boot_hash": null,
+    "image_digest": null,
+    "image_fingerprint": null,
+    "google_play_services": {
+      "present": false,
+      "version_name": null,
+      "version_code": null,
+      "enabled": false,
+      "detected_by": "unknown"
+    },
+    "play_store_present": false,
+    "attestation": {
+      "play_integrity_supported": false,
+      "safetynet_available": false,
+      "max_expected_verdict": "NONE",
+      "observed_verdict": null,
+      "basis": "documented_requirement",
+      "notes": "NONE is a ceiling, not an observation. No hardware attestation exists in a browser and none can be faked convincingly; the shim does not try, because a shim that could pass MEETS_DEVICE_INTEGRITY would not be a shim. safetynet_available is false because SafetyNet was turned down for every app on 2025-01-31 and now always fails, on any device."
+    },
+    "locale": null,
+    "timezone": null,
+    "font_scale": null,
+    "density_dpi": 420,
+    "screen": {
+      "width_px": 1080,
+      "height_px": 2340,
+      "density_dpi": 420,
+      "refresh_rate_hz": null,
+      "supported_refresh_rates_hz": []
+    },
+    "graphics": {
+      "gles_version": null,
+      "vulkan_version": null,
+      "egl_vendor": null,
+      "gl_renderer": null,
+      "extensions_known": false,
+      "hardware_accelerated_default": false
+    },
+    "network": {
+      "egress_available": false,
+      "default_network_type": null,
+      "validated": false
+    },
+    "sensors_present": [
+      "android.hardware.touchscreen",
+      "android.hardware.faketouch",
+      "android.software.leanback"
+    ],
+    "sensors_absent": [
+      "android.hardware.camera",
+      "android.hardware.camera.any",
+      "android.hardware.location",
+      "android.hardware.location.gps",
+      "android.hardware.sensor.accelerometer",
+      "android.hardware.sensor.gyroscope",
+      "android.hardware.sensor.compass",
+      "android.hardware.nfc",
+      "android.hardware.bluetooth",
+      "android.hardware.telephony",
+      "android.hardware.telephony.gsm",
+      "android.hardware.fingerprint",
+      "android.hardware.usb.host",
+      "android.software.leanback",
+      "android.hardware.vulkan.level"
+    ],
+    "properties_observed": {
+      "ro.build.fingerprint": "andro-substrate/shim/0.1.0:substrate/0.1.0:user/release-keys",
+      "ro.kernel.qemu": "<absent>",
+      "ro.debuggable": "0",
+      "ro.build.version.sdk": "34"
+    }
+  },
+  "clock": {
+    "monotonic_source": "synthetic_fixture",
+    "monotonic_resolution_ms": 1,
+    "wall_clock_source": "none",
+    "monotonic_epoch_ref": null,
+    "t_zero_definition": "t=0 is the substrate's virtual clock origin.",
+    "notes": "Virtual and exactly reproducible. Deliberately NOT substrate_instrumentation: a fixture cannot claim a real substrate clock."
+  },
+  "privacy": {
+    "policy": "andro-substrate/oracle-privacy/1",
+    "bodies_captured": false,
+    "hostnames": "plain",
+    "secrets_redacted": true,
+    "user_ca_trusted": false,
+    "notes": "Policy applied at the point of capture, not downstream: the shim's URL parser drops the query string's values and the fragment before any struct can hold them, and its header type has no parameter that would accept a value. Path policy: path=full. Text policy for view trees: shape-only. BODIES ARE NOT DIGESTED, unlike the oracle format which permits body_sha256: a digest over a low-entropy body is reversible by brute force, so only the length is kept and body_sha256 is null. RESIDUAL RISK: a request path is recorded verbatim under path=full, and REST designs do put identifiers in path segments; switch to path=shape-only or path=opaque to remove that. Exception messages are truncated at 2000 characters, which is the one place an app's own formatting can leak user data into a message; the shim's own messages contain no app data, and a message thrown by the INTERPRETER is out of this crate's control. Hostnames are recorded plainly because every host in this document is an RFC 2606 reserved name ending in .invalid, so there is nothing to re-identify."
+  },
+  "lifecycle": {
+    "events": [
+      {
+        "type": "process_start",
+        "t_mono_ms": 0,
+        "t_wall_utc": null,
+        "component": "pro.rudloff.search_to_browser",
+        "pid": 1,
+        "source": "synthetic_fixture",
+        "tier": "T0_DIRECT",
+        "log_tag": null,
+        "log_priority": null,
+        "matched_pattern": "LIFECYCLE_PAT.SUBSTRATE_T0",
+        "detail": "process_start at t=0 ms"
+      },
+      {
+        "type": "activity_create",
+        "t_mono_ms": 4,
+        "t_wall_utc": null,
+        "component": "pro.rudloff.search_to_browser.MainActivity",
+        "pid": 1,
+        "source": "synthetic_fixture",
+        "tier": "T0_DIRECT",
+        "log_tag": null,
+        "log_priority": null,
+        "matched_pattern": "LIFECYCLE_PAT.AM_ON_CREATE",
+        "detail": "activity_create at t=4 ms"
+      },
+      {
+        "type": "activity_start",
+        "t_mono_ms": 6,
+        "t_wall_utc": null,
+        "component": "pro.rudloff.search_to_browser.MainActivity",
+        "pid": 1,
+        "source": "synthetic_fixture",
+        "tier": "T0_DIRECT",
+        "log_tag": null,
+        "log_priority": null,
+        "matched_pattern": "LIFECYCLE_PAT.AM_ON_START",
+        "detail": "activity_start at t=6 ms"
+      },
+      {
+        "type": "activity_resume",
+        "t_mono_ms": 9,
+        "t_wall_utc": null,
+        "component": "pro.rudloff.search_to_browser.MainActivity",
+        "pid": 1,
+        "source": "synthetic_fixture",
+        "tier": "T0_DIRECT",
+        "log_tag": null,
+        "log_priority": null,
+        "matched_pattern": "LIFECYCLE_PAT.AM_ON_RESUME",
+        "detail": "activity_resume at t=9 ms"
+      },
+      {
+        "type": "first_frame_drawn",
+        "t_mono_ms": 41,
+        "t_wall_utc": null,
+        "component": "pro.rudloff.search_to_browser.MainActivity",
+        "pid": 1,
+        "source": "synthetic_fixture",
+        "tier": "T0_DIRECT",
+        "log_tag": null,
+        "log_priority": null,
+        "matched_pattern": "LIFECYCLE_PAT.SUBSTRATE_LAYOUT",
+        "detail": "first_frame_drawn at t=41 ms"
+      },
+      {
+        "type": "capture_boundary",
+        "t_mono_ms": 4000,
+        "t_wall_utc": null,
+        "component": "shim",
+        "pid": 1,
+        "source": "synthetic_fixture",
+        "tier": "T0_DIRECT",
+        "log_tag": null,
+        "log_priority": null,
+        "matched_pattern": "LIFECYCLE_PAT.T0_ANCHOR",
+        "detail": "capture_boundary at t=4000 ms"
+      }
+    ],
+    "terminal": "L2_FIRST_FRAME_DRAWN",
+    "activity_started": 6,
+    "activity_resumed": 9,
+    "first_frame_drawn": 41,
+    "window_focused": null,
+    "first_input_delivered": null,
+    "reached_steady_state": false,
+    "quiet_window_ms": 0,
+    "sustained_log_spam": null,
+    "jank_events": 0
+  },
+  "network": {
+    "capture_method": "none",
+    "hostname_resolution": "plain",
+    "attempts": [
+      {
+        "seq": 0,
+        "t_mono_ms": 56,
+        "direction": "outbound_request",
+        "scheme": "https",
+        "host": "api.substrate.invalid",
+        "port": 443,
+        "path": "/v1/sync",
+        "query_param_names": [
+          "token",
+          "sig"
+        ],
+        "method": "GET",
+        "auth_header_names": [
+          "authorization",
+          "x-api-key"
+        ],
+        "redacted_header_count": 2,
+        "body_bytes": 512,
+        "body_sha256": null,
+        "body_captured": false,
+        "transport": "tcp",
+        "result": "blocked_by_policy",
+        "status_code": null,
+        "error_class": "java.net.ConnectException",
+        "source": "synthetic_fixture",
+        "tier": "T0_DIRECT",
+        "notes": "denied at the substrate's egress sink; no socket, no DNS query, no packet. Hostname policy: plain, and the host is an RFC 2606 reserved name because there is no real network to attribute. The query string was dropped in the URL parser; only parameter names survive."
+      },
+      {
+        "seq": 1,
+        "t_mono_ms": 57,
+        "direction": "outbound_request",
+        "scheme": "https",
+        "host": "api.substrate.invalid",
+        "port": 443,
+        "path": "/v1/sync",
+        "query_param_names": [
+          "token",
+          "sig"
+        ],
+        "method": "GET",
+        "auth_header_names": [
+          "authorization",
+          "x-api-key"
+        ],
+        "redacted_header_count": 2,
+        "body_bytes": 512,
+        "body_sha256": null,
+        "body_captured": false,
+        "transport": "tcp",
+        "result": "blocked_by_policy",
+        "status_code": null,
+        "error_class": "java.net.ConnectException",
+        "source": "synthetic_fixture",
+        "tier": "T0_DIRECT",
+        "notes": "denied at the substrate's egress sink; no socket, no DNS query, no packet. Hostname policy: plain, and the host is an RFC 2606 reserved name because there is no real network to attribute. The query string was dropped in the URL parser; only parameter names survive."
+      },
+      {
+        "seq": 2,
+        "t_mono_ms": 58,
+        "direction": "outbound_request",
+        "scheme": "https",
+        "host": "cdn.substrate.invalid",
+        "port": 443,
+        "path": "/app.js",
+        "query_param_names": [
+          "v"
+        ],
+        "method": "GET",
+        "auth_header_names": [
+          "authorization",
+          "x-api-key"
+        ],
+        "redacted_header_count": 2,
+        "body_bytes": null,
+        "body_sha256": null,
+        "body_captured": false,
+        "transport": "tcp",
+        "result": "blocked_by_policy",
+        "status_code": null,
+        "error_class": "java.net.ConnectException",
+        "source": "synthetic_fixture",
+        "tier": "T0_DIRECT",
+        "notes": "denied at the substrate's egress sink; no socket, no DNS query, no packet. Hostname policy: plain, and the host is an RFC 2606 reserved name because there is no real network to attribute. The query string was dropped in the URL parser; only parameter names survive."
+      }
+    ],
+    "byte_totals_observed": {
+      "source": "synthetic_fixture",
+      "tx_bytes": 0,
+      "rx_bytes": 0,
+      "connection_count": 3,
+      "destination_resolvable": true,
+      "uid": 10123,
+      "note": "Zero bytes moved. Every attempt terminated at the substrate's egress sink before any socket was created, so the counters are structurally zero rather than unmeasured. The destination is resolvable because the shim parsed the hostname; it was never looked up."
+    },
+    "limits": [
+      "The substrate has no network. There is no capture method to choose: attempts are recorded at the sink and refused, so a substrate capture can never show a response, a status code, a TLS session or a redirect.",
+      "SUB.NET.EGRESS is therefore structurally unsatisfiable here, and every network-dependent app is expected to fail identically in every substrate run. That is a property of the architecture, not a finding about any app.",
+      "No DNS query is ever issued, so a request to a host that does not resolve and a request to a host that does are indistinguishable in this document.",
+      "Byte totals are zero by construction, so a recording cannot distinguish an app that sends nothing from an app that sends and is refused before transmission."
+    ]
+  },
+  "filesystem": {
+    "accesses": [
+      {
+        "seq": 0,
+        "t_mono_ms": 14,
+        "op": "read",
+        "path": "/proc/self/status",
+        "size_bytes": 86,
+        "result": "ok",
+        "errno": null,
+        "source": "synthetic_fixture",
+        "tier": "T0_DIRECT",
+        "notes": null
+      },
+      {
+        "seq": 1,
+        "t_mono_ms": 15,
+        "op": "read",
+        "path": "/proc/self/maps",
+        "size_bytes": 0,
+        "result": "ok",
+        "errno": null,
+        "source": "synthetic_fixture",
+        "tier": "T0_DIRECT",
+        "notes": null
+      },
+      {
+        "seq": 2,
+        "t_mono_ms": 16,
+        "op": "read",
+        "path": "/proc/cpuinfo",
+        "size_bytes": 85,
+        "result": "ok",
+        "errno": null,
+        "source": "synthetic_fixture",
+        "tier": "T0_DIRECT",
+        "notes": null
+      },
+      {
+        "seq": 3,
+        "t_mono_ms": 17,
+        "op": "read",
+        "path": "/proc/uptime",
+        "size_bytes": 10,
+        "result": "ok",
+        "errno": null,
+        "source": "synthetic_fixture",
+        "tier": "T0_DIRECT",
+        "notes": null
+      },
+      {
+        "seq": 4,
+        "t_mono_ms": 18,
+        "op": "read",
+        "path": "/sys/class/power_supply/battery/capacity",
+        "size_bytes": 4,
+        "result": "ok",
+        "errno": null,
+        "source": "synthetic_fixture",
+        "tier": "T0_DIRECT",
+        "notes": null
+      },
+      {
+        "seq": 5,
+        "t_mono_ms": 19,
+        "op": "read",
+        "path": "/proc/self/exe",
+        "size_bytes": 0,
+        "result": "enoent",
+        "errno": "enoent",
+        "source": "synthetic_fixture",
+        "tier": "T0_DIRECT",
+        "notes": null
+      },
+      {
+        "seq": 6,
+        "t_mono_ms": 62,
+        "op": "write",
+        "path": "/data/data/pro.rudloff.search_to_browser/files/state.json",
+        "size_bytes": 0,
+        "result": "ok",
+        "errno": null,
+        "source": "synthetic_fixture",
+        "tier": "T0_DIRECT",
+        "notes": null
+      },
+      {
+        "seq": 7,
+        "t_mono_ms": 62,
+        "op": "read",
+        "path": "/system/build.prop",
+        "size_bytes": 0,
+        "result": "enoent",
+        "errno": "enoent",
+        "source": "synthetic_fixture",
+        "tier": "T0_DIRECT",
+        "notes": null
+      }
+    ],
+    "access_trace_obtained": true,
+    "app_dir_listing": [
+      {
+        "path": "/",
+        "entry_type": "dir",
+        "size_bytes": 9,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/apex",
+        "entry_type": "file",
+        "size_bytes": 0,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/cache",
+        "entry_type": "file",
+        "size_bytes": 0,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/data",
+        "entry_type": "file",
+        "size_bytes": 2,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/data/data",
+        "entry_type": "file",
+        "size_bytes": 1,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/data/data/pro.rudloff.search_to_browser",
+        "entry_type": "file",
+        "size_bytes": 4,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/data/data/pro.rudloff.search_to_browser/cache",
+        "entry_type": "file",
+        "size_bytes": 0,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/data/data/pro.rudloff.search_to_browser/files",
+        "entry_type": "file",
+        "size_bytes": 1,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/data/data/pro.rudloff.search_to_browser/files/state.json",
+        "entry_type": "file",
+        "size_bytes": 11,
+        "mode": "600",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/data/data/pro.rudloff.search_to_browser/no_backup",
+        "entry_type": "file",
+        "size_bytes": 0,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/data/data/pro.rudloff.search_to_browser/shared_prefs",
+        "entry_type": "file",
+        "size_bytes": 0,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/data/user",
+        "entry_type": "file",
+        "size_bytes": 1,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/data/user/0",
+        "entry_type": "file",
+        "size_bytes": 0,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/dev",
+        "entry_type": "file",
+        "size_bytes": 0,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/proc",
+        "entry_type": "file",
+        "size_bytes": 0,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/sdcard",
+        "entry_type": "file",
+        "size_bytes": 0,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/sys",
+        "entry_type": "file",
+        "size_bytes": 0,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/system",
+        "entry_type": "file",
+        "size_bytes": 1,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/system/app",
+        "entry_type": "file",
+        "size_bytes": 0,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/vendor",
+        "entry_type": "file",
+        "size_bytes": 0,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      }
+    ],
+    "open_fds_at_snapshot": [],
+    "limits": [
+      "There is no real disk. The VFS is an in-memory map, so a file an app would have persisted across a process death is lost at the end of the run and any state-restoration path takes its fallback branch.",
+      "The /proc and /sys trees are FABRICATED. Contents are synthetic and plausible, and the divergence is recorded as SUB.KERNEL.PROC_SELF or SUB.KERNEL.SYS_BLOCK; a reader must not treat a value here as a device measurement.",
+      "No SELinux labels, no uid/gid ownership and no POSIX modes beyond a single synthetic mode per node, so SUB.FS.PERM_MODEL and SUB.FS.SELINUX_CONTEXT cannot be assessed from this document at all.",
+      "Path contents are never recorded. Only paths, operations and byte counts, so a recording supports no claim about what an app stored."
+    ]
+  },
+  "classes": {
+    "loaded": [
+      "pro.rudloff.search_to_browser.BuildConfig",
+      "pro.rudloff.search_to_browser.MainActivity",
+      "pro.rudloff.search_to_browser.MainApplication",
+      "pro.rudloff.search_to_browser.R",
+      "android.app.Activity",
+      "android.os.Build$VERSION",
+      "com.example.plugin.Thing"
+    ],
+    "loaded_obtained": true,
+    "total_loaded_count": 7,
+    "framework_classes_touched": [
+      "android.app.Activity",
+      "android.os.Build$VERSION",
+      "android.app.Activity"
+    ],
+    "third_party_package_prefixes": [
+      "pro.rudloff.search_to_browser"
+    ],
+    "dex_files": [
+      "<app classes.dex, parsed by dexcore>"
+    ],
+    "dynamic_dex_loaded": [],
+    "limits": [
+      "SUB.FW.CLASS_LOADER: the shim defines a small fraction of the java.* surface. A class the shim does not define resolves to nothing and is recorded as unresolvable, which on a device would have been a NoClassDefFoundError from the app's own dex.",
+      "A class the APP defines that the shim also defines is shadowed. The shim's definition wins, so the app's own class disappears silently; the resolution is recorded as shim_supersedes_app precisely so that this is visible.",
+      "No invokedynamic, no method handles, no call sites. Modern dex is saturated with invokedynamic, so a large fraction of contemporary app behaviour never reaches a shim method at all and is therefore structurally unobservable by this layer.",
+      "Reflection is dispatched through the same table as a direct call, so a reflective call and a direct one are indistinguishable in this document. That is a feature for coverage and a blind spot for attribution.",
+      "The loaded list is what the shim's loader saw, which is not the same as what ART would have loaded: there is no verification, no resolution of a method reference to a class that was never initialised, and no separate compilation."
+    ]
+  },
+  "native": {
+    "libraries_loaded": [],
+    "obtained": true,
+    "mapping_obtained": true,
+    "exec_segments_observed": false,
+    "dlopen_failures": [
+      {
+        "t_mono_ms": 59,
+        "library": "nativecrypto",
+        "error_class": "java.lang.UnsatisfiedLinkError"
+      },
+      {
+        "t_mono_ms": 60,
+        "library": "/system/lib/libnativecrypto.so",
+        "error_class": "java.lang.UnsatisfiedLinkError"
+      }
+    ],
+    "system_libraries_mapped": [],
+    "jit_or_aot_activity_observed": false,
+    "thread_count_at_snapshot": 1,
+    "limits": [
+      "The substrate has no ELF loader, no .so and no /system/lib, so SUB.NATIVE.LOAD_LIBRARY and SUB.NATIVE.JNI_ENTRY are structurally unsatisfiable and every native attempt is UNSATISFIED.",
+      "mapping_obtained is true because the shim knows its own (empty) mapping set exhaustively. A device arm can only read /proc/<pid>/maps, and only with root or a debuggable build.",
+      "No JIT and no AOT: the substrate's execution model is whatever the interpreter is, so SUB.CPU.TIERING cannot be measured here at all. A slow app in a substrate is the interpreter's cost, not ART's, and this document cannot separate the two."
+    ]
+  },
+  "jni": {
+    "calls": [
+      {
+        "seq": 0,
+        "t_mono_ms": 59,
+        "direction": "java_to_native",
+        "symbol": "Java_nativecrypto_load",
+        "declaring_class": "Ljava/lang/System;",
+        "source": "synthetic_fixture",
+        "tier": "T0_DIRECT"
+      },
+      {
+        "seq": 1,
+        "t_mono_ms": 60,
+        "direction": "java_to_native",
+        "symbol": "Java_/system/lib/libnativecrypto.so_load",
+        "declaring_class": "Ljava/lang/System;",
+        "source": "synthetic_fixture",
+        "tier": "T0_DIRECT"
+      }
+    ],
+    "obtained": true,
+    "limits": [
+      "Every call is java_to_native and every outcome is UNSATISFIED. The substrate implements no native code, so there is no native_to_java direction to record.",
+      "obtained is true because the shim is the process and sees every call site the interpreter routes through it. A device arm can only claim this with in-process instrumentation, which the oracle protocol explicitly declines to use."
+    ]
+  },
+  "exceptions": [
+    {
+      "t_mono_ms": 0,
+      "fatal": false,
+      "kind": "java_exception",
+      "thread": "main",
+      "class": "java.lang.ClassNotFoundException",
+      "message": "org.json.JSONObject resolves to nothing in the shim or in any app DEX",
+      "stack_frames": [
+        "java.lang.Class.forName"
+      ],
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "t_mono_ms": 56,
+      "fatal": false,
+      "kind": "java_exception",
+      "thread": "main",
+      "class": "java.net.ConnectException",
+      "message": "the substrate denies egress by construction; no socket is opened and no DNS query is made",
+      "stack_frames": [
+        "Ljava/net/URLConnection;.connect"
+      ],
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "t_mono_ms": 57,
+      "fatal": false,
+      "kind": "java_exception",
+      "thread": "main",
+      "class": "java.net.ConnectException",
+      "message": "the substrate denies egress by construction; no socket is opened and no DNS query is made",
+      "stack_frames": [
+        "Ljava/net/URLConnection;.connect"
+      ],
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "t_mono_ms": 59,
+      "fatal": false,
+      "kind": "java_exception",
+      "thread": "main",
+      "class": "java.lang.UnsatisfiedLinkError",
+      "message": "no ELF loader in the substrate: nativecrypto cannot be mapped",
+      "stack_frames": [
+        "Ljava/lang/System;.loadLibrary"
+      ],
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "t_mono_ms": 60,
+      "fatal": false,
+      "kind": "java_exception",
+      "thread": "main",
+      "class": "java.lang.UnsatisfiedLinkError",
+      "message": "no ELF loader in the substrate: /system/lib/libnativecrypto.so cannot be mapped",
+      "stack_frames": [
+        "Ljava/lang/System;.load"
+      ],
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    }
+  ],
+  "probes": [
+    {
+      "id": "p000",
+      "t_mono_ms": 0,
+      "command": "classloader.resolve",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "Lpro/rudloff/search_to_browser/BuildConfig; -> pro.rudloff.search_to_browser",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "p001",
+      "t_mono_ms": 0,
+      "command": "classloader.resolve",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "Lpro/rudloff/search_to_browser/MainActivity; -> pro.rudloff.search_to_browser",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "p002",
+      "t_mono_ms": 0,
+      "command": "classloader.resolve",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "Lpro/rudloff/search_to_browser/MainApplication; -> pro.rudloff.search_to_browser",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "p003",
+      "t_mono_ms": 0,
+      "command": "classloader.resolve",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "Lpro/rudloff/search_to_browser/R; -> pro.rudloff.search_to_browser",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "p004",
+      "t_mono_ms": 0,
+      "command": "classloader.resolve",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "Landroid/app/Activity; -> the shim DEX",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "p005",
+      "t_mono_ms": 0,
+      "command": "classloader.resolve",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "Landroid/os/Build$VERSION; -> the shim DEX",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "p006",
+      "t_mono_ms": 0,
+      "command": "classloader.resolve",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "Lcom/google/android/gms/auth/GoogleAuthUtil; -> nothing: unresolvable",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "p007",
+      "t_mono_ms": 0,
+      "command": "classloader.resolve",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "Lcom/example/plugin/Thing; -> nothing: the substrate has no DexClassLoader",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "p008",
+      "t_mono_ms": 0,
+      "command": "classloader.resolve",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "Landroid/app/Activity; -> the shim DEX",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "p009",
+      "t_mono_ms": 0,
+      "command": "classloader.resolve",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "Lorg/json/JSONObject; -> nothing: unresolvable",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "p010",
+      "t_mono_ms": 13,
+      "command": "substrate.probe SIGNAL_PAT.BUILD_TAGS",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "ApplicationInfo.isDebuggable() -> false. Reporting true would manufacture an integrity failure that has nothing to do with the app.",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "p011",
+      "t_mono_ms": 13,
+      "command": "substrate.probe SIGNAL_PAT.STATIC_FIELD",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "Landroid/content/pm/ApplicationInfo;.FLAG_DEBUGGABLE read by sget; the value is a compile-time constant and is not recorded",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "p012",
+      "t_mono_ms": 20,
+      "command": "substrate.probe SIGNAL_PAT.PM_QUERY",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "PackageManager query for pro.rudloff.search_to_browser -> self (substrate holds exactly one app; every other answer is 'not installed' and the app sees an empty list, not an error)",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "p013",
+      "t_mono_ms": 20,
+      "command": "substrate.probe SIGNAL_PAT.PM_QUERY",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "PackageManager query for com.whatsapp -> not installed (substrate holds exactly one app; every other answer is 'not installed' and the app sees an empty list, not an error)",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "p014",
+      "t_mono_ms": 20,
+      "command": "substrate.probe SIGNAL_PAT.PM_QUERY",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "pm.queryIntentActivities() -> a list of exactly one entry (the subject itself). An app looking for a share target, a handler or a peer finds nothing, and finds nothing *without an error*.",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "p015",
+      "t_mono_ms": 22,
+      "command": "substrate.probe SIGNAL_PAT.SET_CONTENT_VIEW",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "Landroid/app/Activity;.setContentView(resource id 2130968577); the substrate has no resources.arsc, so no layout was inflated and the app's view tree never exists",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "p016",
+      "t_mono_ms": 50,
+      "command": "substrate.probe SIGNAL_PAT.LAYOUT_PASS",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "7 nodes laid out in 360x780 dp; 45760 dp^2 of leaf area; font model shim-advance-table/v1; painted: false (this layer produces geometry, not pixels)",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "p017",
+      "t_mono_ms": 51,
+      "command": "substrate.probe SIGNAL_PAT.MESSAGE_QUEUE",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "Landroid/os/Looper;.getMainLooper no-op; queue depth now 0. Nothing drains it: the substrate has no display and therefore no vsync, so a frame-driven app waits forever.",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "p018",
+      "t_mono_ms": 51,
+      "command": "substrate.probe SIGNAL_PAT.MESSAGE_QUEUE",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "Landroid/os/Handler;.post posted; queue depth now 1. Nothing drains it: the substrate has no display and therefore no vsync, so a frame-driven app waits forever.",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "p019",
+      "t_mono_ms": 51,
+      "command": "substrate.probe SIGNAL_PAT.MESSAGE_QUEUE",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "Landroid/os/Handler;.post posted; queue depth now 2. Nothing drains it: the substrate has no display and therefore no vsync, so a frame-driven app waits forever.",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "p020",
+      "t_mono_ms": 51,
+      "command": "substrate.probe SIGNAL_PAT.MESSAGE_QUEUE",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "Landroid/os/Handler;.post posted; queue depth now 3. Nothing drains it: the substrate has no display and therefore no vsync, so a frame-driven app waits forever.",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "p021",
+      "t_mono_ms": 51,
+      "command": "substrate.probe SIGNAL_PAT.MESSAGE_QUEUE",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "Landroid/os/MessageQueue;.size queried; queue depth now 3. Nothing drains it: the substrate has no display and therefore no vsync, so a frame-driven app waits forever.",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "p022",
+      "t_mono_ms": 51,
+      "command": "substrate.probe SIGNAL_PAT.MESSAGE_QUEUE",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "Landroid/os/Looper;.loop loop() returned immediately instead of blocking; queue depth now 3. Nothing drains it: the substrate has no display and therefore no vsync, so a frame-driven app waits forever.",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "p023",
+      "t_mono_ms": 54,
+      "command": "substrate.probe SIGNAL_PAT.HEADER_NAME",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "setRequestProperty(\"Authorization\") -> name recorded as \"authorization\", value withheld as non-allowlisted; the value is dropped inside the call",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "p024",
+      "t_mono_ms": 54,
+      "command": "substrate.probe SIGNAL_PAT.HEADER_NAME",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "setRequestProperty(\"X-Api-Key\") -> name recorded as \"x-api-key\", value withheld as non-allowlisted; the value is dropped inside the call",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "p025",
+      "t_mono_ms": 58,
+      "command": "substrate.probe SIGNAL_PAT.WEBVIEW_LOAD",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "WebView.loadUrl to cdn.substrate.invalid:/app.js -> the request is denied at the egress sink, so the page never loads. The hybrid app loses its entire UI, which is SUB.FW.WEBVIEW.",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "p026",
+      "t_mono_ms": 61,
+      "command": "substrate.probe SIGNAL_PAT.EXCEPTION_CAUGHT",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "catch(java.lang.UnsatisfiedLinkError) with nothing in flight; the app caught an exception the shim did not throw",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "layout.27",
+      "t_mono_ms": 50,
+      "command": "shim.layout.dump root",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "{\"id\":\"root\",\"class\":\"LinearLayout\",\"kind\":\"LinearLayout\",\"frame\":{\"left\":0,\"top\":0,\"right\":360,\"bottom\":128},\"measured_width\":\"match_parent\",\"measured_height\":\"wrap_content\",\"visibility\":\"Visible\",\"text\":null,\"painted\":false,\"children\":[{\"id\":\"title\",\"class\":\"TextView\",\"kind\":\"TextView\",\"frame\":{\"left\":4,\"top\":4,\"right\":356,\"bottom\":28},\"measured_width\":\"match_parent\",\"measured_height\":\"wrap_content\",\"visibility\":\"Visible\",\"text\":{\"chars\":19,\"classes\":{\"letter\":16,\"space\":3},\"looks_like_email\":false,\"looks_like_phone\":false,\"looks_numeric\":false,\"text\":null},\"painted\":false,\"children\":[]},{\"id\":\"email\",\"class\":\"EditText\",\"kind\":\"EditText\",\"frame\":{\"left\":4,\"top\":28,\"right\":356,\"bottom\":60},\"measured_width\":\"match_parent\",\"measured_height\":\"wrap_content\",\"visibility\":\"Visible\",\"text\":{\"chars\":22,\"classes\":{\"letter\":20,\"punct\":2},\"looks_like_email\":true,\"looks_like_phone\":false,\"looks_numeric\":false,\"text\":null},\"painted\":false,\"children\":[]},{\"id\":\"password\",\"class\":\"EditText\",\"kind\":\"EditText\",\"frame\":{\"left\":4,\"top\":60,\"right\":356,\"bottom\":92},\"measured_width\":\"match_parent\",\"measured_height\":\"wrap_content\",\"visibility\":\"Visible\",\"text\":{\"chars\":7,\"classes\":{\"digit\":1,\"letter\":6},\"looks_like_email\":false,\"looks_like_phone\":false,\"looks_numeric\":false,\"text\":null},\"painted\":false,\"children\":[]},{\"id\":\"row\",\"class\":\"LinearLayout\",\"kind\":\"LinearLayout\",\"frame\":{\"left\":4,\"top\":92,\"right\":356,\"bottom\":124},\"measured_width\":\"wrap_content\",\"measured_height\":\"wrap_content\",\"visibility\":\"Visible\",\"text\":null,\"painted\":false,\"children\":[{\"id\":\"ok\",\"class\":\"Button\",\"kind\":\"Button\",\"frame\":{\"left\":8,\"top\":96,\"right\":330,\"bottom\":120},\"measured_width\":\"wrap_content\",\"measured_height\":\"wrap_content\",\"visibility\":\"Visible\",\"text\":{\"chars\":8,\"classes\":{\"letter\":8},\"looks_like_email\":false,\"looks_like_phone\":false,\"looks_numeric\":false,\"text\":null},\"painted\":false,\"children\":[]},{\"id\":\"cancel\",\"class\":\"Button\",\"kind\":\"Button\",\"frame\":{\"left\":330,\"top\":96,\"right\":624,\"bottom\":120},\"measured_width\":\"wrap_content\",\"measured_height\":\"wrap_content\",\"visibility\":\"Visible\",\"text\":{\"chars\":6,\"classes\":{\"letter\":6},\"looks_like_email\":false,\"looks_like_phone\":false,\"looks_numeric\":false,\"text\":null},\"painted\":false,\"children\":[]}]}]}",
+      "output_truncated": false,
+      "error": null
+    }
+  ],
+  "diagnostics": [
+    {
+      "pattern": "SIGNAL_PAT.LIFECYCLE",
+      "family": "SUB.FW",
+      "t_mono_ms": 4,
+      "detail": "Landroid/app/Application;.onCreate() called, in the documented order",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.LIFECYCLE",
+      "family": "SUB.FW",
+      "t_mono_ms": 8,
+      "detail": "Landroid/app/Activity;.onCreate() called, in the documented order",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.LIFECYCLE",
+      "family": "SUB.FW",
+      "t_mono_ms": 10,
+      "detail": "Landroid/app/Activity;.onStart() called, in the documented order",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.LIFECYCLE",
+      "family": "SUB.FW",
+      "t_mono_ms": 13,
+      "detail": "Landroid/app/Activity;.onResume() called, in the documented order",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.BUILD_FIELD",
+      "family": "SUB.BUILD",
+      "t_mono_ms": 13,
+      "detail": "Build.FINGERPRINT = andro-substrate/shim/0.1.0:substrate/0.1.0:user/release-keys",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.BUILD_FIELD",
+      "family": "SUB.BUILD",
+      "t_mono_ms": 13,
+      "detail": "Build.MANUFACTURER = andro-substrate",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.BUILD_FIELD",
+      "family": "SUB.BUILD",
+      "t_mono_ms": 13,
+      "detail": "Build.MODEL = Substrate",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.BUILD_FIELD",
+      "family": "SUB.BUILD",
+      "t_mono_ms": 13,
+      "detail": "Build.BRAND = substrate",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.BUILD_FIELD",
+      "family": "SUB.BUILD",
+      "t_mono_ms": 13,
+      "detail": "Build.SDK_INT = 34",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.BUILD_FIELD",
+      "family": "SUB.BUILD",
+      "t_mono_ms": 13,
+      "detail": "Build.RELEASE = 14",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.BUILD_TAGS",
+      "family": "SUB.BUILD",
+      "t_mono_ms": 13,
+      "detail": "ApplicationInfo.isDebuggable() -> false. Reporting true would manufacture an integrity failure that has nothing to do with the app.",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.STATIC_FIELD",
+      "family": "SUB.FW",
+      "t_mono_ms": 13,
+      "detail": "Landroid/content/pm/ApplicationInfo;.FLAG_DEBUGGABLE read by sget; the value is a compile-time constant and is not recorded",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.PROC_STATUS",
+      "family": "SUB.TRUST",
+      "t_mono_ms": 14,
+      "detail": "/proc/self/status -> 86 bytes, fabricated by the substrate; there is no kernel",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.PROC_MAPS",
+      "family": "SUB.NATIVE",
+      "t_mono_ms": 15,
+      "detail": "/proc/self/maps -> 0 bytes, fabricated by the substrate; there is no kernel",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.PROC_CPUINFO",
+      "family": "SUB.KERNEL",
+      "t_mono_ms": 16,
+      "detail": "/proc/cpuinfo -> 85 bytes, fabricated by the substrate; there is no kernel",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.PROC_UPTIME",
+      "family": "SUB.TIME",
+      "t_mono_ms": 17,
+      "detail": "/proc/uptime -> 10 bytes, fabricated by the substrate; there is no kernel",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.BATTERY",
+      "family": "SUB.KERNEL",
+      "t_mono_ms": 18,
+      "detail": "/sys/class/power_supply/battery/capacity -> 4 bytes, fabricated by the substrate; there is no kernel",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.PM_QUERY",
+      "family": "SUB.IPC",
+      "t_mono_ms": 20,
+      "detail": "PackageManager query for pro.rudloff.search_to_browser -> self (substrate holds exactly one app; every other answer is 'not installed' and the app sees an empty list, not an error)",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.PM_QUERY",
+      "family": "SUB.IPC",
+      "t_mono_ms": 20,
+      "detail": "PackageManager query for com.whatsapp -> not installed (substrate holds exactly one app; every other answer is 'not installed' and the app sees an empty list, not an error)",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.PM_QUERY",
+      "family": "SUB.IPC",
+      "t_mono_ms": 20,
+      "detail": "pm.queryIntentActivities() -> a list of exactly one entry (the subject itself). An app looking for a share target, a handler or a peer finds nothing, and finds nothing *without an error*.",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.SYSTEM_FEATURE",
+      "family": "SUB.BUILD",
+      "t_mono_ms": 20,
+      "detail": "hasSystemFeature(\"android.hardware.camera\") -> false",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.SYSTEM_FEATURE",
+      "family": "SUB.BUILD",
+      "t_mono_ms": 20,
+      "detail": "hasSystemFeature(\"android.hardware.sensor.accelerometer\") -> false",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.SYSTEM_FEATURE",
+      "family": "SUB.BUILD",
+      "t_mono_ms": 20,
+      "detail": "hasSystemFeature(\"android.hardware.touchscreen\") -> true",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.SYSTEM_SERVICE",
+      "family": "SUB.IPC",
+      "t_mono_ms": 20,
+      "detail": "getSystemService(\"connectivity\") -> null",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.SET_CONTENT_VIEW",
+      "family": "SUB.RES",
+      "t_mono_ms": 22,
+      "detail": "Landroid/app/Activity;.setContentView(resource id 2130968577); the substrate has no resources.arsc, so no layout was inflated and the app's view tree never exists",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.LAYOUT_PASS",
+      "family": "SUB.GFX",
+      "t_mono_ms": 50,
+      "detail": "7 nodes laid out in 360x780 dp; 45760 dp^2 of leaf area; font model shim-advance-table/v1; painted: false (this layer produces geometry, not pixels)",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.MESSAGE_QUEUE",
+      "family": "SUB.TIME",
+      "t_mono_ms": 51,
+      "detail": "Landroid/os/Looper;.getMainLooper no-op; queue depth now 0. Nothing drains it: the substrate has no display and therefore no vsync, so a frame-driven app waits forever.",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.MESSAGE_QUEUE",
+      "family": "SUB.TIME",
+      "t_mono_ms": 51,
+      "detail": "Landroid/os/Handler;.post posted; queue depth now 1. Nothing drains it: the substrate has no display and therefore no vsync, so a frame-driven app waits forever.",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.MESSAGE_QUEUE",
+      "family": "SUB.TIME",
+      "t_mono_ms": 51,
+      "detail": "Landroid/os/Handler;.post posted; queue depth now 2. Nothing drains it: the substrate has no display and therefore no vsync, so a frame-driven app waits forever.",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.MESSAGE_QUEUE",
+      "family": "SUB.TIME",
+      "t_mono_ms": 51,
+      "detail": "Landroid/os/Handler;.post posted; queue depth now 3. Nothing drains it: the substrate has no display and therefore no vsync, so a frame-driven app waits forever.",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.MESSAGE_QUEUE",
+      "family": "SUB.TIME",
+      "t_mono_ms": 51,
+      "detail": "Landroid/os/MessageQueue;.size queried; queue depth now 3. Nothing drains it: the substrate has no display and therefore no vsync, so a frame-driven app waits forever.",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.MESSAGE_QUEUE",
+      "family": "SUB.TIME",
+      "t_mono_ms": 51,
+      "detail": "Landroid/os/Looper;.loop loop() returned immediately instead of blocking; queue depth now 3. Nothing drains it: the substrate has no display and therefore no vsync, so a frame-driven app waits forever.",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.HEADER_NAME",
+      "family": "SUB.NET",
+      "t_mono_ms": 54,
+      "detail": "setRequestProperty(\"Authorization\") -> name recorded as \"authorization\", value withheld as non-allowlisted; the value is dropped inside the call",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.HEADER_NAME",
+      "family": "SUB.NET",
+      "t_mono_ms": 54,
+      "detail": "setRequestProperty(\"Content-Type\") -> name recorded as \"content-type\"; the value is dropped inside the call",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.HEADER_NAME",
+      "family": "SUB.NET",
+      "t_mono_ms": 54,
+      "detail": "setRequestProperty(\"X-Api-Key\") -> name recorded as \"x-api-key\", value withheld as non-allowlisted; the value is dropped inside the call",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.STREAM_WRITE",
+      "family": "SUB.FS",
+      "t_mono_ms": 54,
+      "detail": "OutputStream.write of 512 bytes; contents not recorded",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.WEBVIEW_LOAD",
+      "family": "SUB.FW",
+      "t_mono_ms": 58,
+      "detail": "WebView.loadUrl to cdn.substrate.invalid:/app.js -> the request is denied at the egress sink, so the page never loads. The hybrid app loses its entire UI, which is SUB.FW.WEBVIEW.",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    }
+  ],
+  "substrate_probe_hits": [
+    {
+      "assumption_id": "SUB.FW.CLASS_LOADER",
+      "family": "SUB.FW",
+      "symptom_class": "refuse",
+      "first_t_mono_ms": 0,
+      "last_t_mono_ms": 13,
+      "hit_count": 13,
+      "evidence": [
+        "/probes/0",
+        "/probes/1",
+        "/probes/2",
+        "/probes/3",
+        "/probes/4",
+        "/probes/5",
+        "/probes/6",
+        "/probes/8",
+        "/probes/9",
+        "/diagnostics/0",
+        "/diagnostics/1",
+        "/diagnostics/2",
+        "/diagnostics/3"
+      ],
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "confidence": "certain",
+      "notes": "observed by the substrate's own instrumentation, not inferred. A device arm can only establish the environment half of this ID; the substrate establishes the app half."
+    },
+    {
+      "assumption_id": "SUB.FW.DYNAMIC_CODE",
+      "family": "SUB.FW",
+      "symptom_class": "refuse",
+      "first_t_mono_ms": 0,
+      "last_t_mono_ms": 0,
+      "hit_count": 1,
+      "evidence": [
+        "/probes/7"
+      ],
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "confidence": "certain",
+      "notes": "observed by the substrate's own instrumentation, not inferred. A device arm can only establish the environment half of this ID; the substrate establishes the app half."
+    },
+    {
+      "assumption_id": "SUB.BUILD.FINGERPRINT",
+      "family": "SUB.BUILD",
+      "symptom_class": "refuse",
+      "first_t_mono_ms": 13,
+      "last_t_mono_ms": 13,
+      "hit_count": 4,
+      "evidence": [
+        "/diagnostics/4",
+        "/diagnostics/5",
+        "/diagnostics/6",
+        "/diagnostics/7"
+      ],
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "confidence": "certain",
+      "notes": "observed by the substrate's own instrumentation, not inferred. A device arm can only establish the environment half of this ID; the substrate establishes the app half."
+    },
+    {
+      "assumption_id": "SUB.BUILD.SDK_INT",
+      "family": "SUB.BUILD",
+      "symptom_class": "misbehave",
+      "first_t_mono_ms": 13,
+      "last_t_mono_ms": 13,
+      "hit_count": 2,
+      "evidence": [
+        "/diagnostics/8",
+        "/diagnostics/9"
+      ],
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "confidence": "certain",
+      "notes": "observed by the substrate's own instrumentation, not inferred. A device arm can only establish the environment half of this ID; the substrate establishes the app half."
+    },
+    {
+      "assumption_id": "SUB.BUILD.TAGS",
+      "family": "SUB.BUILD",
+      "symptom_class": "refuse",
+      "first_t_mono_ms": 13,
+      "last_t_mono_ms": 13,
+      "hit_count": 1,
+      "evidence": [
+        "/diagnostics/10"
+      ],
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "confidence": "certain",
+      "notes": "observed by the substrate's own instrumentation, not inferred. A device arm can only establish the environment half of this ID; the substrate establishes the app half."
+    },
+    {
+      "assumption_id": "SUB.FW.SERIALIZATION",
+      "family": "SUB.FW",
+      "symptom_class": "misbehave",
+      "first_t_mono_ms": 13,
+      "last_t_mono_ms": 13,
+      "hit_count": 1,
+      "evidence": [
+        "/diagnostics/11"
+      ],
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "confidence": "certain",
+      "notes": "observed by the substrate's own instrumentation, not inferred. A device arm can only establish the environment half of this ID; the substrate establishes the app half."
+    },
+    {
+      "assumption_id": "SUB.TRUST.DEBUG_DETECT",
+      "family": "SUB.TRUST",
+      "symptom_class": "refuse",
+      "first_t_mono_ms": 14,
+      "last_t_mono_ms": 14,
+      "hit_count": 2,
+      "evidence": [
+        "/filesystem/accesses/0",
+        "/diagnostics/12"
+      ],
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "confidence": "certain",
+      "notes": "observed by the substrate's own instrumentation, not inferred. A device arm can only establish the environment half of this ID; the substrate establishes the app half."
+    },
+    {
+      "assumption_id": "SUB.NATIVE.LOAD_LIBRARY",
+      "family": "SUB.NATIVE",
+      "symptom_class": "refuse",
+      "first_t_mono_ms": 15,
+      "last_t_mono_ms": 60,
+      "hit_count": 4,
+      "evidence": [
+        "/filesystem/accesses/1",
+        "/diagnostics/13",
+        "/jni/calls/0",
+        "/jni/calls/1"
+      ],
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "confidence": "certain",
+      "notes": "observed by the substrate's own instrumentation, not inferred. A device arm can only establish the environment half of this ID; the substrate establishes the app half."
+    },
+    {
+      "assumption_id": "SUB.KERNEL.PROC_SELF",
+      "family": "SUB.KERNEL",
+      "symptom_class": "degrade",
+      "first_t_mono_ms": 16,
+      "last_t_mono_ms": 19,
+      "hit_count": 3,
+      "evidence": [
+        "/filesystem/accesses/2",
+        "/diagnostics/14",
+        "/filesystem/accesses/5"
+      ],
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "confidence": "certain",
+      "notes": "observed by the substrate's own instrumentation, not inferred. A device arm can only establish the environment half of this ID; the substrate establishes the app half."
+    },
+    {
+      "assumption_id": "SUB.TIME.MONOTONIC",
+      "family": "SUB.TIME",
+      "symptom_class": "degrade",
+      "first_t_mono_ms": 17,
+      "last_t_mono_ms": 17,
+      "hit_count": 2,
+      "evidence": [
+        "/filesystem/accesses/3",
+        "/diagnostics/15"
+      ],
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "confidence": "certain",
+      "notes": "observed by the substrate's own instrumentation, not inferred. A device arm can only establish the environment half of this ID; the substrate establishes the app half."
+    },
+    {
+      "assumption_id": "SUB.KERNEL.SYS_BLOCK",
+      "family": "SUB.KERNEL",
+      "symptom_class": "degrade",
+      "first_t_mono_ms": 18,
+      "last_t_mono_ms": 18,
+      "hit_count": 2,
+      "evidence": [
+        "/filesystem/accesses/4",
+        "/diagnostics/16"
+      ],
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "confidence": "certain",
+      "notes": "observed by the substrate's own instrumentation, not inferred. A device arm can only establish the environment half of this ID; the substrate establishes the app half."
+    },
+    {
+      "assumption_id": "SUB.IPC.PACKAGE_MANAGER_SELF",
+      "family": "SUB.IPC",
+      "symptom_class": "misbehave",
+      "first_t_mono_ms": 20,
+      "last_t_mono_ms": 20,
+      "hit_count": 1,
+      "evidence": [
+        "/diagnostics/17"
+      ],
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "confidence": "certain",
+      "notes": "observed by the substrate's own instrumentation, not inferred. A device arm can only establish the environment half of this ID; the substrate establishes the app half."
+    },
+    {
+      "assumption_id": "SUB.IPC.PACKAGE_MANAGER_OTHER",
+      "family": "SUB.IPC",
+      "symptom_class": "misbehave",
+      "first_t_mono_ms": 20,
+      "last_t_mono_ms": 20,
+      "hit_count": 2,
+      "evidence": [
+        "/diagnostics/18",
+        "/diagnostics/19"
+      ],
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "confidence": "certain",
+      "notes": "observed by the substrate's own instrumentation, not inferred. A device arm can only establish the environment half of this ID; the substrate establishes the app half."
+    },
+    {
+      "assumption_id": "SUB.BUILD.ABILITIES",
+      "family": "SUB.BUILD",
+      "symptom_class": "degrade",
+      "first_t_mono_ms": 20,
+      "last_t_mono_ms": 20,
+      "hit_count": 3,
+      "evidence": [
+        "/diagnostics/20",
+        "/diagnostics/21",
+        "/diagnostics/22"
+      ],
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "confidence": "certain",
+      "notes": "observed by the substrate's own instrumentation, not inferred. A device arm can only establish the environment half of this ID; the substrate establishes the app half."
+    },
+    {
+      "assumption_id": "SUB.IPC.SYSTEM_SERVICE",
+      "family": "SUB.IPC",
+      "symptom_class": "refuse",
+      "first_t_mono_ms": 20,
+      "last_t_mono_ms": 20,
+      "hit_count": 1,
+      "evidence": [
+        "/diagnostics/23"
+      ],
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "confidence": "certain",
+      "notes": "observed by the substrate's own instrumentation, not inferred. A device arm can only establish the environment half of this ID; the substrate establishes the app half."
+    },
+    {
+      "assumption_id": "SUB.RES.ARSC",
+      "family": "SUB.RES",
+      "symptom_class": "refuse",
+      "first_t_mono_ms": 22,
+      "last_t_mono_ms": 22,
+      "hit_count": 1,
+      "evidence": [
+        "/diagnostics/24"
+      ],
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "confidence": "certain",
+      "notes": "observed by the substrate's own instrumentation, not inferred. A device arm can only establish the environment half of this ID; the substrate establishes the app half."
+    },
+    {
+      "assumption_id": "SUB.GFX.TEXT_RENDER",
+      "family": "SUB.GFX",
+      "symptom_class": "degrade",
+      "first_t_mono_ms": 50,
+      "last_t_mono_ms": 50,
+      "hit_count": 1,
+      "evidence": [
+        "/diagnostics/25",
+        "/probes/27"
+      ],
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "confidence": "certain",
+      "notes": "observed by the substrate's own instrumentation, not inferred. A device arm can only establish the environment half of this ID; the substrate establishes the app half."
+    },
+    {
+      "assumption_id": "SUB.TIME.VSYNC",
+      "family": "SUB.TIME",
+      "symptom_class": "refuse",
+      "first_t_mono_ms": 51,
+      "last_t_mono_ms": 51,
+      "hit_count": 6,
+      "evidence": [
+        "/diagnostics/26",
+        "/diagnostics/27",
+        "/diagnostics/28",
+        "/diagnostics/29",
+        "/diagnostics/30",
+        "/diagnostics/31"
+      ],
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "confidence": "certain",
+      "notes": "observed by the substrate's own instrumentation, not inferred. A device arm can only establish the environment half of this ID; the substrate establishes the app half."
+    },
+    {
+      "assumption_id": "SUB.NET.EGRESS",
+      "family": "SUB.NET",
+      "symptom_class": "refuse",
+      "first_t_mono_ms": 54,
+      "last_t_mono_ms": 58,
+      "hit_count": 6,
+      "evidence": [
+        "/diagnostics/32",
+        "/diagnostics/33",
+        "/diagnostics/34",
+        "/network/attempts/0",
+        "/network/attempts/1",
+        "/network/attempts/2"
+      ],
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "confidence": "certain",
+      "notes": "observed by the substrate's own instrumentation, not inferred. A device arm can only establish the environment half of this ID; the substrate establishes the app half."
+    },
+    {
+      "assumption_id": "SUB.FS.DATA_DIR",
+      "family": "SUB.FS",
+      "symptom_class": "misbehave",
+      "first_t_mono_ms": 54,
+      "last_t_mono_ms": 62,
+      "hit_count": 2,
+      "evidence": [
+        "/diagnostics/35",
+        "/filesystem/accesses/6"
+      ],
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "confidence": "certain",
+      "notes": "observed by the substrate's own instrumentation, not inferred. A device arm can only establish the environment half of this ID; the substrate establishes the app half."
+    },
+    {
+      "assumption_id": "SUB.FW.WEBVIEW",
+      "family": "SUB.FW",
+      "symptom_class": "refuse",
+      "first_t_mono_ms": 58,
+      "last_t_mono_ms": 58,
+      "hit_count": 1,
+      "evidence": [
+        "/diagnostics/36"
+      ],
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "confidence": "certain",
+      "notes": "observed by the substrate's own instrumentation, not inferred. A device arm can only establish the environment half of this ID; the substrate establishes the app half."
+    },
+    {
+      "assumption_id": "SUB.FS.SYSTEM_LAYOUT",
+      "family": "SUB.FS",
+      "symptom_class": "refuse",
+      "first_t_mono_ms": 62,
+      "last_t_mono_ms": 62,
+      "hit_count": 1,
+      "evidence": [
+        "/filesystem/accesses/7"
+      ],
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "confidence": "certain",
+      "notes": "observed by the substrate's own instrumentation, not inferred. A device arm can only establish the environment half of this ID; the substrate establishes the app half."
+    }
+  ],
+  "capture_quality": {
+    "completeness": "not_applicable_synthetic",
+    "max_tier_reached": "T0_DIRECT",
+    "signals_expected": [
+      "class_load_census",
+      "file_access_trace",
+      "jni_transitions",
+      "network_attempts",
+      "build_field_reads",
+      "proc_sys_reads",
+      "package_manager_queries",
+      "layout_pass",
+      "message_queue_depth"
+    ],
+    "signals_obtained": [
+      "build_field_reads",
+      "class_load_census",
+      "file_access_trace",
+      "jni_transitions",
+      "layout_pass",
+      "message_queue_depth",
+      "network_attempts",
+      "package_manager_queries",
+      "proc_sys_reads"
+    ],
+    "unobserved": [
+      {
+        "signal": "display_and_compositor",
+        "reason_code": "not_implemented",
+        "reason": "There is no display, no SurfaceFlinger and no vsync. Choreographer never posts a frame callback, so animation never advances and the layout pass produces geometry only. SUB.TIME.VSYNC is structurally unsatisfiable."
+      },
+      {
+        "signal": "binder_ipc",
+        "reason_code": "not_implemented",
+        "reason": "There is no /dev/binder, no ServiceManager and no IBinder. Every system service except the package manager is null, which is SUB.IPC.SYSTEM_SERVICE and SUB.IPC.BINDER_DEV."
+      },
+      {
+        "signal": "input_delivery",
+        "reason_code": "not_implemented",
+        "reason": "The substrate synthesises no input and delivers no MotionEvent or KeyEvent, so lifecycle.first_input_delivered is null and no app flow that waits for a tap can be observed past that point."
+      },
+      {
+        "signal": "process_reclamation",
+        "reason_code": "not_implemented",
+        "reason": "Nothing is ever reaped: no lowmemorykiller, no oom_adj, no cached-process states. lifecycle.events contains no process_killed, and the lifetime bugs a device shows will not appear."
+      },
+      {
+        "signal": "art_execution_tier",
+        "reason_code": "not_implemented",
+        "reason": "There is no AOT-compiled odex and no JIT warm-up. Execution cost belongs entirely to the interpreter, so SUB.CPU.TIERING cannot be measured and a slow app here is not evidence of anything about ART."
+      },
+      {
+        "signal": "resources_arsc",
+        "reason_code": "not_implemented",
+        "reason": "The APK is not a filesystem and resources.arsc is not parsed. Every getIdentifier, getString and setContentView(resource) returns null, so SUB.RES.ARSC is unsatisfiable and the name-to-id mapping that RES.PACKAGE_RESOLVER needs does not exist."
+      },
+      {
+        "signal": "boot_and_system_broadcasts",
+        "reason_code": "not_implemented",
+        "reason": "A browser tab has no boot. BOOT_COMPLETED and every other system broadcast is never delivered, so an app that defers initialisation to a receiver never initialises and never reports that it did not."
+      },
+      {
+        "signal": "hardware_attestation",
+        "reason_code": "requires_in_process_instrumentation",
+        "reason": "No TEE, no hardware-backed KeyStore, no MEETS_DEVICE_INTEGRITY and no MEETS_STRONG_INTEGRITY. Not implementable in software at any effort, so the shim does not try."
+      },
+      {
+        "signal": "selinux_labels_and_ownership",
+        "reason_code": "not_implemented",
+        "reason": "No SELinux, no uid/gid ownership and no POSIX modes beyond one synthetic mode per VFS node, so SUB.FS.SELINUX_CONTEXT and SUB.FS.PERM_MODEL cannot be assessed."
+      },
+      {
+        "signal": "invokedynamic_and_method_handles",
+        "reason_code": "not_implemented",
+        "reason": "The shim has no method-handle or call-site machinery, and the writer emits no method_handle_item or call_site_item. Modern dex is saturated with invokedynamic, so a large fraction of contemporary app behaviour never reaches a shim method and is therefore structurally invisible to this layer. This is the layer's most serious blind spot."
+      },
+      {
+        "signal": "network_responses",
+        "reason_code": "scope_out_of_protocol",
+        "reason": "Egress is denied by construction, so no response, status code, TLS session or redirect is ever observable. Every attempt is recorded and refused; that is a stronger property than a proxy but it is a strictly smaller set of observations."
+      },
+      {
+        "signal": "real_wall_clock",
+        "reason_code": "not_implemented",
+        "reason": "System.currentTimeMillis() returns 0 rather than the host's clock, so a recording is reproducible and does not import the host's skew. The divergence from a device is real and is recorded as SUB.TIME.WALL_CLOCK."
+      }
+    ],
+    "warnings": [
+      "SYNTHETIC FIXTURE - NOT EVIDENCE. No APK was installed, no bytecode was executed, and no Android device or container was involved. Every dynamic field describes the shim's own behaviour under a scripted sequence of calls, not any app's behaviour. Analysis pipelines must filter on synthetic == false before using this document; the oracle validator prints [SYNTHETIC FIXTURE - not evidence] on it for the same reason.",
+      "The static app block (package, apk_sha256, version) is true of the fixture APK pro.rudloff.search_to_browser_2 recorded in tools/dexcore/tests/FIXTURES.md. That does not make the rest of the document a statement about that app.",
+      "is_emulator is false and the attestation ceiling is NONE. The substrate is not attempting to pass emulator detection, because a substrate that could pass it would not be a substrate. An app that checks will check and will fail, and this document will say so."
+    ],
+    "empty_failure": false,
+    "exit_code": 0
+  },
+  "summary": {
+    "lifecycle_terminal": "L2_FIRST_FRAME_DRAWN",
+    "time_to_first_frame_ms": 41,
+    "event_count": 6,
+    "network_attempt_count": 3,
+    "network_destinations": 3,
+    "exception_count": 5,
+    "fatal_count": 0,
+    "class_count": 7,
+    "native_library_count": 0,
+    "distinct_families_touched": 11,
+    "families_touched": [
+      "SUB.BUILD",
+      "SUB.FS",
+      "SUB.FW",
+      "SUB.GFX",
+      "SUB.IPC",
+      "SUB.KERNEL",
+      "SUB.NATIVE",
+      "SUB.NET",
+      "SUB.RES",
+      "SUB.TIME",
+      "SUB.TRUST"
+    ]
+  },
+  "notes": "SYNTHETIC. Produced by shim::scenario::run() and emitted by shim/src/bin/shim-record.rs. Conforms to oracle/schema/ground-truth.schema.json so that a substrate capture and a device capture are the same document shape and directly diffable. Regenerate with: cargo run --quiet --manifest-path shim/Cargo.toml --bin shim-record > shim/recordings/synthetic.recording.json"
+}

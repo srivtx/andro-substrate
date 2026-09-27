@@ -1,0 +1,610 @@
+{
+  "generated": null,
+  "predictorVersion": "0.1.0",
+  "repoVersion": 30000,
+  "selection": {
+    "rule": "stride over corpus/survey.jsonl rows with ok===true, sorted by (packageName, versionCode), stratified by corpus hasNativeCode; APKs above maxApkBytes excluded",
+    "maxApkBytes": 125829120,
+    "corpusRows": 4475,
+    "corpusOkRows": 4475,
+    "nativeEligible": 60,
+    "dexOnlyEligible": 60,
+    "requested": "60:60",
+    "selected": 120,
+    "fetched": 120
+  },
+  "denominators": {
+    "chosen": 120,
+    "analysable": 120,
+    "dexOnlyStratum": 60,
+    "nativeStratum": 60,
+    "unanalysable": 0
+  },
+  "failures": [],
+  "dexVersions": {
+    "035": 56,
+    "037": 30,
+    "038": 19,
+    "039": 15
+  },
+  "coverage": {
+    "methodsWithCode": 4196811,
+    "methodsUndecodable": 0,
+    "methodsTruncatedTail": 5612,
+    "methodsTriesUnparsed": 10206,
+    "appsWithAnyUndecodable": 0
+  },
+  "callSiteSectionsPresent": 0,
+  "methodHandleSectionsPresent": 0,
+  "headline": {
+    "invokePolymorphic": 82,
+    "invokeCustom": 81,
+    "eitherDynamicInvoke": 119,
+    "constMethodHandle": 119,
+    "constMethodType": 118,
+    "declaredNativeMethods": 64,
+    "loadLibraryCallSites": 63,
+    "loadLibraryNamesBound": 56,
+    "libEntries": 60,
+    "assetNativePayloads": 1,
+    "buildIdentityReads": 99,
+    "playServices": 0,
+    "playIntegrity": 0,
+    "drmOrLicensing": 39,
+    "reflectionCallSites": 115,
+    "dynamicCode": 10
+  },
+  "headlineAsCounts": {
+    "invokePolymorphic": 82,
+    "invokeCustom": 81,
+    "eitherDynamicInvoke": 119,
+    "constMethodHandle": 119,
+    "constMethodType": 118,
+    "declaredNativeMethods": 64,
+    "loadLibraryCallSites": 63,
+    "loadLibraryNamesBound": 56,
+    "libEntries": 60,
+    "assetNativePayloads": 1,
+    "buildIdentityReads": 99,
+    "playServices": 0,
+    "playIntegrity": 0,
+    "drmOrLicensing": 39,
+    "reflectionCallSites": 115,
+    "dynamicCode": 10
+  },
+  "signalDefinitions": {
+    "invokePolymorphic": "a decoded invoke-polymorphic or invoke-polymorphic/range",
+    "invokeCustom": "a decoded invoke-custom or invoke-custom/range",
+    "eitherDynamicInvoke": "either of the two, or const-method-handle",
+    "constMethodHandle": "a decoded const-method-handle",
+    "constMethodType": "a decoded const-method-type",
+    "declaredNativeMethods": "a method declared with the native modifier",
+    "loadLibraryCallSites": "a System.loadLibrary / System.load / Runtime.load call site",
+    "loadLibraryNamesBound": "a loadLibrary call site whose library name was bound in the same basic block",
+    "libEntries": "a lib/<abi>/*.so entry in the central directory",
+    "assetNativePayloads": "a .so entry outside lib/, or an assets/ entry with ELF magic",
+    "buildIdentityReads": "an instruction-level read of an android.os.Build identity field",
+    "playServices": "an external com.google.android.gms.* class",
+    "playIntegrity": "a com.google.android.play.core.* class or a Play Integrity / SafetyNet string constant",
+    "drmOrLicensing": "a com.google.android.vending.* class or a licensing/DRM string constant",
+    "reflectionCallSites": "a decoded Class.forName / getMethod(s) / getDeclaredMethod(s) call site",
+    "dynamicCode": "an external DexClassLoader / InMemoryDexClassLoader / PathClassLoader"
+  },
+  "dexOnlyStratumHeadline": {
+    "invokePolymorphic": 27,
+    "invokeCustom": 30,
+    "eitherDynamicInvoke": 59,
+    "constMethodHandle": 59,
+    "declaredNativeMethods": 4,
+    "loadLibraryCallSites": 3,
+    "loadLibraryNamesBound": 3,
+    "libEntries": 0,
+    "assetNativePayloads": 0,
+    "buildIdentityReads": 41,
+    "playServices": 0,
+    "playIntegrity": 0,
+    "drmOrLicensing": 4,
+    "reflectionCallSites": 55,
+    "dynamicCode": 4
+  },
+  "nativeStratumHeadline": {
+    "eitherDynamicInvoke": 60,
+    "declaredNativeMethods": 60,
+    "loadLibraryCallSites": 60,
+    "libEntries": 60,
+    "buildIdentityReads": 58,
+    "playServices": 0,
+    "reflectionCallSites": 60
+  },
+  "bands": {
+    "REFUSE": 119,
+    "DEGRADE": 0,
+    "LIKELY_RUNS": 0,
+    "MINIMAL": 1,
+    "UNKNOWN": 0
+  },
+  "gates": {
+    "NATIVE_PAYLOAD": 60,
+    "DYNAMIC_INVOKE": 119,
+    "PLAY_SERVICES": 0,
+    "NATIVE_METHOD_UNIMPLEMENTED": 4
+  },
+  "taxonomy": [
+    {
+      "id": "SUB.FW.ACTIVITY_LIFECYCLE",
+      "apps": 120,
+      "members": 677,
+      "callSites": 1023,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.FW.SERIALIZATION",
+      "apps": 120,
+      "members": 17244,
+      "callSites": 139978,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.BUILD.SDK_INT",
+      "apps": 116,
+      "members": 150,
+      "callSites": 59748,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.TIME.WALL_CLOCK",
+      "apps": 116,
+      "members": 116,
+      "callSites": 3934,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.FW.REFLECTION",
+      "apps": 115,
+      "members": 1071,
+      "callSites": 35251,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.INPUT.INPUT_EVENT",
+      "apps": 115,
+      "members": 5844,
+      "callSites": 42781,
+      "confidence": "CONJECTURE"
+    },
+    {
+      "id": "SUB.IPC.SYSTEM_SERVICE",
+      "apps": 115,
+      "members": 224,
+      "callSites": 6722,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.GFX.TEXT_RENDER",
+      "apps": 113,
+      "members": 6596,
+      "callSites": 28333,
+      "confidence": "CONJECTURE"
+    },
+    {
+      "id": "SUB.IPC.PACKAGE_MANAGER_OTHER",
+      "apps": 113,
+      "members": 558,
+      "callSites": 1571,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.RES.DISPLAY_METRICS",
+      "apps": 113,
+      "members": 676,
+      "callSites": 4653,
+      "confidence": "CONJECTURE"
+    },
+    {
+      "id": "SUB.IPC.ACTIVITY_MANAGER",
+      "apps": 110,
+      "members": 245,
+      "callSites": 367,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.RES.PACKAGE_RESOLVER",
+      "apps": 110,
+      "members": 207,
+      "callSites": 2068,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.TIME.MONOTONIC",
+      "apps": 110,
+      "members": 110,
+      "callSites": 1997,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.TIME.VSYNC",
+      "apps": 109,
+      "members": 2306,
+      "callSites": 13053,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.RES.LOCALE",
+      "apps": 108,
+      "members": 143,
+      "callSites": 1611,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.BUILD.ABILITIES",
+      "apps": 106,
+      "members": 703,
+      "callSites": 2586,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.INPUT.IME",
+      "apps": 104,
+      "members": 105,
+      "callSites": 326,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.MEM.MMAP",
+      "apps": 104,
+      "members": 223,
+      "callSites": 301,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.IPC.CONTENT_PROVIDER",
+      "apps": 94,
+      "members": 149,
+      "callSites": 571,
+      "confidence": "CONJECTURE"
+    },
+    {
+      "id": "SUB.CPU.CORE_COUNT",
+      "apps": 91,
+      "members": 91,
+      "callSites": 264,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.MEM.HW_CAPS",
+      "apps": 91,
+      "members": 101,
+      "callSites": 183,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.NET.EGRESS",
+      "apps": 87,
+      "members": 1224,
+      "callSites": 2514,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.BUILD.FINGERPRINT",
+      "apps": 83,
+      "members": 83,
+      "callSites": 190,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.HW.LOCATION",
+      "apps": 82,
+      "members": 836,
+      "callSites": 1116,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.IPC.NOTIFICATION",
+      "apps": 82,
+      "members": 115,
+      "callSites": 216,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.FS.EXTERNAL_STORAGE",
+      "apps": 77,
+      "members": 141,
+      "callSites": 307,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.BUILD.MANUFACTURER",
+      "apps": 76,
+      "members": 76,
+      "callSites": 448,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.BUILD.MODEL",
+      "apps": 76,
+      "members": 76,
+      "callSites": 607,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.PWR.WAKE_LOCK",
+      "apps": 76,
+      "members": 76,
+      "callSites": 209,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.FW.NON_SDK_API",
+      "apps": 74,
+      "members": 124,
+      "callSites": 3302,
+      "confidence": "CONJECTURE"
+    },
+    {
+      "id": "SUB.TIME.ELAPSED_REALTIME",
+      "apps": 73,
+      "members": 73,
+      "callSites": 1096,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.FW.WEBVIEW",
+      "apps": 70,
+      "members": 1287,
+      "callSites": 1994,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.TIME.SLEEP",
+      "apps": 70,
+      "members": 75,
+      "callSites": 426,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.IPC.CONNECTIVITY_MANAGER",
+      "apps": 69,
+      "members": 115,
+      "callSites": 184,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.HW.TELEPHONY",
+      "apps": 67,
+      "members": 245,
+      "callSites": 184,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.GFX.SURFACE",
+      "apps": 65,
+      "members": 625,
+      "callSites": 1264,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.HW.VIBRATE",
+      "apps": 64,
+      "members": 113,
+      "callSites": 67,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.MEM.DIRECT_BYTEBUFFER",
+      "apps": 64,
+      "members": 1196,
+      "callSites": 15483,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.IPC.ALARM_MANAGER",
+      "apps": 63,
+      "members": 109,
+      "callSites": 133,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.NATIVE.LOAD_LIBRARY",
+      "apps": 63,
+      "members": 82,
+      "callSites": 182,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.HW.SENSORS",
+      "apps": 57,
+      "members": 156,
+      "callSites": 160,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.TRUST.ROOT_DETECT",
+      "apps": 56,
+      "members": 85,
+      "callSites": 41,
+      "confidence": "CONJECTURE"
+    },
+    {
+      "id": "SUB.HW.BIOMETRIC",
+      "apps": 52,
+      "members": 213,
+      "callSites": 166,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.TRUST.GMS_ACCOUNT",
+      "apps": 49,
+      "members": 74,
+      "callSites": 45,
+      "confidence": "CONJECTURE"
+    },
+    {
+      "id": "SUB.PWR.BATTERY",
+      "apps": 46,
+      "members": 51,
+      "callSites": 6,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.RES.TIMEZONE",
+      "apps": 43,
+      "members": 43,
+      "callSites": 150,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.BUILD.BRAND",
+      "apps": 42,
+      "members": 42,
+      "callSites": 431,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.BUILD.DEVICE",
+      "apps": 37,
+      "members": 37,
+      "callSites": 226,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.IPC.BROADCAST",
+      "apps": 31,
+      "members": 31,
+      "callSites": 31,
+      "confidence": "CONJECTURE"
+    },
+    {
+      "id": "SUB.NET.PROXY",
+      "apps": 31,
+      "members": 52,
+      "callSites": 64,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.FS.SYSTEM_LAYOUT",
+      "apps": 26,
+      "members": 34,
+      "callSites": 74,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.NET.NATIVE_HTTP",
+      "apps": 26,
+      "members": 291,
+      "callSites": 381,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.BUILD.PRODUCT",
+      "apps": 24,
+      "members": 24,
+      "callSites": 36,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.CPU.ARCH",
+      "apps": 23,
+      "members": 49,
+      "callSites": 86,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.GFX.EGL_CONTEXT",
+      "apps": 17,
+      "members": 924,
+      "callSites": 1561,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.TRUST.ATTESTATION_KEY",
+      "apps": 15,
+      "members": 154,
+      "callSites": 316,
+      "confidence": "CONJECTURE"
+    },
+    {
+      "id": "SUB.BUILD.HARDWARE",
+      "apps": 13,
+      "members": 13,
+      "callSites": 40,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.BUILD.BOARD",
+      "apps": 12,
+      "members": 12,
+      "callSites": 16,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.FW.INVOKEDYNAMIC",
+      "apps": 12,
+      "members": 82,
+      "callSites": 333,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.FW.DYNAMIC_CODE",
+      "apps": 10,
+      "members": 16,
+      "callSites": 5,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.BUILD.TAGS",
+      "apps": 9,
+      "members": 9,
+      "callSites": 10,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.HW.BLUETOOTH",
+      "apps": 9,
+      "members": 43,
+      "callSites": 58,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.GFX.CAMERA_PIPE",
+      "apps": 8,
+      "members": 115,
+      "callSites": 199,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.TRUST.DEBUG_DETECT",
+      "apps": 7,
+      "members": 7,
+      "callSites": 7,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.BUILD.BOOTLOADER",
+      "apps": 6,
+      "members": 6,
+      "callSites": 8,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.GFX.SCREEN_ON",
+      "apps": 3,
+      "members": 3,
+      "callSites": 4,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.HW.NFC",
+      "apps": 3,
+      "members": 11,
+      "callSites": 10,
+      "confidence": "VERIFIED"
+    },
+    {
+      "id": "SUB.BUILD.SERIAL",
+      "apps": 2,
+      "members": 4,
+      "callSites": 8,
+      "confidence": "VERIFIED"
+    }
+  ]
+}

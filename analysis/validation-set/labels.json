@@ -1,0 +1,372 @@
+{
+  "schema": "andro-substrate/validation-set/1",
+  "labelled_by": "Agent 5 (the analyzer author)",
+  "labelled_on": "2026-09-28",
+  "features": {
+    "F1": "native_payload \u2014 the APK ships a native payload (lib/<abi>/*.so or an ELF under assets/), or calls System/Runtime loadLibrary/load, or declares a native method nothing in the APK implements.",
+    "F2": "dynamic_invoke \u2014 decoded bytecode contains invoke-polymorphic, invoke-custom, or const-method-handle.",
+    "F3": "trust_client_api \u2014 the APK references a Play Integrity, SafetyNet, Play Services, licensing or DRM client API (MediaDrm and com.widevine included).",
+    "F4": "build_identity \u2014 an instruction reads an android.os.Build identity field.",
+    "F5": "reflection \u2014 a decoded call site targets Class.forName / getMethod(s) / getDeclaredMethod(s) / Field.setAccessible / Method.invoke / Proxy.newProxyInstance / ClassLoader.loadClass.",
+    "F6": "dynamic_code \u2014 an external DexClassLoader / InMemoryDexClassLoader / PathClassLoader / BaseDexClassLoader class is referenced."
+  },
+  "label_values": [
+    "yes",
+    "no",
+    "unknown"
+  ],
+  "selection": {
+    "population": "analysis/sample/rows.jsonl, the 120-APK deterministic sample",
+    "rule": "sort by packageName ascending (ties broken by versionCode), take the first 20",
+    "why": "Deterministic, re-derivable from the committed sample file with no extra tooling, and independent of every signal the analyzer reports.",
+    "sha256Verification": {
+      "note": "SHA-256 of the bytes actually fetched and analysed, cross-checked against the SHA-256 F-Droid publishes in its index for the same package+versionCode. This closes the gap corpus/report.md names: \"SHA-256 values come from the F-Droid index and were not checked against the served bytes.\"",
+      "matching": 20,
+      "total": 20
+    }
+  },
+  "apps": [
+    {
+      "packageName": "InfinityLoop1309.NewPipeEnhanced",
+      "versionCode": 110804,
+      "apkName": "InfinityLoop1309.NewPipeEnhanced_110804.apk",
+      "sha256": "589bb89b777bf0a33a13ab6456d2c876c3b8814f40fa8f74b2c4f0285aa56bf1",
+      "corpusIndexSha256": "589bb89b777bf0a33a13ab6456d2c876c3b8814f40fa8f74b2c4f0285aa56bf1",
+      "labels": {
+        "F1": "yes",
+        "F2": "yes",
+        "F3": "yes",
+        "F4": "yes",
+        "F5": "yes",
+        "F6": "yes"
+      },
+      "note": "10 x lib/arm64-v8a/*.so and a System.loadLibrary(\"androidx.graphics.path\") call site, so F1 is yes on two independent grounds. F3: MediaDrm/Widevine PSSH constants present. F6: PathClassLoader and BaseDexClassLoader are referenced but not defined here.",
+      "sha256MatchesCorpusIndex": true
+    },
+    {
+      "packageName": "S.N.A.K.E",
+      "versionCode": 1000001,
+      "apkName": "S.N.A.K.E_1000001.apk",
+      "sha256": "d8b3db6f912c67bec1ae9dec5b1b4ffd9958004bd7c5efec88cec48c23bfca86",
+      "corpusIndexSha256": "d8b3db6f912c67bec1ae9dec5b1b4ffd9958004bd7c5efec88cec48c23bfca86",
+      "labels": {
+        "F1": "no",
+        "F2": "yes",
+        "F3": "no",
+        "F4": "no",
+        "F5": "no",
+        "F6": "no"
+      },
+      "note": "A 3 KB stub: 9 methods, no lib/ entry, no native declaration, no Build read, no reflective call site. F2 is yes on 9 const-method-handle instructions alone, which shows how little discriminative power a 99%-positive feature has.",
+      "sha256MatchesCorpusIndex": true
+    },
+    {
+      "packageName": "app.halma",
+      "versionCode": 15,
+      "apkName": "app.halma_15.apk",
+      "sha256": "b994337244e2136b54f96f75038fe70d9562635cce50af6387d906ee048d0ec0",
+      "corpusIndexSha256": "b994337244e2136b54f96f75038fe70d9562635cce50af6387d906ee048d0ec0",
+      "labels": {
+        "F1": "yes",
+        "F2": "yes",
+        "F3": "no",
+        "F4": "yes",
+        "F5": "yes",
+        "F6": "no"
+      },
+      "note": "lib/ entries for all four ABIs plus 59 native declarations. 3 loadLibrary call sites whose argument register was never written by a const-string in the same basic block, so the library names are unknown \u2014 F1 does not depend on them.",
+      "sha256MatchesCorpusIndex": true
+    },
+    {
+      "packageName": "app.traced_it",
+      "versionCode": 16,
+      "apkName": "app.traced_it_16.apk",
+      "sha256": "675bf751f7e29a71961d9e4c014d157ae27aa8487e86014c384ca2cae64d2c61",
+      "corpusIndexSha256": "675bf751f7e29a71961d9e4c014d157ae27aa8487e86014c384ca2cae64d2c61",
+      "labels": {
+        "F1": "yes",
+        "F2": "yes",
+        "F3": "yes",
+        "F4": "yes",
+        "F5": "yes",
+        "F6": "no"
+      },
+      "note": "F3 is a single string constant, the descriptor Landroid/media/MediaDrm;. Thin evidence; recorded as yes because MediaDrm is the Widevine entry point, but a stricter rule would call this unknown.",
+      "sha256MatchesCorpusIndex": true
+    },
+    {
+      "packageName": "app.tujice.jergasColombia",
+      "versionCode": 1,
+      "apkName": "app.tujice.jergasColombia_1.apk",
+      "sha256": "ef6177e39b1d0b1d6276f1214d2e9c8f2acd37471cb0eb6fe21cf20468b50e6f",
+      "corpusIndexSha256": "ef6177e39b1d0b1d6276f1214d2e9c8f2acd37471cb0eb6fe21cf20468b50e6f",
+      "labels": {
+        "F1": "no",
+        "F2": "yes",
+        "F3": "no",
+        "F4": "yes",
+        "F5": "yes",
+        "F6": "no"
+      },
+      "note": "No lib/ entry, no native declaration, no loadLibrary. The cleanest negative F1 in the native-free stratum.",
+      "sha256MatchesCorpusIndex": true
+    },
+    {
+      "packageName": "biz.binarysolutions.stress",
+      "versionCode": 6,
+      "apkName": "biz.binarysolutions.stress_6.apk",
+      "sha256": "a79d40377e8755d8d637d05577ac743b59649179727cb2b448a52fa9a69b6c99",
+      "corpusIndexSha256": "a79d40377e8755d8d637d05577ac743b59649179727cb2b448a52fa9a69b6c99",
+      "labels": {
+        "F1": "no",
+        "F2": "yes",
+        "F3": "no",
+        "F4": "yes",
+        "F5": "yes",
+        "F6": "no"
+      },
+      "note": "F4 rests on a single sget of Build.FINGERPRINT. Labelled yes because the field is read, with the caveat that one read is very little evidence of dependency.",
+      "sha256MatchesCorpusIndex": true
+    },
+    {
+      "packageName": "ca.hamaluik.timecop",
+      "versionCode": 45,
+      "apkName": "ca.hamaluik.timecop_45.apk",
+      "sha256": "ac0beb01168754028a1ce9814495b891bf240aa8098d904e2f73347052595cb3",
+      "corpusIndexSha256": "ac0beb01168754028a1ce9814495b891bf240aa8098d904e2f73347052595cb3",
+      "labels": {
+        "F1": "yes",
+        "F2": "yes",
+        "F3": "no",
+        "F4": "yes",
+        "F5": "yes",
+        "F6": "no"
+      },
+      "note": "Flutter app: System.loadLibrary(\"flutter\"), 6 lib/ entries, 38 native declarations.",
+      "sha256MatchesCorpusIndex": true
+    },
+    {
+      "packageName": "ch.gassenarbeit.bern.your.rights",
+      "versionCode": 203,
+      "apkName": "ch.gassenarbeit.bern.your.rights_203.apk",
+      "sha256": "f395f335978533a86a1c0b387a13ccc9b4bba3e5d26fe4719906d05fb8b17e20",
+      "corpusIndexSha256": "f395f335978533a86a1c0b387a13ccc9b4bba3e5d26fe4719906d05fb8b17e20",
+      "labels": {
+        "F1": "no",
+        "F2": "yes",
+        "F3": "no",
+        "F4": "yes",
+        "F5": "yes",
+        "F6": "no"
+      },
+      "note": "Small: 628 methods, 5 const-method-handle, 9 reflection call sites, one sget of Build.MANUFACTURER.",
+      "sha256MatchesCorpusIndex": true
+    },
+    {
+      "packageName": "co.adityarajput.fileflow",
+      "versionCode": 11,
+      "apkName": "co.adityarajput.fileflow_11.apk",
+      "sha256": "c8c12538346be1fba2c7d8d2714935a8bdf207ef4536d3c327967b88fceea85c",
+      "corpusIndexSha256": "c8c12538346be1fba2c7d8d2714935a8bdf207ef4536d3c327967b88fceea85c",
+      "labels": {
+        "F1": "yes",
+        "F2": "yes",
+        "F3": "no",
+        "F4": "yes",
+        "F5": "yes",
+        "F6": "no"
+      },
+      "note": "The one DEX 039 app among the native-code group. 4 lib/ entries, 8 native declarations.",
+      "sha256MatchesCorpusIndex": true
+    },
+    {
+      "packageName": "com.agatamessina.webinspector",
+      "versionCode": 4,
+      "apkName": "com.agatamessina.webinspector_4.apk",
+      "sha256": "b8f2f505aad9d728b704fecb8d98b7f5176b68565adf220d41e14fba636974e5",
+      "corpusIndexSha256": "b8f2f505aad9d728b704fecb8d98b7f5176b68565adf220d41e14fba636974e5",
+      "labels": {
+        "F1": "yes",
+        "F2": "yes",
+        "F3": "yes",
+        "F4": "yes",
+        "F5": "yes",
+        "F6": "no"
+      },
+      "note": "4 dex files, 13951 const-method-handle instructions in a single app. F3 from the MediaDrm descriptor constant.",
+      "sha256MatchesCorpusIndex": true
+    },
+    {
+      "packageName": "com.agateau.catgenerator",
+      "versionCode": 3,
+      "apkName": "com.agateau.catgenerator_3.apk",
+      "sha256": "d2f2c5ac99108d1c5a30f52e4d2d89000ab4de7c17e72ee9e277f2a024f398be",
+      "corpusIndexSha256": "d2f2c5ac99108d1c5a30f52e4d2d89000ab4de7c17e72ee9e277f2a024f398be",
+      "labels": {
+        "F1": "no",
+        "F2": "yes",
+        "F3": "no",
+        "F4": "yes",
+        "F5": "yes",
+        "F6": "no"
+      },
+      "note": "F4 reads FINGERPRINT, MANUFACTURER and MODEL \u2014 three distinct identity fields, the strongest F4 evidence in the set.",
+      "sha256MatchesCorpusIndex": true
+    },
+    {
+      "packageName": "com.android.xrayfa",
+      "versionCode": 33004,
+      "apkName": "com.android.xrayfa_33004.apk",
+      "sha256": "48a1c3662b60764750c47536e4fab2144b080fd27252042d449578487d6dcb2a",
+      "corpusIndexSha256": "48a1c3662b60764750c47536e4fab2144b080fd27252042d449578487d6dcb2a",
+      "labels": {
+        "F1": "yes",
+        "F2": "yes",
+        "F3": "no",
+        "F4": "yes",
+        "F5": "yes",
+        "F6": "no"
+      },
+      "note": "6 x lib/x86_64/*.so (x86_64 only, a real-world packaging oddity), 47 native declarations, 4 named loadLibrary call sites including gojni and image_processing_util_jni.",
+      "sha256MatchesCorpusIndex": true
+    },
+    {
+      "packageName": "com.anysoftkeyboard.languagepack.esperanto",
+      "versionCode": 6158,
+      "apkName": "com.anysoftkeyboard.languagepack.esperanto_6158.apk",
+      "sha256": "f03253812374686f66645f28a7552908945f0224e3e19bc954dc18bd43da0f21",
+      "corpusIndexSha256": "f03253812374686f66645f28a7552908945f0224e3e19bc954dc18bd43da0f21",
+      "labels": {
+        "F1": "no",
+        "F2": "yes",
+        "F3": "no",
+        "F4": "yes",
+        "F5": "yes",
+        "F6": "yes"
+      },
+      "note": "F6 from a BaseDexClassLoader reference. This is a keyboard language pack with no code of its own beyond the AnySoftKeyboard API, so the positive is plausible rather than certain \u2014 flagged as the weakest F6 label in the set.",
+      "sha256MatchesCorpusIndex": true
+    },
+    {
+      "packageName": "com.anysoftkeyboard.languagepack.slovene",
+      "versionCode": 6158,
+      "apkName": "com.anysoftkeyboard.languagepack.slovene_6158.apk",
+      "sha256": "ca70ef617a907b02042a7a9e026041e0d6591717dd6e8de541f6162ae9b3c058",
+      "corpusIndexSha256": "ca70ef617a907b02042a7a9e026041e0d6591717dd6e8de541f6162ae9b3c058",
+      "labels": {
+        "F1": "no",
+        "F2": "yes",
+        "F3": "no",
+        "F4": "yes",
+        "F5": "yes",
+        "F6": "yes"
+      },
+      "note": "Byte-for-byte the same DEX as the Esperanto pack apart from dictionary data; identical labels are the correct outcome, and their agreement tests nothing.",
+      "sha256MatchesCorpusIndex": true
+    },
+    {
+      "packageName": "com.autismprime.krassesSpiel",
+      "versionCode": 6,
+      "apkName": "com.autismprime.krassesSpiel_6.apk",
+      "sha256": "2ab8fbbd40520c94f721f5f5e8d24492bce109c01656913ccf94f9ab7e838bab",
+      "corpusIndexSha256": "2ab8fbbd40520c94f721f5f5e8d24492bce109c01656913ccf94f9ab7e838bab",
+      "labels": {
+        "F1": "no",
+        "F2": "yes",
+        "F3": "no",
+        "F4": "yes",
+        "F5": "yes",
+        "F6": "no"
+      },
+      "note": "F2 on 4 invoke-custom sites and 1416 const-method-handle; no native anything.",
+      "sha256MatchesCorpusIndex": true
+    },
+    {
+      "packageName": "com.aw.huda",
+      "versionCode": 513,
+      "apkName": "com.aw.huda_513.apk",
+      "sha256": "bdce59944dcf345bffbca56979959c283fc02dd9900aef89d1a5154d3b43f6cd",
+      "corpusIndexSha256": "bdce59944dcf345bffbca56979959c283fc02dd9900aef89d1a5154d3b43f6cd",
+      "labels": {
+        "F1": "yes",
+        "F2": "yes",
+        "F3": "yes",
+        "F4": "yes",
+        "F5": "yes",
+        "F6": "no"
+      },
+      "note": "Strongest Build identity coverage in the set: 19 distinct fields including BOOTLOADER, TAGS and SUPPORTED_ABIS, 25 reads. 4 loadLibrary call sites with no bound name, so the library identities are unknown \u2014 F1 rests on the 4 x lib/x86_64 entries and the 53 declarations.",
+      "sha256MatchesCorpusIndex": true
+    },
+    {
+      "packageName": "com.bodycheck",
+      "versionCode": 2,
+      "apkName": "com.bodycheck_2.apk",
+      "sha256": "8db883a728f98d0345f97e1b0125dbc23d47a4e06e357fd5d50e5cd219952b78",
+      "corpusIndexSha256": "8db883a728f98d0345f97e1b0125dbc23d47a4e06e357fd5d50e5cd219952b78",
+      "labels": {
+        "F1": "yes",
+        "F2": "yes",
+        "F3": "yes",
+        "F4": "yes",
+        "F5": "yes",
+        "F6": "no"
+      },
+      "note": "267 Build identity reads across 8 distinct fields \u2014 8x the read count of any other app in the set, which is the anti-tamper signature the taxonomy predicts for BUILD.*.",
+      "sha256MatchesCorpusIndex": true
+    },
+    {
+      "packageName": "com.callblocker",
+      "versionCode": 17,
+      "apkName": "com.callblocker_17.apk",
+      "sha256": "23b796e4e4bd3ed94e810107e3cb6485bee378b3f4f9156eb73a547fd53f6e9a",
+      "corpusIndexSha256": "23b796e4e4bd3ed94e810107e3cb6485bee378b3f4f9156eb73a547fd53f6e9a",
+      "labels": {
+        "F1": "no",
+        "F2": "yes",
+        "F3": "no",
+        "F4": "yes",
+        "F5": "yes",
+        "F6": "no"
+      },
+      "note": "DEX 039, 3 loadLibrary-looking call sites absent; 2 invoke-custom and 1361 const-method-handle.",
+      "sha256MatchesCorpusIndex": true
+    },
+    {
+      "packageName": "com.co3",
+      "versionCode": 214,
+      "apkName": "com.co3_214.apk",
+      "sha256": "bbf89427b83675b630baa8ceef71df43d59725c8c4450659280b92286c0d5935",
+      "corpusIndexSha256": "bbf89427b83675b630baa8ceef71df43d59725c8c4450659280b92286c0d5935",
+      "labels": {
+        "F1": "yes",
+        "F2": "yes",
+        "F3": "yes",
+        "F4": "yes",
+        "F5": "yes",
+        "F6": "yes"
+      },
+      "note": "21 x lib/x86_64, 426 native declarations, 18 distinct Build identity fields. One inferred loadLibrary name is the bare string \"lib\", which is a mis-binding \u2014 the argument register was reused. F1 does not depend on it, and it is recorded here as a known analyzer defect on this app.",
+      "sha256MatchesCorpusIndex": true
+    },
+    {
+      "packageName": "com.daemon.ssh",
+      "versionCode": 64,
+      "apkName": "com.daemon.ssh_64.apk",
+      "sha256": "806970f840ff395d9803e8c7c9a4212ef17400095218825aaceee0fd5beaeb11",
+      "corpusIndexSha256": "806970f840ff395d9803e8c7c9a4212ef17400095218825aaceee0fd5beaeb11",
+      "labels": {
+        "F1": "no",
+        "F2": "yes",
+        "F3": "yes",
+        "F4": "yes",
+        "F5": "yes",
+        "F6": "no"
+      },
+      "note": "An SSH client with no native code at all. 2 /dev/* constants and 5 /system partition constants, which is the most substrate-specific string surface in the set even though F1 is no.",
+      "sha256MatchesCorpusIndex": true
+    }
+  ],
+  "apksCommitted": false,
+  "apksNote": "No APK is committed. corpus/apks/ and the download cache are gitignored; only the digests and the derived analysis rows are."
+}

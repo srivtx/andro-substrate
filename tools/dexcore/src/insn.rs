@@ -499,13 +499,23 @@ impl Payload {
 
     /// Total width in bytes: ident, body, and padding up to a code unit.
     ///
-    /// * `packed-switch-payload`: `4 + targets` units
-    /// * `sparse-switch-payload`: `2 + 2*keys` units
-    /// * `fill-array-data-payload`: `4 + ceil(data/2)` units
+    /// * `packed-switch-payload`: `ident(2) size(2) first_key(4) targets(4n)`
+    ///   = `8 + 4n` bytes, so `4 + 2n` code units.
+    /// * `sparse-switch-payload`: `ident(2) size(2) keys(4n) targets(4n)`
+    ///   = `4 + 8n` bytes, so `2 + 4n` code units.
+    /// * `fill-array-data-payload`: `ident(2) element_width(2) size(4) data`
+    ///   = `8 + data` bytes, so `4 + ceil(data/2)` code units.
+    ///
+    /// The two switch counts previously treated each 32-bit array element as
+    /// if it were 16 bits, so both were short by a factor of two and
+    /// disagreed with the very 32-bit words the decoder reads for them. The
+    /// symptom is silent: a linear sweep still tiles, because the unconsumed
+    /// remainder simply decodes as further instructions, so the fixture
+    /// tiling test passed. What breaks is branch-target fixup.
     pub fn width(&self) -> u16 {
         let units: u32 = match self {
-            Payload::PackedSwitch(p) => 4 + p.targets.len() as u32,
-            Payload::SparseSwitch(s) => 2 + 2 * s.keys.len() as u32,
+            Payload::PackedSwitch(p) => 4 + 2 * p.targets.len() as u32,
+            Payload::SparseSwitch(s) => 2 + 4 * s.keys.len() as u32,
             Payload::FillArrayData(f) => 4 + (f.data.len() as u32).div_ceil(2),
         };
         (units * 2) as u16
@@ -519,14 +529,14 @@ mod tests {
     #[test]
     fn payload_widths_match_the_spec() {
         let p = Payload::PackedSwitch(PackedSwitch { ident: 0x0100, first_key: 0, targets: vec![0; 3] });
-        assert_eq!(p.width(), 7 * 2);
+        assert_eq!(p.width(), 20);
 
         let s = Payload::SparseSwitch(SparseSwitch {
             ident: 0x0200,
             keys: vec![0; 4],
             targets: vec![0; 4],
         });
-        assert_eq!(s.width(), 10 * 2);
+        assert_eq!(s.width(), 36);
 
         // An odd number of payload bytes still occupies a whole code unit.
         let f = Payload::FillArrayData(FillArrayData {

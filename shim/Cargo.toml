@@ -1,0 +1,30 @@
+[package]
+name = "shim"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+description = "android.* framework shim as an OBSERVATION layer for andro-substrate: a synthetic DEX emitted with dexcore, a redacting event recorder, an in-memory VFS, a hard egress-denial sink and a serialisable measure/layout/draw cycle"
+license = "Apache-2.0"
+publish = false
+
+# Standalone crate, not a workspace member: `tools/dexcore` is owned by another
+# agent and adding this to a shared workspace would couple their build to ours.
+[workspace]
+
+[lib]
+name = "shim"
+path = "src/lib.rs"
+
+[[bin]]
+name = "shim-record"
+path = "src/bin/shim-record.rs"
+
+[dependencies]
+dexcore = { path = "../tools/dexcore" }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1

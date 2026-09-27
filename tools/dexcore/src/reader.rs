@@ -768,7 +768,9 @@ fn decode_payload(
         K::PackedSwitch => {
             need(3)?;
             let size = units[at + 1] as usize;
-            let total = 4 + size;
+            // words 0..=2+size are read (ident, size, first_key, targets),
+            // so the advance must be 2*(2+size) units, not 4+size.
+            let total = 4 + 2 * size;
             need(total)?;
             // first_key is 32-bit word 1; targets follow as 32-bit words.
             let first_key = word_i(1);
@@ -787,7 +789,8 @@ fn decode_payload(
         K::SparseSwitch => {
             need(2)?;
             let size = units[at + 1] as usize;
-            let total = 2 + 2 * size;
+            // words 0..=1+2*size are read (ident, size, keys, targets).
+            let total = 2 + 4 * size;
             need(total)?;
             let keys = (0..size).map(|i| word_i(1 + i)).collect();
             let targets = (0..size).map(|i| word_i(1 + size + i)).collect();
@@ -1030,7 +1033,7 @@ mod tests {
         b.extend_from_slice(&0i32.to_le_bytes());
         b.extend_from_slice(&5i32.to_le_bytes());
         let (i, n) = decode_one(&units(&b), 0).unwrap();
-        assert_eq!(n, 6);
+        assert_eq!(n, 8);
         match i {
             Instruction::Payload(Payload::PackedSwitch(ref p)) => {
                 assert_eq!(p.first_key, 10);
@@ -1038,7 +1041,7 @@ mod tests {
             }
             other => panic!("expected packed switch, got {other:?}"),
         }
-        assert_eq!(i.width(), 12);
+        assert_eq!(i.width(), 16);
     }
 
     #[test]
@@ -1048,7 +1051,8 @@ mod tests {
             b.extend_from_slice(&v.to_le_bytes());
         }
         let (i, n) = decode_one(&units(&b), 0).unwrap();
-        assert_eq!(n, 6);
+        // 2 ident/size + 2 keys + 2 targets words = 5 words = 10 units.
+        assert_eq!(n, 10);
         match i {
             Instruction::Payload(Payload::SparseSwitch(ref s)) => {
                 assert_eq!(s.keys, vec![100, 200]);

@@ -1,0 +1,163 @@
+{
+  "schema": 1,
+  "run": {
+    "startedAt": "2026-09-27T21:22:36.857Z",
+    "finishedAt": "2026-09-27T21:46:56.242Z",
+    "durationSeconds": 1459.4,
+    "command": "node tools/corpus/survey.mjs --n 5000 --seed 20260928 --concurrency 8",
+    "seed": 20260928,
+    "requestedN": 5000,
+    "concurrency": 8,
+    "withManifest": true,
+    "tailBytes": 131072,
+    "indexFormat": "v1"
+  },
+  "index": {
+    "url": "https://f-droid.org/repo/index-v1.json",
+    "version": 30000,
+    "maxage": 14,
+    "timestamp": 1790497006850,
+    "timestampISO": "2026-09-27T08:16:46.850Z",
+    "address": "https://f-droid.org/repo",
+    "bytes": 63129759,
+    "sha256": "1f4bd109de2f5c1e5a13d8282d5a0b1411f170aee0b2426080e708803d6fb562",
+    "retrievedAt": "2026-09-27T19:53:44.243Z"
+  },
+  "population": {
+    "packagesInIndex": 4475,
+    "sampled": 4475,
+    "succeeded": 4475,
+    "failed": 0,
+    "samplingMethod": "census"
+  },
+  "headline": {
+    "metric": "APKs with zero lib/<abi>/*.so entries",
+    "numerator": 2003,
+    "denominator": 4475,
+    "percentNoNativeCode": 44.75977653631285,
+    "percentWithNativeCode": 55.24022346368715,
+    "wilson95Low": 43.3080108165728,
+    "wilson95High": 46.220531233596354
+  },
+  "bytes": {
+    "totalFetched": 669714734,
+    "totalFetchedMiB": 638.69,
+    "sumOfRowBytes": 669714734,
+    "sumOfRowRequests": 13677,
+    "fullDownloadWouldBeBytes": 81700227935,
+    "fullDownloadWouldBeGiB": 76.089,
+    "fractionOfFullDownload": 0.008197219896777023,
+    "indexDownloadBytes": 63129759,
+    "perApkMeanBytes": 149657,
+    "perApkMeanApkBytes": 18257034
+  },
+  "transfer": {
+    "bytesFetched": 669714734,
+    "requestCount": 13677,
+    "redirectCount": 0,
+    "retryCount": 1,
+    "bytesByHost": {
+      "f-droid.org": 669714734
+    }
+  },
+  "dex": {
+    "meanDexCount": 1.532,
+    "meanCompressedDexBytes": 3546121,
+    "meanUncompressedDexBytes": 8075211,
+    "zeroDexApps": 2,
+    "multiDexApps": 1393
+  },
+  "abis": {
+    "librariesByAbi": {
+      "x86_64": 16332,
+      "arm64-v8a": 9348,
+      "armeabi-v7a": 6555,
+      "x86": 4769,
+      "armeabi": 84,
+      "mips": 45,
+      "mips64": 34,
+      "riscv64": 2
+    },
+    "appsByAbi": {
+      "arm64-v8a": 2207,
+      "x86_64": 2065,
+      "armeabi-v7a": 1912,
+      "x86": 1566,
+      "armeabi": 60,
+      "mips": 36,
+      "mips64": 28,
+      "riscv64": 1
+    },
+    "straySharedObjectApps": 6
+  },
+  "minSdk": {
+    "buckets": {
+      "c: 21-23 (L-M)": {
+        "total": 1374,
+        "pure": 733
+      },
+      "d: 24-25 (N-N MR1)": {
+        "total": 975,
+        "pure": 256
+      },
+      "e: 26-28 (O-P)": {
+        "total": 904,
+        "pure": 266
+      },
+      "a: <16 (pre-Jelly Bean)": {
+        "total": 339,
+        "pure": 294
+      },
+      "b: 16-20 (JB-JB MR1)": {
+        "total": 501,
+        "pure": 338
+      },
+      "f: 29-32 (Q-T)": {
+        "total": 330,
+        "pure": 101
+      },
+      "g: 33+ (recent)": {
+        "total": 51,
+        "pure": 14
+      },
+      "unknown": {
+        "total": 1,
+        "pure": 1
+      }
+    },
+    "manifestParsed": 4474,
+    "manifestParseRate": 0.9997765363128491,
+    "disagreementWithIndex": 0
+  },
+  "crossChecks": {
+    "indexDeclaredNative": 2473,
+    "indexDeclaredAndMeasuredNative": 2472,
+    "indexDeclaredNativeButMeasuredNone": 1,
+    "measuredNativeButIndexDeclaredNone": 0
+  },
+  "resourcesArsc": {
+    "present": 4474,
+    "absent": 1
+  },
+  "entryCount": {
+    "mean": 847.4,
+    "max": 32290
+  },
+  "zip64Apps": 0,
+  "twoFetchApps": 252,
+  "serverIgnoredRange": 0,
+  "failures": [],
+  "licenseSource": null,
+  "seededSubsample": {
+    "seed": 20260928,
+    "requestedN": 3000,
+    "inSample": 3000,
+    "succeeded": 3000,
+    "failed": 0,
+    "numerator": 1358,
+    "denominator": 3000,
+    "percentNoNativeCode": 45.266666666666666,
+    "wilson95Low": 43.492689951764504,
+    "wilson95High": 47.05274981616858
+  }
+}

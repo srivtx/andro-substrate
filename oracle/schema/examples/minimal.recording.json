@@ -1,0 +1,240 @@
+{
+  "record_format": "andro-substrate.ground-truth/1",
+  "synthetic": true,
+  "capture_id": "FIXTURE-SYNTHETIC-0001-minimal",
+
+  "provenance": {
+    "execution_performed": false,
+    "synthetic_reason": "SYNTHETIC FIXTURE. Hand-authored to exercise the minimum of ground-truth.schema.json v1. No APK was installed, no device was contacted, and no logcat was read. This document describes no real execution and must never be cited as evidence.",
+    "toolchain_revision": "n/a -- synthetic fixture authored before any commit",
+    "capture_script_sha256": null,
+    "authored_by": "agent-3 (research design)",
+    "host_os": "darwin 25.4.0 arm64",
+    "notes": "Exists so that the schema has a lower bound that is provably satisfiable, and so that CI can test the validator without a device. If you are reading this in an analysis pipeline, you should be filtering on synthetic == false."
+  },
+
+  "recorder": {
+    "name": "none (synthetic fixture)",
+    "version": "0.0.0",
+    "implementation": "synthetic"
+  },
+
+  "capture": {
+    "started_utc": "2026-01-01T00:00:00.000Z",
+    "ended_utc": "2026-01-01T00:00:10.000Z",
+    "duration_ms": 10000,
+    "observation_window_ms": 9000,
+    "boot_wait_ms": 0,
+    "install": {
+      "method": "not_applicable_synthetic",
+      "succeeded": true
+    },
+    "launch": {
+      "method": "not_applicable_synthetic",
+      "component": null,
+      "succeeded": true
+    },
+    "device_serial": "FIXTURE0000",
+    "shell_uid": 2000,
+    "root_shell": false,
+    "snapshot_at_ms": null,
+    "clock": {
+      "monotonic_source": "synthetic_fixture",
+      "monotonic_resolution_ms": 1,
+      "wall_clock_source": "none",
+      "monotonic_epoch_ref": null,
+      "t_zero_definition": "synthetic fixture: t=0 is an invented origin, not a device event"
+    },
+    "observer_effects": [
+      {
+        "kind": "none",
+        "applied": false,
+        "detail": null,
+        "expected_to_change_behaviour": false
+      }
+    ],
+    "interventions_during_run": []
+  },
+
+  "app": {
+    "package": "org.example.fixture",
+    "apk_sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    "apk_size_bytes": 1048576,
+    "apk_paths": [],
+    "version_code": 1,
+    "version_name": "0.0.0",
+    "min_sdk": 21,
+    "target_sdk": 34,
+    "install_flags": [],
+    "debuggable": false,
+    "user_id": null,
+    "declared_permissions": [],
+    "granted_permissions": [],
+    "split_apks": [],
+    "native_libs_declared": [],
+    "signature_sha256": [],
+    "data_dir": null,
+    "is_synthetic": true
+  },
+
+  "environment": {
+    "kind": "synthetic",
+    "android_release": "0.0.0",
+    "sdk_int": 1,
+    "build_fingerprint": "synthetic/fixture/0000:user/release-keys",
+    "build_id": "FIXTURE",
+    "build_type": null,
+    "abis": [],
+    "is_emulator": false,
+    "is_physical_device": false,
+    "selinux": null,
+    "google_play_services": {
+      "present": false,
+      "version_name": null,
+      "version_code": null,
+      "enabled": null,
+      "detected_by": "unknown"
+    },
+    "play_store_present": false,
+    "attestation": {
+      "play_integrity_supported": false,
+      "safetynet_available": false,
+      "max_expected_verdict": "UNKNOWN",
+      "observed_verdict": null,
+      "basis": "unknown"
+    }
+  },
+
+  "clock": {
+    "monotonic_source": "synthetic_fixture",
+    "monotonic_resolution_ms": 1,
+    "wall_clock_source": "none",
+    "monotonic_epoch_ref": null,
+    "t_zero_definition": "synthetic fixture: t=0 is an invented origin, not a device event"
+  },
+
+  "privacy": {
+    "policy": "andro-substrate/oracle-privacy/1",
+    "bodies_captured": false,
+    "hostnames": "none",
+    "secrets_redacted": true,
+    "user_ca_trusted": false,
+    "notes": "SYNTHETIC FIXTURE. No real traffic, paths, hostnames, or identifiers appear anywhere in this document."
+  },
+
+  "lifecycle": {
+    "events": [
+      {
+        "type": "process_start",
+        "t_mono_ms": 0,
+        "t_wall_utc": null,
+        "component": null,
+        "pid": null,
+        "source": "synthetic_fixture",
+        "tier": "T4_UNOBSERVED",
+        "log_tag": null,
+        "log_priority": null,
+        "matched_pattern": null,
+        "detail": "Invented single event. The terminal state below is L0_PROCESS_STARTED because no resume and no failure follow it."
+      }
+    ],
+    "activity_started": null,
+    "activity_resumed": null,
+    "first_frame_drawn": null,
+    "window_focused": null,
+    "terminal": "L0_PROCESS_STARTED",
+    "reached_steady_state": false,
+    "quiet_window_ms": null,
+    "sustained_log_spam": null,
+    "jank_events": 0
+  },
+
+  "network": {
+    "capture_method": "none",
+    "hostname_resolution": "unavailable",
+    "proxy": {
+      "installed": false,
+      "user_ca_trusted": false
+    },
+    "attempts": [],
+    "byte_totals_observed": {
+      "source": "netstats_counters",
+      "tx_bytes": null,
+      "rx_bytes": null,
+      "connection_count": null,
+      "destination_resolvable": false,
+      "uid": null,
+      "note": "SYNTHETIC FIXTURE: no netstats were read; all counters are unknown rather than zero."
+    },
+    "limits": [
+      "SYNTHETIC FIXTURE: this recording observed no network behaviour of any kind."
+    ]
+  },
+
+  "filesystem": {
+    "accesses": [],
+    "access_trace_obtained": false,
+    "app_dir_listing": [],
+    "open_fds_at_snapshot": [],
+    "limits": [
+      "access_trace_obtained is false: a per-operation file access trace is unobtainable without in-process instrumentation, so an empty array here means UNKNOWN, not 'no file access occurred'."
+    ]
+  },
+
+  "classes": {
+    "loaded": [],
+    "loaded_obtained": false,
+    "total_loaded_count": null,
+    "dex_files": [],
+    "limits": [
+      "loaded_obtained is false: an empty loaded array means no class loading was observed, not that the app loaded no classes."
+    ]
+  },
+
+  "native": {
+    "libraries_loaded": [],
+    "obtained": false,
+    "mapping_obtained": false,
+    "jit_or_aot_activity_observed": false,
+    "limits": [
+      "mapping_obtained is false: /proc/<pid>/maps requires a root shell or a debuggable build, neither of which a minimal fixture can have."
+    ]
+  },
+
+  "jni": {
+    "calls": [],
+    "obtained": false,
+    "limits": [
+      "obtained is false: JNI transitions are not observable from outside the process on a stock device."
+    ]
+  },
+
+  "exceptions": [],
+
+  "probes": [],
+
+  "diagnostics": [],
+
+  "substrate_probe_hits": [],
+
+  "capture_quality": {
+    "completeness": "not_applicable_synthetic",
+    "max_tier_reached": "T4_UNOBSERVED",
+    "signals_expected": [],
+    "signals_obtained": [],
+    "unobserved": [
+      {
+        "signal": "everything",
+        "reason_code": "scope_out_of_protocol",
+        "reason": "SYNTHETIC FIXTURE: no execution was performed, so every signal is unobserved by construction."
+      }
+    ],
+    "warnings": [
+      "SYNTHETIC FIXTURE -- NOT EVIDENCE. No APK was run and no device was contacted. This document is schema coverage only."
+    ],
+    "empty_failure": false,
+    "exit_code": 0
+  },
+
+  "notes": "SYNTHETIC FIXTURE. The minimal instance: every required key present, every observation array empty, and every 'obtained' flag false so that no absence of evidence can be misread as evidence of absence. See oracle/RECORDING.md section 6."
+}

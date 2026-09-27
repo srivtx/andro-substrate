@@ -1,0 +1,1233 @@
+{
+  "record_format": "andro-substrate.ground-truth/1",
+  "synthetic": true,
+  "capture_id": "FIXTURE-SYNTHETIC-0002-full-crash",
+
+  "provenance": {
+    "execution_performed": false,
+    "synthetic_reason": "SYNTHETIC FIXTURE. Hand-authored to exercise the maximum surface of ground-truth.schema.json v1, including a fatal native crash after first draw, a TLS pinning rejection, a dlopen failure and a Play Integrity refusal. No APK was installed, no device was contacted, no logcat was read and no proxy was installed. The package name and version are those of a real F-Droid app only so that the fixture exercises realistic string shapes; NO behaviour attributed to it here was ever observed.",
+    "toolchain_revision": "n/a -- synthetic fixture authored before any commit",
+    "capture_script_sha256": null,
+    "authored_by": "agent-3 (research design)",
+    "host_os": "darwin 25.4.0 arm64",
+    "notes": "This fixture is a HYPOTHETICAL divergence scenario: an app that draws a frame, silently loses Play Integrity and TLS, fails to load a native library, and then dies. It is a specification of what a real capture would look like, not a record that any of it happened. It exists to pin down the shape of the interesting cases so that the recorder and the analyst agree on what counts as evidence."
+  },
+
+  "recorder": {
+    "name": "adb-recorder.sh",
+    "version": "0.1.0",
+    "implementation": "adb-recorder",
+    "options": {
+      "DURATION": "90",
+      "SNAPSHOT_AT": "8",
+      "HOSTNAMES": "hmac",
+      "MITM": "false",
+      "ALLOW_INCOMPLETE": "false"
+    },
+    "adb_version": "1.0.41 (version 35.0.2-12147458) [fixture]",
+    "notes": "The version string is a plausible placeholder, not a captured value."
+  },
+
+  "capture": {
+    "started_utc": "2026-01-01T00:00:00.000Z",
+    "ended_utc": "2026-01-01T00:01:42.000Z",
+    "duration_ms": 102000,
+    "observation_window_ms": 90000,
+    "boot_wait_ms": 7400,
+    "install": {
+      "method": "adb_install",
+      "succeeded": true,
+      "flags": ["INSTALL_FAILED_NO_MATCHING_ABIS"],
+      "apks_replaced_existing": false,
+      "install_source": "adb",
+      "error": null
+    },
+    "launch": {
+      "method": "am_start",
+      "component": "org.fdroid.fdroid/.ui.MyActivity",
+      "requested_activity_resolved_by": "explicit_intent",
+      "succeeded": true,
+      "error": null
+    },
+    "device_serial": "emulator-5554",
+    "shell_uid": 0,
+    "root_shell": true,
+    "snapshot_at_ms": 8000,
+    "clock": {
+      "monotonic_source": "proc_uptime",
+      "monotonic_resolution_ms": 10,
+      "wall_clock_source": "host_date",
+      "monotonic_epoch_ref": "81234.56 80211.44",
+      "t_zero_definition": "t=0 is the instant the am start intent was accepted by ActivityManagerService, reconstructed from the logcat START line and cross-checked against /proc/uptime",
+      "notes": "redroid as root exposes /proc/uptime at 10 ms resolution; logcat adds 1 ms wall timestamps with no year, so the two are combined and the reconstruction is stated rather than assumed."
+    },
+    "observer_effects": [
+      {
+        "kind": "root_shell_used",
+        "applied": true,
+        "detail": "adb root; used for /proc/<pid>/{maps,fd,status} and /data/user/0/<pkg> listing",
+        "expected_to_change_behaviour": false
+      },
+      {
+        "kind": "log_level_raised",
+        "applied": false,
+        "detail": null,
+        "expected_to_change_behaviour": false
+      },
+      {
+        "kind": "mitm_proxy_installed",
+        "applied": false,
+        "detail": "No proxy. This is why the pinning rejection below is observed only as an app-side exception and not as a full exchange.",
+        "expected_to_change_behaviour": false
+      }
+    ],
+    "interventions_during_run": []
+  },
+
+  "app": {
+    "package": "org.fdroid.fdroid",
+    "apk_sha256": "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
+    "apk_size_bytes": 7340032,
+    "apk_paths": ["/data/app/~~aBcD==/org.fdroid.fdroid-1/base.apk"],
+    "apk_digest_on_device": "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
+    "version_code": 1019051,
+    "version_name": "1.19.1",
+    "min_sdk": 21,
+    "target_sdk": 34,
+    "install_flags": ["INSTALL_ALLOW_DOWNGRADE", "INSTALL_NON_MILESTONE"],
+    "private_flags": ["PRIVATE_FLAG_DIRECT_BOOT_AWARE", "PRIVATE_FLAG_HAS_CODE"],
+    "debuggable": false,
+    "user_id": 10234,
+    "declared_permissions": [
+      "android.permission.INTERNET",
+      "android.permission.ACCESS_NETWORK_STATE",
+      "android.permission.WAKE_LOCK",
+      "com.android.vending.BILLING"
+    ],
+    "granted_permissions": [
+      "android.permission.INTERNET",
+      "android.permission.ACCESS_NETWORK_STATE",
+      "android.permission.WAKE_LOCK"
+    ],
+    "requested_features": [
+      "android.hardware.touchscreen",
+      "android.hardware.fingerprint"
+    ],
+    "split_apks": [],
+    "main_activity": "org.fdroid.fdroid.ui.MyActivity",
+    "activities": ["org.fdroid.fdroid.ui.MyActivity", "org.fdroid.fdroid.ui.AppDetailsActivity"],
+    "services": ["org.fdroid.fdroid.net.DownloaderService"],
+    "receivers": ["org.fdroid.fdroid.net.NetworkObserver"],
+    "providers": ["org.fdroid.fdroid.data.ClientProvider"],
+    "native_libs_declared": ["lib/arm64-v8a/libfdroid.so"],
+    "uses_non_sdk_api": true,
+    "signature_sha256": ["9a1f3c7e5b2d8046af17c3e90b6d5a482f1e7c309b8d6a24e5f70c1b9a3e8d42"],
+    "data_dir": "/data/user/0/org.fdroid.fdroid",
+    "code_path": "/data/app/~~aBcD==/org.fdroid.fdroid-1",
+    "device_protected_data_dir": "/data/user_de/0/org.fdroid.fdroid",
+    "is_synthetic": true
+  },
+
+  "environment": {
+    "kind": "redroid",
+    "android_release": "13",
+    "security_patch": "2024-04-05",
+    "sdk_int": 33,
+    "build_fingerprint": "redroid/redroid:13/TQ3A.230805.001/10316531:user/release-keys",
+    "build_id": "TQ3A.230805.001",
+    "build_type": "user",
+    "build_tags": "release-keys",
+    "model": "redroid",
+    "manufacturer": "redroid",
+    "brand": "redroid",
+    "product": "redroid",
+    "device": "redroid",
+    "hardware": "redroid",
+    "board": "redroid",
+    "serial": "0123456789ABCDEF",
+    "bootloader": "redroid",
+    "abis": ["arm64-v8a"],
+    "cpu_count": 8,
+    "total_ram_bytes": 2147483648,
+    "low_ram_device": false,
+    "is_emulator": false,
+    "is_physical_device": false,
+    "bootloader_unlocked": true,
+    "ro_secure": false,
+    "verified_boot_state": "orange",
+    "selinux": "permissive",
+    "selinux_enforcing": false,
+    "verified_boot_hash": "d6301b4bd0e0c14a4b7c9b0b6e2f1a3c8d5e7f90a1b2c3d4e5f60718293a4b5c",
+    "image_digest": "sha256:7f3a1c9e2b4d6085a1c3e5f7092b4d6e8f0a1c3e5f7092b4d6e8f0a1c3e5f70",
+    "image_fingerprint": "redroid/redroid:13.0.0_64only-latest",
+    "google_play_services": {
+      "present": false,
+      "version_name": null,
+      "version_code": null,
+      "enabled": null,
+      "detected_by": "pm_list_packages"
+    },
+    "play_store_present": false,
+    "attestation": {
+      "play_integrity_supported": false,
+      "safetynet_available": false,
+      "max_expected_verdict": "NONE",
+      "observed_verdict": "NONE",
+      "basis": "documented_requirement",
+      "notes": "Play Integrity verdicts are computed server-side by Google Play from hardware-backed signals. A privileged Linux container has no such signals, so NONE is the maximum possible. The app's own refusal is visible in the log; the verdict itself is not locally observable."
+    },
+    "locale": "en_US",
+    "timezone": "Europe/Berlin",
+    "font_scale": 1.0,
+    "density_dpi": 420,
+    "screen": {
+      "width_px": 1080,
+      "height_px": 2400,
+      "density_dpi": 420,
+      "refresh_rate_hz": 60.0,
+      "supported_refresh_rates_hz": [60.0, 90.0, 120.0]
+    },
+    "graphics": {
+      "gles_version": "3.2",
+      "vulkan_version": null,
+      "egl_vendor": " Mesa",
+      "gl_renderer": "Android Emulator OpenGL ES Translator (0x00050108)",
+      "extensions_known": false,
+      "hardware_accelerated_default": true
+    },
+    "network": {
+      "egress_available": true,
+      "default_network_type": "WIFI",
+      "validated": true,
+      "metered": false,
+      "captive_portal": false,
+      "dns_servers": ["10.0.2.3"],
+      "system_proxy": null
+    },
+    "sensors_present": [],
+    "sensors_absent": [
+      "accelerometer",
+      "gyroscope",
+      "magnetometer",
+      "barometer",
+      "proximity",
+      "light"
+    ],
+    "properties_observed": {
+      "ro.build.version.sdk": "33",
+      "ro.build.version.release": "13",
+      "ro.build.fingerprint": "redroid/redroid:13/TQ3A.230805.001/10316531:user/release-keys",
+      "ro.product.model": "redroid",
+      "ro.product.manufacturer": "redroid",
+      "ro.product.brand": "redroid",
+      "ro.hardware": "redroid",
+      "ro.product.board": "redroid",
+      "ro.serialno": "0123456789ABCDEF",
+      "ro.build.tags": "release-keys",
+      "ro.build.type": "user",
+      "ro.secure": "0",
+      "ro.boot.verifiedbootstate": "orange",
+      "ro.kernel.qemu": "0",
+      "ro.product.cpu.abi": "arm64-v8a",
+      "ro.product.cpu.abilist": "arm64-v8a,armeabi-v7a,armeabi",
+      "selinux": "permissive",
+      "gsm.version.baseband": "",
+      "persist.sys.timezone": "Europe/Berlin"
+    }
+  },
+
+  "clock": {
+    "monotonic_source": "proc_uptime",
+    "monotonic_resolution_ms": 10,
+    "wall_clock_source": "host_date",
+    "monotonic_epoch_ref": "81234.56 80211.44",
+    "t_zero_definition": "t=0 is the instant the am start intent was accepted by ActivityManagerService, reconstructed from the logcat START line and cross-checked against /proc/uptime",
+    "notes": "Device uptime has 10 ms resolution; logcat wall timestamps have 1 ms resolution but no year and no monotonicity guarantee across an NTP step. Durations quoted in this recording are therefore accurate to roughly 10 ms, and any analysis claiming millisecond-exact frame timings from it is over-reading."
+  },
+
+  "privacy": {
+    "policy": "andro-substrate/oracle-privacy/1",
+    "bodies_captured": false,
+    "hostnames": "hmac",
+    "secrets_redacted": true,
+    "user_ca_trusted": false,
+    "notes": "SYNTHETIC FIXTURE, and also the policy the real recorder applies. Hostnames are replaced by HMAC-SHA256 tokens under a key held out of band, so hosts can be correlated across a corpus without being disclosed. Query strings are dropped entirely and only parameter NAMES are kept. No request or response body was or may ever be recorded; only byte counts and SHA-256 digests, which permit detecting that two requests carried identical payloads without revealing either."
+  },
+
+  "lifecycle": {
+    "events": [
+      {
+        "type": "capture_boundary",
+        "t_mono_ms": 0,
+        "t_wall_utc": "2026-01-01T00:00:07.400Z",
+        "component": null,
+        "pid": null,
+        "source": "logcat",
+        "tier": "T1_LOGCAT",
+        "log_tag": "ActivityTaskManager",
+        "log_priority": 4,
+        "matched_pattern": "LIFECYCLE_PAT.START_INTENT",
+        "detail": "Marker: t=0. am start -W dispatched for org.fdroid.fdroid/.ui.MyActivity."
+      },
+      {
+        "type": "process_start",
+        "t_mono_ms": 12,
+        "t_wall_utc": "2026-01-01T00:00:07.412Z",
+        "component": null,
+        "pid": 4242,
+        "source": "logcat",
+        "tier": "T1_LOGCAT",
+        "log_tag": "ActivityManager",
+        "log_priority": 4,
+        "matched_pattern": "LIFECYCLE_PAT.START_PROC",
+        "detail": "Start proc 4242:org.fdroid.fdroid/u10234 for activity {org.fdroid.fdroid/.ui.MyActivity}"
+      },
+      {
+        "type": "activity_create",
+        "t_mono_ms": 118,
+        "t_wall_utc": "2026-01-01T00:00:07.518Z",
+        "component": "org.fdroid.fdroid/.ui.MyActivity",
+        "pid": 4242,
+        "source": "logcat",
+        "tier": "T1_LOGCAT",
+        "log_tag": "ActivityTaskManager",
+        "log_priority": 4,
+        "matched_pattern": "LIFECYCLE_PAT.ON_CREATE",
+        "detail": "am_on_create_called reported by the platform for the main activity."
+      },
+      {
+        "type": "activity_start",
+        "t_mono_ms": 240,
+        "t_wall_utc": "2026-01-01T00:00:07.640Z",
+        "component": "org.fdroid.fdroid/.ui.MyActivity",
+        "pid": 4242,
+        "source": "logcat",
+        "tier": "T1_LOGCAT",
+        "log_tag": "ActivityTaskManager",
+        "log_priority": 4,
+        "matched_pattern": "LIFECYCLE_PAT.ON_START",
+        "detail": "am_on_start_called."
+      },
+      {
+        "type": "activity_resume",
+        "t_mono_ms": 299,
+        "t_wall_utc": "2026-01-01T00:00:07.699Z",
+        "component": "org.fdroid.fdroid/.ui.MyActivity",
+        "pid": 4242,
+        "source": "logcat",
+        "tier": "T1_LOGCAT",
+        "log_tag": "ActivityTaskManager",
+        "log_priority": 4,
+        "matched_pattern": "LIFECYCLE_PAT.ON_RESUME",
+        "detail": "am_on_resume_called; activity is now visible and will accept input."
+      },
+      {
+        "type": "first_frame_drawn",
+        "t_mono_ms": 455,
+        "t_wall_utc": "2026-01-01T00:00:07.855Z",
+        "component": "org.fdroid.fdroid/.ui.MyActivity",
+        "pid": 4242,
+        "source": "logcat",
+        "tier": "T1_LOGCAT",
+        "log_tag": "ActivityTaskManager",
+        "log_priority": 4,
+        "matched_pattern": "LIFECYCLE_PAT.DISPLAYED",
+        "detail": "Displayed org.fdroid.fdroid/.ui.MyActivity: +455ms"
+      },
+      {
+        "type": "window_focused",
+        "t_mono_ms": 502,
+        "t_wall_utc": "2026-01-01T00:00:07.902Z",
+        "component": "org.fdroid.fdroid/.ui.MyActivity",
+        "pid": 4242,
+        "source": "dumpsys_window",
+        "tier": "T2_SNAPSHOT",
+        "log_tag": null,
+        "log_priority": null,
+        "matched_pattern": null,
+        "detail": "mCurrentFocus=Window{9f2c1a u0 org.fdroid.fdroid/org.fdroid.fdroid.ui.MyActivity}"
+      },
+      {
+        "type": "input_delivered",
+        "t_mono_ms": 1490,
+        "t_wall_utc": "2026-01-01T00:00:08.890Z",
+        "component": "org.fdroid.fdroid/.ui.MyActivity",
+        "pid": 4242,
+        "source": "logcat",
+        "tier": "T1_LOGCAT",
+        "log_tag": "InputDispatcher",
+        "log_priority": 4,
+        "matched_pattern": "LIFECYCLE_PAT.INPUT_DELIVERED",
+        "detail": "Delivering touch to window of the app. Out-of-protocol: the automated harness does not synthesise input; this event is present only to show the field in use."
+      },
+      {
+        "type": "activity_pause",
+        "t_mono_ms": 3810,
+        "t_wall_utc": "2026-01-01T00:00:11.210Z",
+        "component": "org.fdroid.fdroid/.ui.MyActivity",
+        "pid": 4242,
+        "source": "logcat",
+        "tier": "T1_LOGCAT",
+        "log_tag": "ActivityTaskManager",
+        "log_priority": 4,
+        "matched_pattern": "LIFECYCLE_PAT.ON_PAUSE",
+        "detail": "am_on_pause_called."
+      },
+      {
+        "type": "fatal_exception",
+        "t_mono_ms": 5900,
+        "t_wall_utc": "2026-01-01T00:00:13.300Z",
+        "component": null,
+        "pid": 4242,
+        "source": "logcat_buffer_crash",
+        "tier": "T1_LOGCAT",
+        "log_tag": "AndroidRuntime",
+        "log_priority": 6,
+        "matched_pattern": "EXC_PAT.FATAL",
+        "detail": "FATAL EXCEPTION: DroidData -- the first death is a Java-level abort triggered by the native loader failure recorded at /native/dlopen_failures/0."
+      },
+      {
+        "type": "process_died",
+        "t_mono_ms": 6000,
+        "t_wall_utc": "2026-01-01T00:00:13.400Z",
+        "component": null,
+        "pid": 4242,
+        "source": "logcat",
+        "tier": "T1_LOGCAT",
+        "log_tag": "ActivityManager",
+        "log_priority": 4,
+        "matched_pattern": "LIFECYCLE_PAT.PROCESS_DIED",
+        "detail": "Process org.fdroid.fdroid (pid 4242) has died: fore TOP"
+      },
+      {
+        "type": "capture_boundary",
+        "t_mono_ms": 89500,
+        "t_wall_utc": "2026-01-01T00:01:36.900Z",
+        "component": null,
+        "pid": null,
+        "source": "adb_shell",
+        "tier": "T2_SNAPSHOT",
+        "log_tag": null,
+        "log_priority": null,
+        "matched_pattern": null,
+        "detail": "Marker: end of the 90 s observation window; logcat drained and collection began."
+      }
+    ],
+    "activity_started": 240,
+    "activity_resumed": 299,
+    "first_frame_drawn": 455,
+    "window_focused": 502,
+    "first_input_delivered": 1490,
+    "terminal": "LF_CRASHED",
+    "reached_steady_state": false,
+    "quiet_window_ms": 0,
+    "sustained_log_spam": true,
+    "jank_events": 2
+  },
+
+  "network": {
+    "capture_method": "logcat_only",
+    "hostname_resolution": "unavailable",
+    "proxy": {
+      "installed": false,
+      "user_ca_trusted": false,
+      "tool": null,
+      "pinning_failure_observed": true,
+      "notes": "No proxy was installed, so no full exchange is available. What is recorded is the app's own failure reporting, which is why the pinning rejection appears as an inbound-free outbound attempt with result=tls_failure and no response. Installing a proxy would have required trusting a user CA, which is a behaviour-changing observer effect and is therefore out of the default protocol."
+    },
+    "attempts": [
+      {
+        "seq": 0,
+        "t_mono_ms": 812,
+        "direction": "dns_query",
+        "scheme": "https",
+        "host": null,
+        "host_token": "hmac:4f2a9c17d3e85b06",
+        "port": null,
+        "path": null,
+        "query_param_names": [],
+        "method": "OTHER",
+        "auth_header_names": [],
+        "redacted_header_count": 0,
+        "body_bytes": null,
+        "body_sha256": null,
+        "body_captured": false,
+        "transport": "udp",
+        "tls": {
+          "established": false,
+          "protocol": null,
+          "cipher": null
+        },
+        "result": "ok",
+        "status_code": null,
+        "error_class": null,
+        "source": "logcat",
+        "tier": "T1_LOGCAT",
+        "notes": "Resolved by inference from the app's subsequent connect attempt; the resolver itself was not observed."
+      },
+      {
+        "seq": 1,
+        "t_mono_ms": 890,
+        "direction": "outbound_request",
+        "scheme": "https",
+        "host": null,
+        "host_token": "hmac:4f2a9c17d3e85b06",
+        "port": 443,
+        "path": "/repo/index-v2.json",
+        "query_param_names": ["sha256", "lang"],
+        "method": "GET",
+        "headers": {
+          "accept": "application/json",
+          "accept-encoding": "gzip",
+          "user-agent": "F-Droid/1.19.1 (Android 13; redroid)",
+          "connection": "Keep-Alive"
+        },
+        "auth_header_names": [],
+        "redacted_header_count": 0,
+        "body_bytes": 0,
+        "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "body_captured": false,
+        "transport": "tcp",
+        "tls": {
+          "established": false,
+          "protocol": null,
+          "cipher": null,
+          "ja3": null,
+          "pinning_enforced": true
+        },
+        "result": "tls_failure",
+        "status_code": null,
+        "error_class": "SSLHandshakeException",
+        "source": "logcat",
+        "tier": "T1_LOGCAT",
+        "notes": "sha256 of the empty body is recorded so that 'sent an empty body' is distinguishable from 'body unknown'; the body itself is never recorded. Pinning was enforced by the app, not by the network."
+      },
+      {
+        "seq": 2,
+        "t_mono_ms": 1120,
+        "direction": "observed_failure",
+        "scheme": "https",
+        "host": null,
+        "host_token": "hmac:9b71e0a4c82f5d3e",
+        "port": 443,
+        "path": "/v1/PACKAGE_NAME:decodeIntegrityToken",
+        "query_param_names": [],
+        "method": "POST",
+        "auth_header_names": ["Authorization", "X-Android-Package"],
+        "redacted_header_count": 2,
+        "body_bytes": 1180,
+        "body_sha256": null,
+        "body_captured": false,
+        "transport": "tcp",
+        "tls": {
+          "established": true,
+          "protocol": "TLSv1.3",
+          "cipher": "TLS_AES_128_GCM_SHA256",
+          "ja3": null,
+          "pinning_enforced": false
+        },
+        "result": "http_error",
+        "status_code": 400,
+        "error_class": "ApiException",
+        "source": "logcat",
+        "tier": "T1_LOGCAT",
+        "notes": "The app logged the status code and error class but not the verdict. An Authorization header is present and its value is deliberately not recorded; only the header NAME is, which is itself a finding. The body digest is null because the body was never obtainable, which is a different fact from a zero-length body and must not be collapsed into one."
+      },
+      {
+        "seq": 3,
+        "t_mono_ms": 45010,
+        "direction": "outbound_request",
+        "scheme": "https",
+        "host": null,
+        "host_token": "hmac:c30d5b2e7a91f480",
+        "port": 443,
+        "path": "/metrics",
+        "query_param_names": [],
+        "method": "GET",
+        "auth_header_names": [],
+        "redacted_header_count": 1,
+        "body_bytes": 0,
+        "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "body_captured": false,
+        "transport": "tcp",
+        "tls": {
+          "established": true,
+          "protocol": "TLSv1.3",
+          "cipher": "TLS_AES_128_GCM_SHA256",
+          "ja3": null,
+          "pinning_enforced": false
+        },
+        "result": "ok",
+        "status_code": 204,
+        "error_class": null,
+        "source": "logcat",
+        "tier": "T1_LOGCAT",
+        "notes": "Telemetry succeeded while everything the app exists to do failed. This is the shape of a silent-degradation finding and the reason the taxonomy insists on separating degrade from refuse."
+      }
+    ],
+    "byte_totals_observed": {
+      "source": "netstats_counters",
+      "tx_bytes": 1284412,
+      "rx_bytes": 98213,
+      "connection_count": 4,
+      "destination_resolvable": false,
+      "uid": 10234,
+      "note": "Per-UID counters from dumpsys netstats. They are authoritative for volume and useless for attribution: no hostname or destination IP is available at this source, which is why hostname_resolution is 'unavailable' and every host field is an HMAC token derived from the logcat layer instead."
+    },
+    "limits": [
+      "logcat_only cannot observe a request that the app did not itself log. Absence of an attempt here is not evidence that no request was made.",
+      "No exchange is visible: no response headers, no timing, no body, no TLS transcript. Only what the app chose to report is present.",
+      "DNS answers are inferred from follow-on behaviour, not observed."
+    ]
+  },
+
+  "filesystem": {
+    "accesses": [
+      {
+        "seq": 0,
+        "t_mono_ms": 30,
+        "op": "open",
+        "path": "/data/user/0/org.fdroid.fdroid/shared_prefs/index.xml",
+        "size_bytes": 4096,
+        "result": "enoent",
+        "errno": "ENOENT",
+        "source": "adb_shell_root",
+        "tier": "T2_SNAPSHOT",
+        "notes": "First run: nothing cached."
+      },
+      {
+        "seq": 1,
+        "t_mono_ms": 34,
+        "op": "write",
+        "path": "/data/user/0/org.fdroid.fdroid/shared_prefs/index.xml",
+        "size_bytes": 4096,
+        "result": "ok",
+        "errno": null,
+        "source": "adb_shell_root",
+        "tier": "T2_SNAPSHOT",
+        "notes": null
+      },
+      {
+        "seq": 2,
+        "t_mono_ms": 2404,
+        "op": "open",
+        "path": "/dev/urandom",
+        "size_bytes": 16,
+        "result": "ok",
+        "errno": null,
+        "source": "adb_shell_root",
+        "tier": "T2_SNAPSHOT",
+        "notes": "Entropy draw for a session identifier. In a browser substrate the nearest analogue is a CSPRNG in a sandboxed worker, which is a claim about semantics, not about provenance, and the two are not interchangeable."
+      },
+      {
+        "seq": 3,
+        "t_mono_ms": 2407,
+        "op": "open",
+        "path": "/dev/binder",
+        "size_bytes": 0,
+        "result": "ok",
+        "errno": null,
+        "source": "adb_shell_root",
+        "tier": "T2_SNAPSHOT",
+        "notes": "A direct device open rather than a framework-mediated Binder call. The presence of this path is a hard prerequisite for SUB.IPC.BINDER_DEV and has no browser analogue at all."
+      },
+      {
+        "seq": 4,
+        "t_mono_ms": 2412,
+        "op": "stat",
+        "path": "/system/framework/framework-res.apk",
+        "size_bytes": 24576000,
+        "result": "ok",
+        "errno": null,
+        "source": "adb_shell_root",
+        "tier": "T2_SNAPSHOT",
+        "notes": "Resource table lookup. A substrate that synthesises resources.arsc at a different path, or does not have one, is a different environment and the app can tell."
+      },
+      {
+        "seq": 5,
+        "t_mono_ms": 2418,
+        "op": "list",
+        "path": "/data/user/0/org.fdroid.fdroid/files",
+        "size_bytes": 4096,
+        "result": "ok",
+        "errno": null,
+        "source": "adb_shell_root",
+        "tier": "T2_SNAPSHOT",
+        "notes": null
+      }
+    ],
+    "access_trace_obtained": true,
+    "app_dir_listing": [
+      {
+        "path": "/data/user/0/org.fdroid.fdroid",
+        "entry_type": "dir",
+        "size_bytes": 4096,
+        "mode": "drwx------",
+        "owner_uid": 10234,
+        "selinux_context": "u:r:app_data_file:s0:c123,c256"
+      },
+      {
+        "path": "/data/user/0/org.fdroid.fdroid/shared_prefs",
+        "entry_type": "dir",
+        "size_bytes": 4096,
+        "mode": "drwxrwx--x",
+        "owner_uid": 10234,
+        "selinux_context": "u:r:app_data_file:s0:c123,c256"
+      },
+      {
+        "path": "/data/user/0/org.fdroid.fdroid/shared_prefs/index.xml",
+        "entry_type": "file",
+        "size_bytes": 2611,
+        "mode": "-rw-rw----",
+        "owner_uid": 10234,
+        "selinux_context": "u:r:app_data_file:s0:c123,c256"
+      },
+      {
+        "path": "/data/user/0/org.fdroid.fdroid/files",
+        "entry_type": "dir",
+        "size_bytes": 4096,
+        "mode": "drwxrwx--x",
+        "owner_uid": 10234,
+        "selinux_context": "u:r:app_data_file:s0:c123,c256"
+      },
+      {
+        "path": "/data/user/0/org.fdroid.fdroid/lib",
+        "entry_type": "symlink",
+        "size_bytes": 30,
+        "mode": "lrwxrwxrwx",
+        "owner_uid": 10234,
+        "selinux_context": null
+      },
+      {
+        "path": "/data/user/0/org.fdroid.fdroid/no_backup",
+        "entry_type": "dir",
+        "size_bytes": 4096,
+        "mode": "drwxrwx--x",
+        "owner_uid": 10234,
+        "selinux_context": "u:r:app_data_file:s0:c123,c256"
+      }
+    ],
+    "open_fds_at_snapshot": [
+      {
+        "fd": 3,
+        "target": "/dev/binder",
+        "kind": "binder"
+      },
+      {
+        "fd": 7,
+        "target": "/data/user/0/org.fdroid.fdroid/shared_prefs/index.xml",
+        "kind": "file"
+      },
+      {
+        "fd": 11,
+        "target": "socket:[42819]",
+        "kind": "socket"
+      },
+      {
+        "fd": 12,
+        "target": "/dev/urandom",
+        "kind": "dev"
+      }
+    ],
+    "limits": [
+      "These entries are RECONSTRUCTED from the mid-run /proc snapshot plus the app's own log lines; the recorder did not trace individual syscalls. A file the app opened and closed entirely between t=0 and t=8000ms and never mentioned would not appear here.",
+      "File CONTENT is never recorded, only paths, sizes, modes, owners and SELinux labels."
+    ]
+  },
+
+  "classes": {
+    "loaded": [
+      "android.app.Application",
+      "android.app.Activity",
+      "android.content.Context",
+      "android.content.pm.PackageManager",
+      "android.os.Build",
+      "android.os.Bundle",
+      "android.os.Handler",
+      "android.os.Looper",
+      "android.os.SystemClock",
+      "android.util.Log"
+    ],
+    "loaded_obtained": true,
+    "total_loaded_count": 4187,
+    "framework_classes_touched": [
+      "android.os.Build",
+      "android.os.SystemClock",
+      "android.content.pm.PackageManager",
+      "android.view.Choreographer"
+    ],
+    "third_party_package_prefixes": [
+      "okhttp3.",
+      "kotlinx.coroutines.",
+      "com.google.android.gms."
+    ],
+    "dex_files": [
+      "/data/app/~~aBcD==/org.fdroid.fdroid-1/base.apk",
+      "/system/framework/framework-res.apk",
+      "/system/framework/boot-framework.oat"
+    ],
+    "dynamic_dex_loaded": [],
+    "limits": [
+      "The loaded list is a SAMPLE, not a census. It is bounded by what the platform chose to report, and total_loaded_count is a counter rather than an enumeration. Do not compute a per-class hit rate from this."
+    ]
+  },
+
+  "native": {
+    "libraries_loaded": [
+      "/data/app/~~aBcD==/org.fdroid.fdroid-1/lib/arm64/libfdroid.so",
+      "/apex/com.android.art/lib64/libart.so",
+      "/apex/com.android.art/lib64/libnativehelper.so",
+      "/apex/com.android.runtime/lib64/bionic/libc.so",
+      "/system/lib64/libEGL.so",
+      "/system/lib64/libGLESv2.so"
+    ],
+    "obtained": true,
+    "mapping_obtained": true,
+    "exec_segments_observed": true,
+    "dlopen_failures": [
+      {
+        "t_mono_ms": 5310,
+        "library": "libfdroid-drm.so",
+        "error_class": "java.lang.UnsatisfiedLinkError: dlopen failed: library \"libfdroid-drm.so\" not found"
+      }
+    ],
+    "system_libraries_mapped": ["libc.so", "libdl.so", "libm.so", "libz.so"],
+    "jit_or_aot_activity_observed": true,
+    "thread_count_at_snapshot": 14,
+    "limits": [
+      "Maps are read at one instant. A library mapped and unmapped between t=0 and the snapshot would be missed.",
+      "Whether each mapping has ever been EXECUTED is not derivable from /proc/<pid>/maps; exec_segments_observed reports only that an executable segment exists, not that the code ran."
+    ]
+  },
+
+  "jni": {
+    "calls": [
+      {
+        "seq": 0,
+        "t_mono_ms": 5290,
+        "direction": "java_to_native",
+        "symbol": "Java_org_fdroid_fdroid_IndexStore_open",
+        "declaring_class": "org.fdroid.fdroid.IndexStore",
+        "source": "adb_shell_root",
+        "tier": "T2_SNAPSHOT"
+      },
+      {
+        "seq": 1,
+        "t_mono_ms": 5310,
+        "direction": "java_to_native",
+        "symbol": "System.loadLibrary",
+        "declaring_class": "org.fdroid.fdroid.drm.DrmBridge",
+        "source": "adb_shell_root",
+        "tier": "T2_SNAPSHOT"
+      },
+      {
+        "seq": 2,
+        "t_mono_ms": 5311,
+        "direction": "native_to_java",
+        "symbol": "ThrowNew",
+        "declaring_class": "java.lang.UnsatisfiedLinkError",
+        "source": "adb_shell_root",
+        "tier": "T2_SNAPSHOT"
+      },
+      {
+        "seq": 3,
+        "t_mono_ms": 5320,
+        "direction": "vm_to_java",
+        "symbol": "onNativeCrashed",
+        "declaring_class": "org.fdroid.fdroid.CrashReporter",
+        "source": "adb_shell_root",
+        "tier": "T2_SNAPSHOT"
+      },
+      {
+        "seq": 4,
+        "t_mono_ms": 5880,
+        "direction": "java_to_native",
+        "symbol": "art::Runtime::Abort",
+        "declaring_class": null,
+        "source": "adb_shell_root",
+        "tier": "T2_SNAPSHOT"
+      }
+    ],
+    "obtained": true,
+    "limits": [
+      "Reconstructed from native stack frames embedded in the crash log and from the unsatisfied-link error text, NOT from a JNI call trace. Ordering within a millisecond is not reliable. On a non-root device obtained is false and this array is empty."
+    ]
+  },
+
+  "exceptions": [
+    {
+      "t_mono_ms": 5311,
+      "t_wall_utc": "2026-01-01T00:00:10.711Z",
+      "fatal": false,
+      "kind": "java_exception",
+      "thread": "DroidData",
+      "pid": 4242,
+      "class": "java.lang.UnsatisfiedLinkError",
+      "message": "dlopen failed: library \"libfdroid-drm.so\" not found: tried data/app/~~aBcD==/org.fdroid.fdroid-1/lib/arm64/libfdroid-drm.so, system/lib64/libfdroid-drm.so",
+      "stack_frames": [
+        "java.lang.UnsatisfiedLinkError: dlopen failed: library \"libfdroid-drm.so\" not found",
+        "java.lang.ClassLoader.findLibrary(ClassLoader.java:)",
+        "java.lang.Runtime.loadLibrary0(Runtime.java:)",
+        "org.fdroid.fdroid.drm.DrmBridge.<clinit>(DrmBridge.java:41)",
+        "org.fdroid.fdroid.IndexStore.onCreate(IndexStore.java:118)"
+      ],
+      "crash_log_ref": null,
+      "source": "logcat",
+      "tier": "T1_LOGCAT"
+    },
+    {
+      "t_mono_ms": 5900,
+      "t_wall_utc": "2026-01-01T00:00:13.300Z",
+      "fatal": true,
+      "kind": "java_exception",
+      "thread": "DroidData",
+      "pid": 4242,
+      "class": "java.lang.RuntimeException",
+      "message": "A fatal error has been detected. The app will be terminated. DRM bridge unavailable: integrity verdict NONE and no fallback licence store.",
+      "stack_frames": [
+        "java.lang.RuntimeException: A fatal error has been detected. The app will be terminated.",
+        "org.fdroid.fdroid.licensing.LicenceGate.verify(LicenceGate.java:206)",
+        "org.fdroid.fdroid.licensing.LicenceGate.onIntegrityVerdict(LicenceGate.java:141)",
+        "android.os.Handler.handleCallback(Handler.java:958)",
+        "android.os.Looper.loop(Looper.java:257)",
+        "android.app.ActivityThread.main(ActivityThread.java:8003)"
+      ],
+      "crash_log_ref": "/data/tombstones/tombstone_00",
+      "source": "logcat_buffer_crash",
+      "tier": "T1_LOGCAT"
+    }
+  ],
+
+  "probes": [
+    {
+      "id": "env.boot_completed",
+      "t_mono_ms": -1,
+      "command": "adb shell getprop sys.boot_completed",
+      "status": "ok",
+      "source": "getprop",
+      "tier": "T2_SNAPSHOT",
+      "output": "1",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "env.device_uptime_at_t0",
+      "t_mono_ms": 0,
+      "command": "adb shell cat /proc/uptime",
+      "status": "ok",
+      "source": "proc_uptime",
+      "tier": "T0_DIRECT",
+      "output": "81234.56 80211.44",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "pkg.dumpsys_package",
+      "t_mono_ms": 89600,
+      "command": "adb shell dumpsys package org.fdroid.fdroid",
+      "status": "ok",
+      "source": "dumpsys_package",
+      "tier": "T2_SNAPSHOT",
+      "output": "Packages: ... versionCode=1019051 minSdk=21 targetSdk=34 ... dataDir=/data/user/0/org.fdroid.fdroid ... flags=[ HAS_CODE ALLOW_CLEAR_USER_DATA INSTALLED_FOR_USER ] ... installerPackageName=org.fdroid.fdroid ... primaryCpuAbi=arm64-v8a ... usesNonSdkApi=true [truncated at 8000 chars]",
+      "output_truncated": true,
+      "error": null
+    },
+    {
+      "id": "pkg.pm_path",
+      "t_mono_ms": 89610,
+      "command": "adb shell pm path org.fdroid.fdroid",
+      "status": "ok",
+      "source": "pm_path",
+      "tier": "T2_SNAPSHOT",
+      "output": "package:/data/app/~~aBcD==/org.fdroid.fdroid-1/base.apk",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "proc.maps",
+      "t_mono_ms": 8000,
+      "command": "adb shell cat /proc/4242/maps",
+      "status": "ok",
+      "source": "proc_maps",
+      "tier": "T0_DIRECT",
+      "output": "4120-4140 r-xp 00000000 fd:01 1817 /data/app/~~aBcD==/org.fdroid.fdroid-1/lib/arm64/libfdroid.so [truncated at 8000 chars]",
+      "output_truncated": true,
+      "error": null
+    },
+    {
+      "id": "proc.tid_count",
+      "t_mono_ms": 8005,
+      "command": "adb shell cat /proc/4242/status | grep Threads",
+      "status": "ok",
+      "source": "proc_tid_count",
+      "tier": "T0_DIRECT",
+      "output": "Threads: 14",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "fs.app_dir",
+      "t_mono_ms": 89700,
+      "command": "adb shell ls -lZ /data/user/0/org.fdroid.fdroid",
+      "status": "ok",
+      "source": "ls_app_dir",
+      "tier": "T0_DIRECT",
+      "output": "total 1\ndrwx------ 1 root root u:r:app_data_file:s0:c123,c256 4096 Jan  1 00:00 .\n[truncated at 8000 chars]",
+      "output_truncated": true,
+      "error": null
+    },
+    {
+      "id": "net.netstats_detail",
+      "t_mono_ms": 89800,
+      "command": "adb shell dumpsys netstats detail",
+      "status": "ok",
+      "source": "dumpsys_netstats",
+      "tier": "T2_SNAPSHOT",
+      "output": "uid=10234 tag=0 ... txBytesRxBytes=1284412/98213 [truncated at 8000 chars]",
+      "output_truncated": true,
+      "error": null
+    },
+    {
+      "id": "env.gms_presence",
+      "t_mono_ms": 89810,
+      "command": "adb shell pm list packages com.google.android.gms",
+      "status": "empty",
+      "source": "pm_list_packages",
+      "tier": "T2_SNAPSHOT",
+      "output": "",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "net.mitm_proxy_handshake",
+      "t_mono_ms": 0,
+      "command": "not run: proxy disabled by protocol (--mitm=false)",
+      "status": "not_found",
+      "source": "mitm_proxy",
+      "tier": "T4_UNOBSERVED",
+      "output": "",
+      "output_truncated": false,
+      "error": "observer_effect_not_permitted: trusting a user CA changes app behaviour, so the default protocol does not install a proxy"
+    }
+  ],
+
+  "diagnostics": [
+    {
+      "pattern": "SIGNAL_PAT.LOAD_FAIL",
+      "family": "SUB.NATIVE",
+      "t_mono_ms": 5310,
+      "detail": "SYNTHETIC FIXTURE row: java.lang.UnsatisfiedLinkError: dlopen failed: library \"libfdroid-drm.so\" not found",
+      "source": "logcat",
+      "tier": "T1_LOGCAT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.TLS_FAILURE",
+      "family": "SUB.NET",
+      "t_mono_ms": 890,
+      "detail": "SYNTHETIC FIXTURE row: javax.net.ssl.SSLHandshakeException: Chain validation failed",
+      "source": "logcat",
+      "tier": "T1_LOGCAT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.PLAY_SERVICES",
+      "family": "SUB.TRUST",
+      "t_mono_ms": 1120,
+      "detail": "SYNTHETIC FIXTURE row: com.google.android.gms.common.api.ApiException: 10:",
+      "source": "logcat",
+      "tier": "T1_LOGCAT"
+    }
+  ],
+  "substrate_probe_hits": [
+    {
+      "assumption_id": "SUB.TRUST.PLAY_INTEGRITY",
+      "family": "SUB.TRUST",
+      "symptom_class": "refuse",
+      "first_t_mono_ms": 1120,
+      "last_t_mono_ms": 1120,
+      "hit_count": 1,
+      "evidence": [
+        "/environment/attestation/max_expected_verdict",
+        "/network/attempts/1/result",
+        "/exceptions/1/message"
+      ],
+      "source": "analyst_annotation",
+      "tier": "T3_INFERRED",
+      "confidence": "likely",
+      "notes": "FORWARD PREDICTION, not a finding: this recording documents the app asking for a verdict and failing. The prediction is that a browser substrate, which cannot produce a hardware-backed verdict at all, drives the same refusal. The app's behaviour here is the evidence that the assumption is load-bearing, not evidence about any substrate."
+    },
+    {
+      "assumption_id": "SUB.TRUST.PLAY_SERVICES",
+      "family": "SUB.TRUST",
+      "symptom_class": "misbehave",
+      "first_t_mono_ms": 240,
+      "last_t_mono_ms": 89810,
+      "hit_count": 3,
+      "evidence": [
+        "/classes/third_party_package_prefixes",
+        "/environment/google_play_services/present",
+        "/probes/8/status"
+      ],
+      "source": "analyst_annotation",
+      "tier": "T3_INFERRED",
+      "confidence": "likely",
+      "notes": "The app links against com.google.android.gms classes and the reference environment does not have Play Services at all. Note that this recording is a poor oracle for this assumption precisely because the ORACLE lacks the thing being measured; a Play-Services-bearing image is required. See docs/research-protocol.md T-04."
+    },
+    {
+      "assumption_id": "SUB.NATIVE.LOAD_LIBRARY",
+      "family": "SUB.NATIVE",
+      "symptom_class": "refuse",
+      "first_t_mono_ms": 5290,
+      "last_t_mono_ms": 5311,
+      "hit_count": 2,
+      "evidence": [
+        "/native/dlopen_failures/0/library",
+        "/exceptions/0/class",
+        "/app/native_libs_declared"
+      ],
+      "source": "logcat",
+      "tier": "T1_LOGCAT",
+      "confidence": "certain",
+      "notes": "Load-bearing native code is present in the APK and already fails to load even on real Android, for ABI reasons. A no-native-code substrate therefore fails the same class of app for a DIFFERENT reason, which is a confound any comparison must state."
+    },
+    {
+      "assumption_id": "SUB.NET.TLS_TRUST",
+      "family": "SUB.NET",
+      "symptom_class": "degrade",
+      "first_t_mono_ms": 890,
+      "last_t_mono_ms": 890,
+      "hit_count": 1,
+      "evidence": [
+        "/network/attempts/1/tls/pinning_enforced",
+        "/network/attempts/1/result",
+        "/network/limits"
+      ],
+      "source": "logcat",
+      "tier": "T1_LOGCAT",
+      "confidence": "certain",
+      "notes": "Certificate pinning is enforced by the app itself. A substrate with hard egress denial never reaches a TLS handshake at all, so the observable is 'no connection' rather than 'handshake failure'. Those are different symptoms of the same unmet assumption and must not be merged in analysis."
+    },
+    {
+      "assumption_id": "SUB.IPC.BINDER_DEV",
+      "family": "SUB.IPC",
+      "symptom_class": "refuse",
+      "first_t_mono_ms": 2407,
+      "last_t_mono_ms": 2407,
+      "hit_count": 1,
+      "evidence": [
+        "/filesystem/accesses/3/path",
+        "/filesystem/open_fds_at_snapshot/0/target"
+      ],
+      "source": "adb_shell_root",
+      "tier": "T0_DIRECT",
+      "confidence": "certain",
+      "notes": "A device node was opened directly. This is the assumption with the least ambiguity in the whole taxonomy: there is no browser analogue to /dev/binder, and no amount of framework shimming changes that."
+    },
+    {
+      "assumption_id": "SUB.TIME.MONOTONIC",
+      "family": "SUB.TIME",
+      "symptom_class": "degrade",
+      "first_t_mono_ms": 0,
+      "last_t_mono_ms": 0,
+      "hit_count": 1,
+      "evidence": [
+        "/clock/monotonic_resolution_ms",
+        "/clock/monotonic_epoch_ref"
+      ],
+      "source": "proc_uptime",
+      "tier": "T0_DIRECT",
+      "confidence": "likely",
+      "notes": "Monotonic uptime is load-bearing for retry backoff, animation and ANR avoidance. The divergence is not merely that a substrate lacks a Linux clock: on a browser host uptimeMillis and elapsedRealtime are indistinguishable, because the host never enters deep sleep, whereas on real Android they differ by accumulated suspend time. That is a divergence in the OPPOSITE direction from the obvious one and is easy to miss."
+    }
+  ],
+
+  "capture_quality": {
+    "completeness": "not_applicable_synthetic",
+    "max_tier_reached": "T2_SNAPSHOT",
+    "signals_expected": [
+      "lifecycle_logcat",
+      "pm_path",
+      "dumpsys_package",
+      "dumpsys_window",
+      "dumpsys_netstats",
+      "dumpsys_connectivity",
+      "app_dir_listing",
+      "proc_maps",
+      "proc_fd",
+      "proc_tid_count",
+      "loaded_classes",
+      "jni_calls",
+      "fs_access_trace",
+      "network_exchange",
+      "play_services_presence",
+      "install_state"
+    ],
+    "signals_obtained": [
+      "lifecycle_logcat",
+      "pm_path",
+      "dumpsys_package",
+      "dumpsys_window",
+      "dumpsys_netstats",
+      "dumpsys_connectivity",
+      "app_dir_listing",
+      "proc_maps",
+      "proc_fd",
+      "proc_tid_count",
+      "loaded_classes",
+      "jni_calls",
+      "fs_access_trace",
+      "play_services_presence",
+      "install_state"
+    ],
+    "unobserved": [
+      {
+        "signal": "network_exchange",
+        "reason_code": "requires_observer_effect",
+        "reason": "A full request/response exchange requires an intercepting proxy, which requires trusting a user CA. That changes app behaviour for exactly the cert-pinning and NSC-assuming apps this project most needs to observe, so the default protocol declines to pay that observer effect. Consequence: no request or response headers, bodies, timings or TLS transcript are available."
+      },
+      {
+        "signal": "per_operation_fs_trace",
+        "reason_code": "requires_in_process_instrumentation",
+        "reason": "Per-syscall file access needs strace or an in-process agent. The accesses array is reconstructed from a mid-run /proc snapshot plus app log lines, so a file opened and closed inside the window and never logged is invisible."
+      },
+      {
+        "signal": "class_load_census",
+        "reason_code": "not_implemented",
+        "reason": "classes.loaded is a sample bounded by platform reporting, not a census. total_loaded_count is a counter. Per-class hit rates must not be computed from this."
+      },
+      {
+        "signal": "verdict_value",
+        "reason_code": "requires_observer_effect",
+        "reason": "A Play Integrity verdict is computed server-side by Google Play and returned to the app's backend. It is not locally observable. observed_verdict is NONE here because the environment cannot produce one, not because one was read off the wire."
+      }
+    ],
+    "warnings": [
+      "SYNTHETIC FIXTURE -- NOT EVIDENCE. No APK was run and no device was contacted.",
+      "network_exchange was expected and not obtained, so every SUB.NET finding derived from this recording rests on app-reported failures only.",
+      "class_load_census was expected and not obtained; per-class frequencies are not supported by this recording."
+    ],
+    "empty_failure": false,
+    "exit_code": 0
+  },
+
+  "summary": {
+    "lifecycle_terminal": "LF_CRASHED",
+    "time_to_first_frame_ms": 455,
+    "event_count": 12,
+    "network_attempt_count": 4,
+    "network_destinations": 2,
+    "exception_count": 2,
+    "fatal_count": 1,
+    "class_count": 10,
+    "native_library_count": 6,
+    "distinct_families_touched": 5,
+    "families_touched": [
+      "SUB.IPC",
+      "SUB.NATIVE",
+      "SUB.NET",
+      "SUB.TIME",
+      "SUB.TRUST"
+    ]
+  },
+
+  "notes": "SYNTHETIC FIXTURE -- NOT EVIDENCE. This document is a specification of an interesting capture, not a capture. It exists so that the recorder, the schema and the analyst can agree on what a real Play-Integrity refusal, a real pinning rejection and a real dlopen failure must look like in a recording. Every number here was chosen to be consistent with the schema's cross-field invariants; none was measured."
+}

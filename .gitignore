@@ -1,8 +1,16 @@
 node_modules/
+
+# Rust build output
 target/
+
+# TypeScript / build output
 dist/
 out/
 *.wasm
+
+# APK corpus: binaries are never committed, only derived rows
 corpus/apks/
 corpus/*.jsonl
+!corpus/survey.jsonl
+
 .DS_Store

@@ -1,6 +1,6 @@
 # Recordings
 
-## The four files here
+## The five files here
 
 | file | what it is |
 |---|---|
@@ -8,8 +8,9 @@
 | `differential-left.fabricated.recording.json` | the **left arm**: the same script under the default policy. |
 | `differential-right.loud.recording.json` | the **right arm**: the same script under the loudest substrate in the family. |
 | `differential.report.txt` | the attribution table, computed **from the two JSON files alone**. |
+| `sync-differential.report.txt` | the **control**: the same workload run 8× per arm under one policy, and the four-way decomposition. |
 
-**All four are synthetic fixtures, not evidence.** See the note below; it applies
+**All five are synthetic fixtures, not evidence.** See the note below; it applies
 to every file in this directory.
 
 ## The differential, and why it is committed
@@ -33,19 +34,61 @@ top-level `substrate_policy` block. All five axes differ:
 | `network` | `record_and_deny` | `synthetic_loopback` |
 | `time` | `virtual` | `frozen` |
 
-The result, in the report's own words: **1432 of 1617 compared leaves are
+The result, in the report's own words: **1486 of 1617 compared leaves are
 byte-identical**, every moved fact is attributed to an axis that actually changed,
 and the `app` class — the things the substrate did not decide — moved zero.
 
 ### Read this before you cite the number
 
-1432 of 1617 is evidence about a **deterministic script** under two substrates. It
+**It is a demonstration of a mechanism, not a measurement of anything.** 1486 of
+1617 is evidence about a **deterministic script** under two substrates. It
 demonstrates that the attribution mechanism works. It is **not** a measurement of
 any app, and it cannot be: the input is a fixed call sequence, so it contains no
-app nondeterminism for the harness to mistake for a substrate effect. The arm that
-would fix that — the same APK twice under the *same* policy, to measure the noise
-floor — does not exist yet because the interpreter does not.
-`docs/decisions/0006-substrate-policy.md` says so at length.
+app nondeterminism for the harness to mistake for a substrate effect. A fact that
+did not move is a fact about *this program* under two substrates — it is not
+evidence that the app decides it, either.
+
+The number was **1432** when the first version of this README was written. That was
+an arithmetic error: the unmoved count was `compared − every difference`, and a
+pointer present in one document and absent in the other is a difference that was
+never a compared leaf. 1486 is the corrected figure and
+`docs/divergence/0007-sync-differential.md` explains it.
+
+### The control exists, and its answer is zero
+
+`shim-sync-differential` runs the same workload **8 times per arm under one
+policy** and diffs those runs against each other: whatever moves there moved with
+no substrate decision changing, so it is app + interpreter. That is the arm
+ADR 0006 said was missing, and without it the number above is not a measurement.
+
+It is built, and it is committed as `sync-differential.report.txt`. Its answer for
+this workload:
+
+| | count |
+|---|---|
+| of the 1486 leaves reported as unmoved, leaves that move between identical runs | **0** |
+| `policy_varies` — substrate-determined | 345 |
+| `sync_varies` — app + interpreter | 0 |
+| `both` — unattributable | 0 |
+| `stable` — nothing claimed | 1486 |
+
+**Zero is the real result, and it does not upgrade the number above.** It confirms
+the script is deterministic — the assumption the earlier result rested on and
+which nothing before this could check. It cannot show an app had no say, because
+there is no app in the input for one to have. The correction owed is zero because
+the workload is degenerate with respect to the confound, not because the confound
+is gone.
+
+The control is shown to have power on `time: host_real`, the one axis value whose
+own declaration says `reproducible: false` and which reads the host's wall clock:
+eight runs of that policy produce documents that differ, and every leaf that
+differs is a clock fact. Its *counts* are deliberately not committed, because
+whether a host-clock read lands in the same millisecond on two runs depends on how
+loaded the machine is.
+
+`docs/divergence/0007-sync-differential.md` is the ADR. It also states what remains
+unattributable even with the control in place — coincidence, the `(1-p)^(N-1)`
+sampling hole, the missing subject, and the gap between a model and a device.
 
 ### Regenerating
 
@@ -55,6 +98,9 @@ cargo run --quiet --manifest-path shim/Cargo.toml --bin shim-record \
 
 cargo run --quiet --manifest-path shim/Cargo.toml --bin shim-differential \
     > /tmp/differential.txt
+
+cargo run --quiet --manifest-path shim/Cargo.toml --bin shim-sync-differential \
+    > shim/recordings/sync-differential.report.txt
 ```
 
 `shim-differential` prints both arms and the report to **stdout**, separated by
@@ -70,8 +116,15 @@ awk '/^==== left arm/  {f="recordings/differential-left.fabricated.recording.jso
                        {print > f}' /tmp/differential.txt
 ```
 
-`tests/policy.rs` asserts all three are byte-identical to what the binary prints
-today, so regeneration is **checked**, not asserted.
+`shim-sync-differential` prints the whole artefact in one piece, so it is
+redirected rather than split. Its output is byte-stable across runs: the
+non-reproducible control's numbers are withheld precisely so that they cannot
+drift with machine load.
+
+`tests/policy.rs` asserts the three `shim-differential` artefacts are
+byte-identical to what the binary prints today, and
+`tests/sync_differential.rs` asserts the same for the sync report, so regeneration
+is **checked**, not asserted.
 
 ## `synthetic.recording.json`
 

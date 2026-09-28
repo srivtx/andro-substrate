@@ -201,9 +201,29 @@ covers `src/policy.rs` and `src/differential.rs`.
 ### The positive consequence
 
 The questions an app asked are now not measurements of the substrate. In the
-committed differential, **1432 of 1617 compared leaves are byte-identical** across
+committed differential, **1486 of 1617 compared leaves are byte-identical** across
 two maximally different substrates, and the class-by-class tally of moved facts
 lands entirely in the five governed classes.
+
+> **Both numbers in that paragraph were wrong when this ADR was first accepted, and
+> both are corrected here by [ADR 0007](../divergence/0007-sync-differential.md).**
+>
+> * **1486, not 1432.** The unmoved count was computed as
+>   `compared_leaves - differences.len()`, and a pointer present in one document
+>   and absent in the other is a difference that was never a *compared* leaf.
+>   Subtracting it understated the unmoved set by exactly the number of one-sided
+>   differences. The error ran in the direction that makes an unmoved set look
+>   smaller than it is.
+> * **A demonstration, not a measurement.** "The questions an app asked are now
+>   not measurements of the substrate" is the correct *direction* and it was
+>   stated about leaves that had not been shown to be app-determined. The sync arm
+>   in ADR 0007 measured this workload's noise floor at **exactly zero** across
+>   eight runs per arm, which confirms the script is deterministic and licenses
+>   **nothing further**: a control that measures the noise floor of a
+>   deterministic program cannot see the noise a real app would have introduced.
+>   The 1486 remain a demonstration that the attribution mechanism works. Read
+>   "not a measurement" as "not a measurement of the substrate" *and not a
+>   measurement of the app either*.
 
 Three results in that diff are worth reading closely, because they are the
 confound in its pure form:
@@ -277,20 +297,40 @@ nothing else.** It is a demonstration that the *mechanism* works, not a measurem
 of any app. Anyone who reads it otherwise has reintroduced exactly the error the
 ADR exists to name, one level up.
 
+> **Status: the arm exists.** [ADR 0007](../divergence/0007-sync-differential.md)
+> implements it. Two things to carry forward from this section, both settled:
+>
+> * The number was **1486**, not 1432. The unmoved count was an undercount; see
+>   the correction in Consequences above.
+> * **Of the 1486 leaves reported as unmoved, 0 move between identical runs** at
+>   N = 8 per arm. That is a real result and it is the *uncomfortable* one: the
+>   correction is zero because the workload is degenerate with respect to the
+>   confound, not because the confound is gone. The 1486 are a demonstration. The
+>   control exists now, and it has been measured; what it measured was the shim's
+>   own determinism, because that is all the input contains.
+>
+> The two items below are therefore no longer "what would fix it" but "what is
+> still missing": the *subject* is still a script and not an APK.
+
 This is not fixable inside the differential, because it is a property of the
 absence of an interpreter. What would fix it, and does not exist yet:
 
 1. **Run the same APK twice under the same policy** and diff. Whatever moves
    between those two runs is the app plus the interpreter. Subtract it from the
    policy-to-policy diff and what is left is the substrate. Without this arm the
-   first number is not a measurement.
+   first number is not a measurement. — *The arm exists
+   (`shim::syncdiff`, ADR 0007). What does not exist is an APK to point it at.*
 2. **N runs, not two.** A single policy-to-policy diff cannot distinguish a small
-   substrate effect from a large app effect that happened to cancel.
+   substrate effect from a large app effect that happened to cancel. — *Done: the
+   committed arm is N = 8 per arm, giving 64 left/right pairings per leaf, and 0
+   of the 345 substrate-determined leaves disagree in only some of them.*
 
 Until arm 1 exists, the honest summary is: *the shim's dependence on its own
 behaviour is now declared, labelled per-observation, and demonstrably the sole
 cause of every difference the harness can see — and the harness cannot yet see
-whether the app also had a say in those differences.*
+whether the app also had a say in those differences.* — *Superseded by ADR 0007,
+which measures that floor at zero for this workload and therefore cannot show the
+app had no say either.*
 
 ### And four smaller things, in descending order of how much they should worry you
 
@@ -348,4 +388,7 @@ whether the app also had a say in those differences.*
 - `shim/src/differential.rs` — the classifier, the walk, the report.
 - `shim/tests/policy.rs` — the evidence for every claim above.
 - `shim/recordings/differential.report.txt` — the worked differential.
+- `shim/recordings/sync-differential.report.txt` and
+  `docs/divergence/0007-sync-differential.md` — the control this ADR asked for,
+  and the correction to this ADR's own numbers.
 - `oracle/RECORDING.md` §3.1 — the format-level statement.

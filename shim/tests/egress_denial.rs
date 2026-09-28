@@ -292,6 +292,7 @@ const SOURCES: &[(&str, &str)] = &[
     ("src/redact.rs", include_str!("../src/redact.rs")),
     ("src/registry.rs", include_str!("../src/registry.rs")),
     ("src/scenario.rs", include_str!("../src/scenario.rs")),
+    ("src/syncdiff.rs", include_str!("../src/syncdiff.rs")),
     ("src/system.rs", include_str!("../src/system.rs")),
     ("src/taxonomy.rs", include_str!("../src/taxonomy.rs")),
     ("src/vfs.rs", include_str!("../src/vfs.rs")),
@@ -302,6 +303,14 @@ const SOURCES: &[(&str, &str)] = &[
     (
         "src/bin/shim-differential.rs",
         include_str!("../src/bin/shim-differential.rs"),
+    ),
+    // The sync differential runs the whole scenario N times per policy and then
+    // reasons about the documents. That is the largest new surface this crate has
+    // had, and "it only calls the scenario" is exactly the kind of assumption a
+    // source scan exists to refuse.
+    (
+        "src/bin/shim-sync-differential.rs",
+        include_str!("../src/bin/shim-sync-differential.rs"),
     ),
 ];
 

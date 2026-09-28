@@ -23,6 +23,10 @@ path = "src/bin/shim-record.rs"
 name = "shim-differential"
 path = "src/bin/shim-differential.rs"
 
+[[bin]]
+name = "shim-sync-differential"
+path = "src/bin/shim-sync-differential.rs"
+
 [dependencies]
 dexcore = { path = "../tools/dexcore" }
 serde = { version = "1", features = ["derive"] }

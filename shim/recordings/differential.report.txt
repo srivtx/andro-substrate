@@ -294,10 +294,14 @@ FACTS THAT MOVED, AND WHY
 
 FACTS THAT DID NOT MOVE
 ----------------------
-  1432 of 1617 compared leaves are byte-identical. Those are the app's observable behaviour
-  under this script, and the claim they support is exactly this: the substrate's declared
-  behaviour is a parameter, and the part of the recording that did not change when the
-  parameter changed is not a measurement of the substrate.
+  1486 of 1617 compared leaves are byte-identical. Read that as what it is: a demonstration that the
+  attribution MECHANISM works, on a fixed branch-free script, under two substrates. It is
+  not a measurement of any app. A leaf that did not move between these two documents is a leaf
+  that did not move on THIS run; whether it would have moved on a run with a `HashMap` iteration
+  order, a retry, a timestamp or an animation frame is a question this input cannot even pose.
+  The control that poses it is the sync arm: the same workload repeated under the SAME policy,
+  differenced against itself. See docs/divergence/0007-sync-differential.md for that arm and for
+  the four-way decomposition it enables. The number above is a property of a deterministic program.
   app                      moved 0
   environment_identity     moved 14
   identity_probe           moved 9
@@ -381,7 +385,10 @@ WHAT THIS DOES NOT SHOW
 ---------------------
 The input was a fixed script, not an APK. The script is deterministic, so nothing here separates
 the substrate from the app's own nondeterminism; on a real run the same diff would be
-confounded by it. And a fact that did not move is not thereby a fact about a real device:
-it is a fact about this program under two substrates, and the third thing a study needs —
-what the program does on hardware — is outside anything in these two files. See docs/decisions/0006-substrate-policy.md.
+confounded by it. That control now exists and is committed: docs/divergence/0007-sync-differential.md
+is the ADR, and shim/recordings/sync-differential.report.txt is its output. Read this
+report as the mechanism demonstration it is. And a fact that did not move is not
+thereby a fact about a real device: it is a fact about this program under two
+substrates, and the third thing a study needs — what the program does on hardware — is
+outside anything in these two files. See docs/decisions/0006-substrate-policy.md.
 

@@ -228,11 +228,23 @@ Three things the axes provably cannot do, with the test for each:
 - **No value can be set from the environment.** The only way to run a non-default
   substrate is `Shim::with_policy(..)`, so "which substrate produced this" is a
   value in a struct. `tests/egress_denial.rs` forbids `std::env` outright and its
-  source scan now covers `src/policy.rs` and `src/differential.rs`.
+  source scan now covers `src/policy.rs`, `src/differential.rs`, `src/syncdiff.rs`
+  and all three binaries.
+- **No value can be widened by repetition or by decomposition.** The sync
+  differential runs the whole scenario N times per policy and then reasons about
+  the documents, which is the largest new surface this crate has had.
+  `tests/sync_differential.rs` re-runs all 162 reproducible combinations through
+  `syncdiff::repeat` and requires every `network.attempts[].result` to be
+  `blocked_by_policy` with `egress_available: false` and zero byte totals in
+  every document, and runs the same 16-document arms with the scenario's own
+  canaries present, requiring them absent from all sixteen.
 
 `docs/decisions/0006-substrate-policy.md` has the full decision, the worked
 differential, and — the part that matters most — what the family still cannot
-separate from the app.
+separate from the app. `docs/divergence/0007-sync-differential.md` is the control
+that family was missing, and it measures the floor for this workload at exactly
+zero across 8 runs per arm, which is a fact about a fixed script and not about any
+app.
 
 ## 6. The classloader boundary
 

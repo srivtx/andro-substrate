@@ -1,0 +1,169 @@
+==== sync arm: fnv1a64:3831a4e300ed0c91 (identity-fabricated_system_fs-fabricated_cross_app_packages-subject_only_network-record_and_deny_time-virtual), runs=8 ====
+--- committed differential, left arm ---
+policy: fnv1a64:3831a4e300ed0c91 (identity-fabricated_system_fs-fabricated_cross_app_packages-subject_only_network-record_and_deny_time-virtual)
+reproducible: true
+runs: 8
+workload: shim::scenario::run_with (one function, no per-policy branch, virtual clock advanced by literals)
+leaves varying across the 8 identical runs: 0 of 1831
+run document digests: fnv1a64:fff1b1ba48cd9c2c fnv1a64:fff1b1ba48cd9c2c fnv1a64:fff1b1ba48cd9c2c fnv1a64:fff1b1ba48cd9c2c fnv1a64:fff1b1ba48cd9c2c fnv1a64:fff1b1ba48cd9c2c fnv1a64:fff1b1ba48cd9c2c fnv1a64:fff1b1ba48cd9c2c
+==== sync arm: fnv1a64:b71360edcacb3d39 (identity-withheld_system_fs-absent_cross_app_packages-error_network-synthetic_loopback_time-frozen), runs=8 ====
+--- committed differential, right arm ---
+policy: fnv1a64:b71360edcacb3d39 (identity-withheld_system_fs-absent_cross_app_packages-error_network-synthetic_loopback_time-frozen)
+reproducible: true
+runs: 8
+workload: shim::scenario::run_with (one function, no per-policy branch, virtual clock advanced by literals)
+leaves varying across the 8 identical runs: 0 of 1831
+run document digests: fnv1a64:a289267b93249ee9 fnv1a64:a289267b93249ee9 fnv1a64:a289267b93249ee9 fnv1a64:a289267b93249ee9 fnv1a64:a289267b93249ee9 fnv1a64:a289267b93249ee9 fnv1a64:a289267b93249ee9 fnv1a64:a289267b93249ee9
+==== non-reproducible control: fnv1a64:1e31119c75b5c848 (identity-fabricated_system_fs-fabricated_cross_app_packages-subject_only_network-record_and_deny_time-host_real) ====
+--- positive control: the same arithmetic on a substrate that is NOT reproducible ---
+policy: fnv1a64:1e31119c75b5c848 (identity-fabricated_system_fs-fabricated_cross_app_packages-subject_only_network-record_and_deny_time-host_real)
+reproducible: false
+runs: 8
+workload: shim::scenario::run_with (one function, no per-policy branch, virtual clock advanced by literals)
+
+The `time` axis is set to `host_real`, the one value whose declaration says
+`reproducible: false`. It reads the host's wall clock, so no two runs are the same
+document. Nothing here was manufactured: this is a property the shim already had
+and already disclosed. The point is that the control detects the leaves that move,
+which is what a control that reported zero everywhere would not have demonstrated.
+
+  ITS COUNTS ARE DELIBERATELY NOT COMMITTED. How many leaves move depends on how long
+  each run took on the machine that produced this file: two runs whose host-clock read
+  lands in the same millisecond are byte-identical, and a loaded machine moves that
+  boundary. The stable claims — the control finds varying leaves, every one of them is
+  a clock fact, and none of them is ever filed as substrate-determined — are asserted
+  in shim/tests/sync_differential.rs, where an assertion of `> 0` cannot go stale the
+  way a committed integer would. A number that changes with machine load is a
+  measurement of the machine, not of the substrate.
+
+  This file therefore carries the arm and its declaration and nothing else about it. The
+  one number that is stable — the leaf universe, 1686 addresses, which depends on the
+  document's shape and not on its values — is printed below.
+
+  A wandering leaf here lands in `both`, never in `policy_varies`, and the reason is
+  the strict value-set rule: both arms read the host clock, so both value sets differ
+  from each other even though no policy changed. A leaf the substrate cannot own is
+  correctly not filed as substrate-determined, and correctly NOT filed as an app effect
+  either. The single-run differential has no way to say that, and would have reported
+  every one of them as moved and attributed it to the `time` axis — which, for a leaf
+  whose value is a host timestamp, is an attribution to nothing at all.
+
+  Both `policy_varies` and `sync_varies` are zero there only because the two arms are
+  the SAME policy. Had they differed on some other axis, a wandering leaf would still
+  land in `both`: coincidence is what that bucket is for, and no repetition removes it.
+==== report ====
+SYNC DIFFERENTIAL: THE NOISE FLOOR UNDER THE POLICY DIFFERENTIAL
+===========================================================
+
+runs   : 8 per arm (a control below 5 is not a measurement)
+workload: shim::scenario::run_with (one function, no per-policy branch, virtual clock advanced by literals)
+left   : fnv1a64:3831a4e300ed0c91
+identity-fabricated_system_fs-fabricated_cross_app_packages-subject_only_network-record_and_deny_time-virtual
+right  : fnv1a64:b71360edcacb3d39
+identity-withheld_system_fs-absent_cross_app_packages-error_network-synthetic_loopback_time-frozen
+
+leaf universe: 1831 distinct addresses, over 8 left documents and 8 right documents.
+  A pointer that appears on some runs and not others is one leaf that varies; absence is a value.
+
+1. WHAT REPETITION ALONE MOVED  (app + interpreter)
+-----------------------------------------------
+  left arm  : 0 of 1831 leaves move across 8 identical runs
+  right arm : 0 of 1831 leaves move across 8 identical runs
+  either arm: 0 of 1831 leaves move under repetition
+
+  Both arms are byte-identical across all 8 runs. That is a real result, and what
+  it licenses is exactly this:
+
+    A zero noise floor here is a fact about a fixed call sequence, not about any app. It shows the control is wired up and that this input is deterministic. It cannot detect app nondeterminism, because there is no app in the input: no HashMap to reorder, no retry, no locale, no frame callback. The earlier 1432-of-1617 figure therefore remains a demonstration of the attribution mechanism, and the existence of this control does not upgrade it to a measurement.
+
+2. THE FOUR-WAY DECOMPOSITION
+---------------------------
+  policy_varies 345
+  sync_varies   0
+  both          0
+  stable        1486
+  TOTAL         1831    (the four sum to the leaf universe, and the tests assert it)
+
+  SUBSTRATE-DETERMINED. Stable under repetition and changed across policies: the substrate decided this leaf. This is the strongest claim the harness supports.
+  APP + INTERPRETER. Moved without any policy changing, so any policy-to-policy diff that called this leaf unmoved got it wrong.
+  UNATTRIBUTABLE. The substrate changed this leaf AND the program wanders across it. Neither the fact of the change nor its size can be attributed from these runs; no N separates a substrate effect from an app effect acting on the same leaf.
+  NOTHING CLAIMED. It did not move under repetition and did not move across policies. That is equally consistent with 'determined by the app' and with 'not exercised here'.
+
+  SUBSTRATE-DETERMINED: 345. That count is the only thing in this report that may be cited as
+  a substrate effect, and it is the count that a study would report.
+
+3. THE CORRECTION TO THE EARLIER RESULT
+------------------------------------
+  FALSE NEGATIVES — leaves the earlier diff called unmoved that move anyway.
+  OF ITS 1486 UNMOVED LEAVES, 0 MOVE BETWEEN IDENTICAL RUNS.
+  Zero. Every leaf the earlier differential called unmoved did not move under
+  repetition either. Read that for exactly what it is. It confirms that the fixed
+  script is deterministic, which is the assumption the earlier result rested on and
+  which no artefact before this one could check. It does NOT convert the earlier
+  number into a measurement, because a control that measures the noise floor of a
+  deterministic program cannot see the noise a real app would have introduced.
+  The correction owed is zero because the workload is degenerate with respect to the
+  confound, not because the confound is absent from the method.
+
+  FALSE POSITIVES — leaves the earlier diff called moved that no policy can own.
+  OF ITS 345 MOVED LEAVES, 0 ARE NOT SUBSTRATE-DETERMINED.
+  Zero, and for a reason worth naming: both arms of the committed pair declare
+  themselves reproducible, so there is no wandering for a single-run diff to
+  misread. The number is a property of those two policies, not of the method.
+
+  RECONCILING THE TWO LEAF SPACES, because the numbers do not tie by eye.
+    leaves compared at run 0 (present in both arms)        1617
+    of those, identical                                 1486
+    of those, differing                                  131
+    leaves present on one side only (addresses)          214
+    SUBSTRATE-DETERMINED, total                          345
+    entries in the earlier report's difference lists     185
+    distinct pointers in those lists                     154
+
+  Two arithmetic corrections, both of which change a published number, and one
+  granularity difference that does not:
+    (a) CORRECTION. The committed differential.report.txt printed
+        "1432 of 1617 compared leaves are byte-identical". That was wrong: it computed
+        `identical = compared - every difference`, and a one-sided pointer — a leaf in one
+        document and absent from the other — is a difference that was never a
+        compared leaf. The true figure was 1486 all along. The error was an undercount,
+        which is the direction that makes an unmoved set look smaller than it is.
+    (b) GRANULARITY, not an error. The earlier report lists differences by *pointer*;
+        an N-way comparison has to address the same leaf in N documents, so it counts
+        addresses. Six `SIGNAL_PAT.BUILD_FIELD` diagnostics that exist only in the right
+        arm are one line of that list and six leaf addresses. Where a whole array
+        element is absent, the walk records the difference at the *element* pointer
+        rather than at the leaves beneath it, which is a third granularity and the
+        reason the two pointer counts differ from each other too.
+
+4. HOW MUCH OF THE POLICY EFFECT SURVIVES REPETITION
+-----------------------------------------------
+  64 left/right pairings per leaf. Of the 345 leaves whose value set differs between
+  the two policies:
+    disagreed in all 64 pairings        : 345
+    disagreed in some pairings     : 0
+    disagreed in none — cancellation : 0
+
+  This is ADR 0006's second objection, answered for this workload: a small substrate
+  effect cannot hide behind a large app effect, because a hiding place would have to
+  disagree in only some pairings and there are 64 of them per leaf. Zero in the
+  `some` line is a statement about this deterministic input, not a general guarantee.
+
+5. WHAT REMAINS UNATTRIBUTABLE EVEN WITH THIS CONTROL
+----------------------------------------------
+  1. Coincidence. A leaf that is nondeterministic and substrate-sensitive at the same
+  time is unattributable at any N, and lands in `both` when the sample catches it.
+  Here `both` is 0. There is no test in this crate that can force it to be zero, and
+  adding one would be manufacturing a result.
+  2. The sampling hole. A per-run nondeterminism of probability p slips past an 8-run
+  arm with probability (1-p)^(N-1):
+       p = 0.01  -> 0.932
+       p = 0.10  -> 0.478
+       p = 0.50  -> 0.008
+     A measured zero is a statement about these runs and not a proof of determinism,
+     and no amount of repetition inside this harness becomes one.
+  3. The missing subject. A zero noise floor here is a fact about a fixed call sequence, not about any app. It shows the control is wired up and that this input is deterministic. It cannot detect app nondeterminism, because there is no app in the input: no HashMap to reorder, no retry, no locale, no frame callback. The earlier 1432-of-1617 figure therefore remains a demonstration of the attribution mechanism, and the existence of this control does not upgrade it to a measurement.
+  4. Model versus reality. Nothing here is a statement about a device. A fact that did
+  not move under a different substrate is a fact about this program under two
+  substrates; what the program does on hardware is outside both files, and no number
+  in this report is evidence about it.

@@ -39,6 +39,7 @@
 //! | [`classes`] | the classloader and the supersede decision. |
 //! | [`policy`] | **the substrate policy**: the shim's own behaviour, as a declared parameter. |
 //! | [`differential`] | run one program under two substrates and attribute every moved fact. |
+//! | [`syncdiff`] | the **control**: run one program N times under *one* substrate, and subtract. |
 //! | [`system`] | the fabricated device identity, and the probes that read it. |
 //! | [`layout`] | a real measure/layout/draw cycle producing a serialisable box tree. |
 //! | [`emit`] | emit the shim as a DEX with `dexcore`'s writer. |
@@ -90,6 +91,7 @@ pub mod recording;
 pub mod redact;
 pub mod registry;
 pub mod scenario;
+pub mod syncdiff;
 pub mod system;
 pub mod taxonomy;
 pub mod vfs;
@@ -104,6 +106,7 @@ pub use policy::{
     SystemFsMode, TimeMode, POLICY_FORMAT, POLICY_VERSION,
 };
 pub use redact::{HeaderNames, HttpMethod, PathPolicy, RequestMeta, Scheme};
+pub use syncdiff::{Attribution, SyncDifferential};
 pub use taxonomy::{AssumptionId, Family, SymptomClass};
 
 /// The crate's own version, for a recording's `recorder.version`.

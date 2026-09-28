@@ -40,11 +40,25 @@
 //!
 //! It cannot separate the substrate from **the app's own nondeterminism**,
 //! because it runs a script rather than an APK and the script is deterministic by
-//! construction. On a real run the same diff would be confounded by the app. That
-//! is stated in `docs/decisions/0006-substrate-policy.md` and repeated in every
-//! report, because a differential harness whose input is a fixed script proves a
-//! narrower claim than one whose input is an app, and narrowing it silently would
-//! be the same error as the confound it was built to remove.
+//! construction. On a real run the same diff would be confounded by the app.
+//!
+//! That limit is not a note any more; it has a control. [`crate::syncdiff`] runs
+//! the same script N times under *one* policy, diffs those runs against each
+//! other, and subtracts what moved there from what moved across policies. A leaf
+//! may be called substrate-determined only if it does **not** move under
+//! repetition. See `docs/decisions/0006-substrate-policy.md` for the diagnosis,
+//! `docs/divergence/0007-sync-differential.md` for the control and its answer on
+//! this workload (a measured noise floor of exactly zero, which licenses nothing
+//! about any app), and `shim/recordings/sync-differential.report.txt` for the
+//! artefact.
+//!
+//! The arithmetic in this module was also wrong in a way the control forced into
+//! the open: `identical_leaves` was `compared_leaves - differences.len()`, and a
+//! one-sided pointer is a difference that was never a compared leaf, so the
+//! unmoved count was an undercount. The walk counts identical leaves as it goes
+//! now, and the corrected figure is in the committed report.
+
+use std::collections::BTreeMap;
 
 use serde_json::Value as J;
 
@@ -209,7 +223,15 @@ impl Differential {
         }
         o.push_str("\nFACTS THAT DID NOT MOVE\n----------------------\n");
         o.push_str(&format!(
-            "  {} of {} compared leaves are byte-identical. Those are the app's observable behaviour\n  under this script, and the claim they support is exactly this: the substrate's declared\n  behaviour is a parameter, and the part of the recording that did not change when the\n  parameter changed is not a measurement of the substrate.\n",
+            "  {} of {} compared leaves are byte-identical. Read that as what it is: a \
+             demonstration that the\n  attribution MECHANISM works, on a fixed branch-free script, under two substrates. It \
+             is\n  not a measurement of any app. A leaf that did not move between these two \
+             documents is a leaf\n  that did not move on THIS run; whether it would have moved on a run with a \
+             `HashMap` iteration\n  order, a retry, a timestamp or an animation frame is a question this input \
+             cannot even pose.\n  The control that poses it is the sync arm: the same workload repeated under the SAME \
+             policy,\n  differenced against itself. See docs/divergence/0007-sync-differential.md for \
+             that arm and for\n  the four-way decomposition it enables. The number above is a property of a \
+             deterministic program.\n",
             self.identical_leaves, self.compared_leaves
         ));
         for class in [
@@ -265,12 +287,15 @@ impl Differential {
             }
         }
         o.push_str(
-            "\nWHAT THIS DOES NOT SHOW\n---------------------\nThe input was a fixed script, not an APK. The script is deterministic, so nothing here \
-             separates\nthe substrate from the app's own nondeterminism; on a real run the same diff \
-             would be\nconfounded by it. And a fact that did not move is not thereby a fact about a \
-             real device:\nit is a fact about this program under two substrates, and the third thing a study \
-             needs —\nwhat the program does on hardware — is outside anything in these two files. See \
-             docs/decisions/0006-substrate-policy.md.\n",
+            "\nWHAT THIS DOES NOT SHOW\n---------------------\nThe input was a fixed script, not an APK. The script is \
+             deterministic, so nothing here separates\nthe substrate from the app's own nondeterminism; on a real \
+             run the same diff would be\nconfounded by it. That control now exists and is \
+             committed: docs/divergence/0007-sync-differential.md\nis the ADR, and \
+             shim/recordings/sync-differential.report.txt is its output. Read this\nreport as the \
+             mechanism demonstration it is. And a fact that did not move is not\nthereby a fact \
+             about a real device: it is a fact about this program under two\nsubstrates, and the \
+             third thing a study needs — what the program does on hardware — is\noutside anything \
+             in these two files. See docs/decisions/0006-substrate-policy.md.\n",
         );
         o
     }
@@ -288,8 +313,8 @@ pub fn diff(left: &J, right: &J) -> Result<Differential, crate::error::ShimError
     let rp = declared_policy(right)?;
     let mut raw: Vec<Difference> = Vec::new();
     let mut leaves = 0usize;
-    walk("", left, right, None, &mut raw, &mut leaves);
-    let identical = leaves - raw.len();
+    let mut identical = 0usize;
+    walk("", left, right, None, &mut raw, &mut leaves, &mut identical);
 
     let mut moved = Vec::new();
     let mut derived = Vec::new();
@@ -354,13 +379,24 @@ fn declared_policy(doc: &J) -> Result<SubstratePolicy, crate::error::ShimError> 
     SubstratePolicy::from_json(block)
 }
 
-/// Walk two JSON documents in parallel, collecting every leaf that differs.
+/// Walk two JSON documents in parallel, collecting every leaf that differs and
+/// counting the leaves that did not.
 ///
 /// `element` is the nearest enclosing array element, because a diagnostic's
 /// `pattern` and a filesystem access's `path` are what classify it and neither
 /// is visible from a leaf. Carrying the element down the recursion is why the
 /// classifier is a pure function of the document rather than a lookup table the
 /// walker has to special-case at every array.
+///
+/// `identical` is counted **in the walk** rather than derived afterwards as
+/// `leaves - differences`. The subtraction is wrong, and was: a pointer present
+/// on one side only is a difference but was never a compared leaf, so subtracting
+/// every difference from the compared count double-counted the absences. The
+/// committed report said "1432 of 1617 compared leaves are byte-identical" when
+/// the true figure was 1486 — the number was an undercount of the unmoved set by
+/// exactly the number of one-sided differences. An undercount is the dangerous
+/// direction: it makes the unmoved set look smaller than it is, and the unmoved
+/// set is the positive result. See `docs/divergence/0007-sync-differential.md`.
 #[allow(clippy::too_many_arguments)]
 fn walk(
     pointer: &str,
@@ -369,6 +405,7 @@ fn walk(
     element: Option<&J>,
     out: &mut Vec<Difference>,
     leaves: &mut usize,
+    identical: &mut usize,
 ) {
     match (a, b) {
         (J::Object(x), J::Object(y)) => {
@@ -382,7 +419,7 @@ fn walk(
                     format!("{pointer}/{k}")
                 };
                 match (x.get(k), y.get(k)) {
-                    (Some(va), Some(vb)) => walk(&p, va, vb, element, out, leaves),
+                    (Some(va), Some(vb)) => walk(&p, va, vb, element, out, leaves, identical),
                     (va, vb) => {
                         let class = classify(&p, va.or(vb), element);
                         out.push(Difference {
@@ -396,7 +433,7 @@ fn walk(
             }
         }
         (J::Array(x), J::Array(y)) => {
-            walk_array(pointer, x, y, out, leaves);
+            walk_array(pointer, x, y, out, leaves, identical);
         }
         _ => {
             *leaves += 1;
@@ -407,6 +444,8 @@ fn walk(
                     left: Some(a.clone()),
                     right: Some(b.clone()),
                 });
+            } else {
+                *identical += 1;
             }
         }
     }
@@ -426,7 +465,14 @@ fn walk(
 /// Identity is `array_identity`, and elements are paired within an identity in
 /// order, so an element that appears only on one side is reported as an addition
 /// and never silently displaces its neighbour.
-fn walk_array(pointer: &str, x: &[J], y: &[J], out: &mut Vec<Difference>, leaves: &mut usize) {
+fn walk_array(
+    pointer: &str,
+    x: &[J],
+    y: &[J],
+    out: &mut Vec<Difference>,
+    leaves: &mut usize,
+    identical: &mut usize,
+) {
     let keys_x: Vec<Option<String>> = x.iter().map(|e| array_identity(pointer, e)).collect();
     let keys_y: Vec<Option<String>> = y.iter().map(|e| array_identity(pointer, e)).collect();
     if keys_x.iter().any(Option::is_none) || keys_y.iter().any(Option::is_none) {
@@ -436,7 +482,7 @@ fn walk_array(pointer: &str, x: &[J], y: &[J], out: &mut Vec<Difference>, leaves
         for i in 0..n {
             let p = format!("{pointer}/#{i}");
             match (x.get(i), y.get(i)) {
-                (Some(va), Some(vb)) => walk(&p, va, vb, Some(va), out, leaves),
+                (Some(va), Some(vb)) => walk(&p, va, vb, Some(va), out, leaves, identical),
                 (va, vb) => {
                     let class = classify(&p, va.or(vb), None);
                     out.push(Difference {
@@ -475,7 +521,7 @@ fn walk_array(pointer: &str, x: &[J], y: &[J], out: &mut Vec<Difference>, leaves
                     if let Some(i) = idx_y.get(j) {
                         used_y[*i] = true;
                     }
-                    walk(&p, va, vb, Some(va), out, leaves);
+                    walk(&p, va, vb, Some(va), out, leaves, identical);
                 }
                 (va, vb) => {
                     let class = classify(&p, va.or(vb), None);
@@ -551,6 +597,134 @@ pub fn array_identity(pointer: &str, elem: &J) -> Option<String> {
 /// contains spaces — `probes[].command` is a whole sentence — and a space would
 /// make the key unparseable. Chosen because no recording value contains it.
 const KEY_SEP: &str = "::";
+
+/// One scalar leaf of a recording, as [`leaves`] sees it.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Leaf {
+    /// The JSON pointer, with an occurrence index when the enclosing array has
+    /// more than one element sharing an identity.
+    pub pointer: String,
+    /// The value at that pointer. `None` means the pointer is **absent** from the
+    /// document, which is a different observation from a JSON `null` and is
+    /// tracked separately because "the array element was not emitted this time"
+    /// is exactly the kind of fact a repeated-run comparison has to notice.
+    pub value: Option<J>,
+    /// The class the classifier assigns, from the pointer, the value and the
+    /// enclosing array element.
+    pub class: FactClass,
+}
+
+/// Every scalar leaf of one recording, keyed by a pointer that is **unique**
+/// within the document.
+///
+/// The leaf *space* here is the same one [`diff`] walks: same
+/// [`array_identity`] rules, same [`classify`], same `KEY_SEP`. The one
+/// difference is that an array element which repeats an identity already taken
+/// by a sibling gets a `~{occurrence}` suffix, so six `SIGNAL_PAT.BUILD_FIELD`
+/// diagnostics are six addressable leaves rather than one key written six times.
+/// The differential does not need the suffix because it pairs positionally
+/// within an identity; an N-way comparison does, because it has to address the
+/// same leaf in N documents at once.
+///
+/// The count is the check on the claim: `leaves(doc).len() == diff(doc, doc)
+/// .compared_leaves`, asserted in this module's tests. If the two ever disagree
+/// the sync arm and the policy differential are talking about different leaf
+/// spaces and the intersection between them is meaningless.
+pub fn leaves(doc: &J) -> BTreeMap<String, Leaf> {
+    let mut out = BTreeMap::new();
+    collect_leaves("", None, doc, &mut out);
+    out
+}
+
+fn collect_leaves(pointer: &str, element: Option<&J>, v: &J, out: &mut BTreeMap<String, Leaf>) {
+    match v {
+        J::Object(m) => {
+            for (k, val) in m {
+                let p = if pointer.is_empty() {
+                    format!("/{k}")
+                } else {
+                    format!("{pointer}/{k}")
+                };
+                collect_leaves(&p, element, val, out);
+            }
+        }
+        J::Array(a) => {
+            // Same rule as `walk_array`: one element without an identity makes
+            // the whole array index-addressed, and mixing the two schemes inside
+            // one array would double-count the elements before the unidentifiable
+            // one.
+            if a.iter().any(|e| array_identity(pointer, e).is_none()) {
+                for (i, e) in a.iter().enumerate() {
+                    collect_leaves(&format!("{pointer}/#{i}"), Some(e), e, out);
+                }
+                return;
+            }
+            let mut seen: BTreeMap<String, usize> = BTreeMap::new();
+            for e in a {
+                let base = format!(
+                    "{pointer}[{}]",
+                    array_identity(pointer, e).unwrap_or_default()
+                );
+                let n = seen.entry(base.clone()).or_insert(0);
+                let key = if *n == 0 {
+                    base.clone()
+                } else {
+                    format!("{base}~{n}")
+                };
+                *n += 1;
+                collect_leaves(&key, Some(e), e, out);
+            }
+        }
+        _ => {
+            out.insert(
+                pointer.to_string(),
+                Leaf {
+                    pointer: pointer.to_string(),
+                    value: Some(v.clone()),
+                    class: classify(pointer, Some(v), element),
+                },
+            );
+        }
+    }
+}
+
+/// Delete the `~{occurrence}` suffix [`leaves`] adds to a repeated array
+/// identity, yielding the pointer [`diff`] would have used for the same leaf.
+///
+/// Needed to join the two leaf spaces: the sync arm addresses a leaf uniquely,
+/// the differential addresses it by identity, and a leaf whose sibling moved
+/// shares the differential's pointer with that sibling.
+///
+/// The suffix is *removed*, not truncated, because it sits between the array's
+/// closing bracket and whatever fields follow inside the element:
+/// `/diagnostics[pattern=P]~1/detail` folds onto `/diagnostics[pattern=P]/detail`
+/// and not onto `/diagnostics[pattern=P]`. It is recognised only as `]~digits`
+/// followed by `/` or the end of the pointer, so a `~` inside an identity is
+/// left alone. Returns a `String` because removing a span from the middle of a
+/// pointer cannot borrow.
+pub fn base_pointer(pointer: &str) -> String {
+    let mut from = 0usize;
+    while let Some(rel) = pointer[from..].find('~') {
+        let i = from + rel;
+        let rest = &pointer[i + 1..];
+        let digits = rest.len() - rest.trim_start_matches(|c: char| c.is_ascii_digit()).len();
+        if i > 0
+            && pointer.as_bytes()[i - 1] == b']'
+            && digits > 0
+            && matches!(rest.as_bytes().get(digits), None | Some(b'/'))
+        {
+            let mut s = String::with_capacity(pointer.len() - 1 - digits);
+            s.push_str(&pointer[..i]);
+            s.push_str(&rest[digits..]);
+            return s;
+        }
+        from = i + 1;
+        if from >= pointer.len() {
+            break;
+        }
+    }
+    pointer.to_string()
+}
 
 /// One field of an array key, by name.
 fn key_field<'a>(key: &'a str, name: &str) -> &'a str {
@@ -1306,6 +1480,91 @@ mod tests {
             .chain(dx.derived)
             .filter(|d| !d.pointer.starts_with("/substrate_policy"))
             .collect()
+    }
+
+    #[test]
+    fn the_leaf_table_and_the_walk_count_the_same_leaf_space() {
+        // The load-bearing cross-check for the sync arm. `leaves` and `walk` are
+        // two views of one notion of a leaf; if their cardinalities ever diverge
+        // the four-way classification and the earlier differential are counting
+        // different things, and the intersection between them is arithmetic on
+        // unrelated numbers.
+        for (l, r) in [
+            (SubstratePolicy::default(), SubstratePolicy::default()),
+            committed_policies(),
+        ] {
+            let (a, b) = two_arms(l, r).expect("arms");
+            let self_diff = diff(&a.document, &a.document).expect("diff");
+            assert_eq!(
+                leaves(&a.document).len(),
+                self_diff.compared_leaves,
+                "left arm"
+            );
+            assert_eq!(
+                leaves(&a.document).len(),
+                self_diff.identical_leaves,
+                "a self-diff has no differences, so compared and identical coincide"
+            );
+            let both = diff(&a.document, &b.document).expect("diff");
+            let one_sided = |ds: &[Difference]| {
+                ds.iter()
+                    .filter(|d| d.left.is_none() || d.right.is_none())
+                    .count()
+            };
+            let moved: Vec<Difference> = both.moved.iter().map(|m| m.difference.clone()).collect();
+            let two_sided = (both.moved.len() - one_sided(&moved)) + both.derived.len()
+                - one_sided(&both.derived)
+                + both.declared.len()
+                - one_sided(&both.declared)
+                + both.unattributed.len()
+                - one_sided(&both.unattributed);
+            assert_eq!(
+                both.compared_leaves,
+                both.identical_leaves + two_sided,
+                "compared leaves split into identical and two-sided differences, and a one-sided \
+                 difference is a pointer that was never a compared leaf at all"
+            );
+        }
+    }
+
+    #[test]
+    fn a_repeated_array_identity_stays_addressable() {
+        // Three `BUILD_FIELD` diagnostics share one identity, so `walk` writes the
+        // same pointer three times and `leaves` has to disambiguate them or the
+        // sync arm would silently compare one of them to itself N times.
+        let doc = serde_json::json!({
+            "diagnostics": [
+                {"pattern": "SIGNAL_PAT.BUILD_FIELD", "detail": "a"},
+                {"pattern": "SIGNAL_PAT.BUILD_FIELD", "detail": "b"},
+                {"pattern": "SIGNAL_PAT.BUILD_FIELD", "detail": "c"}
+            ]
+        });
+        let t = leaves(&doc);
+        assert_eq!(t.len(), 6, "`pattern` and `detail` per element");
+        let mut details: Vec<(String, &str)> = t
+            .iter()
+            .filter(|(k, _)| k.ends_with("/detail"))
+            .map(|(k, l)| {
+                (
+                    k.clone(),
+                    l.value.as_ref().and_then(|v| v.as_str()).unwrap_or(""),
+                )
+            })
+            .collect();
+        details.sort();
+        assert_eq!(
+            details.iter().map(|(_, d)| *d).collect::<Vec<_>>(),
+            vec!["a", "b", "c"]
+        );
+        for (k, _) in &details {
+            assert_eq!(
+                base_pointer(k),
+                details[0].0,
+                "every sibling must fold back onto the first occurrence's pointer, which is the \
+                 one the differential writes"
+            );
+        }
+        assert_ne!(details[0].0, details[1].0, "each element needs its own key");
     }
 
     #[test]

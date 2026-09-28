@@ -195,11 +195,13 @@ own central-directory criterion. Exact numerators, no rounding.
 
 | signal | all 120 | DEX-only 60 | native 60 |
 |---|---:|---:|---:|
-| `invoke-polymorphic` present | **82/120 = 68.3%** | 27/60 = 45.0% | 55/60 = 91.7% |
-| `invoke-custom` present | **81/120 = 67.5%** | 30/60 = 50.0% | 51/60 = 85.0% |
-| either of the two (union) | 90/120 = 75.0% | 33/60 = 55.0% | 57/60 = 95.0% |
-| `const-method-handle` present | **119/120 = 99.2%** | 59/60 = 98.3% | 60/60 = 100% |
-| `const-method-type` present | 118/120 = 98.3% | 58/60 = 96.7% | 60/60 = 100% |
+| `invoke-polymorphic` present | **2/120 = 1.7%** | 0/60 = 0.0% | 2/60 = 3.3% |
+| `invoke-custom` present | **0/120 = 0.0%** | 0/60 = 0.0% | 0/60 = 0.0% |
+| either of the two (union) | 2/120 = 1.7% | 0/60 = 0.0% | 2/60 = 3.3% |
+| `const-method-handle` present | **0/120 = 0.0%** | 0/60 = 0.0% | 0/60 = 0.0% |
+| `const-method-type` present | **0/120 = 0.0%** | 0/60 = 0.0% | 0/60 = 0.0% |
+| `call_site_id_item` section present | **0/120 = 0.0%** | 0/60 = 0.0% | 0/60 = 0.0% |
+| `method_handle_item` section present | **0/120 = 0.0%** | 0/60 = 0.0% | 0/60 = 0.0% |
 | declares a `native` method | **64/120 = 53.3%** | 4/60 = 6.7% | 60/60 = 100% |
 | `loadLibrary`/`load` call site | **63/120 = 52.5%** | 3/60 = 5.0% | 60/60 = 100% |
 | …with the library name bound | 56/120 = 46.7% | 3/60 = 5.0% | 53/60 = 88.3% |
@@ -211,6 +213,27 @@ own central-directory criterion. Exact numerators, no rounding.
 | references licensing/DRM | 39/120 = 32.5% | 4/60 = 6.7% | 35/60 = 58.3% |
 | reflective call site | **115/120 = 95.8%** | 55/60 = 91.7% | 60/60 = 100% |
 | external dex class loader | 10/120 = 8.3% | 4/60 = 6.7% | 6/60 = 10.0% |
+
+> **RETRACTED AND CORRECTED.** An earlier version of this table reported
+> `invoke-polymorphic` at 82/120 (68.3%), `invoke-custom` at 81/120 (67.5%),
+> `const-method-handle` at 119/120 (99.2%) and `const-method-type` at
+> 118/120 (98.3%). All four were wrong. `dexscan.rs` numbered
+> `const-method-handle` as opcode `0x15` and `const-method-type` as `0x16`; those
+> are `const/high16` and `const-wide/16`, ordinary 32-bit integer constants.
+> 717,313 integer constants across the sample were therefore counted as method
+> handles, and a composite predicate inherited the error into the `invoke-*`
+> rows. `0xfe` and `0xff` are the real opcodes; the constants are now pinned
+> against `dexcore` by test.
+>
+> A second, smaller error compounded it: the published rows were generated
+> before the `dexcore` switch-payload fix (`de7f244`), whose under-counted
+> advance desynchronised the linear sweep and let payload bytes decode as
+> instructions. That produced spurious `0xfa`/`0xfc` opcodes in DEX 035 and 037
+> files, where those opcodes are *reserved* and cannot legitimately occur. The
+> diagnostic signature was `methodsTruncatedTail = 5,612`, now 0.
+>
+> The corrected figures were reproduced independently against `androguard`
+> 4.1.4 and agree to the instruction. Corrected rows are shown above.
 
 (The union row is `90/120`, not the sum of the two rows above it: an app with
 both opcodes is one app. Its per-stratum split, 33 + 57, does sum to 90.)
@@ -235,90 +258,90 @@ do not use Play Integrity".
 ### 4.2 Bands and gates
 
 ```
-REFUSE     119/120 = 99.2%
-DEGRADE      0/120
-LIKELY_RUNS  0/120
-MINIMAL      1/120 =  0.8%
-UNKNOWN      0/120
+REFUSE      60/120 = 50.0%
+DEGRADE       0/120
+LIKELY_RUNS   0/120
+MINIMAL      60/120 = 50.0%
+UNKNOWN       0/120
 
 NATIVE_PAYLOAD             60/120 = 50.0%
-DYNAMIC_INVOKE            119/120 = 99.2%
+DYNAMIC_INVOKE              2/120 =  1.7%
 PLAY_SERVICES               0/120 =  0.0%
-NATIVE_METHOD_UNIMPLEMENTED  4/120 =  3.3%
+NATIVE_METHOD_UNIMPLEMENTED 4/120 =  3.3%
 ```
 
-A `REFUSE` rate of 99.2% is not a compatibility result. It is the statement that
-`DYNAMIC_INVOKE` fires on 119/120 apps, which is a statement about the **d8
-toolchain**, not about 119 individual apps. §4.4 explains why, and §7 explains
-why that makes the band almost uninformative even though the underlying counts
-are not.
+The `REFUSE` band is now driven entirely by `NATIVE_PAYLOAD`, and the two bands
+are exactly the two corpus strata. `DYNAMIC_INVOKE` is no longer a gate that
+fires on nearly everything; it fires on 2 apps out of 120, and on **0 of the 60
+DEX-only** apps. This is a different instrument from the one §4.1 previously
+described, and it is far less discriminating: with `NATIVE_PAYLOAD` splitting
+the sample cleanly 60/60 and the other three gates at or near zero, the band
+assignment carries essentially no information beyond "does this app ship a
+`.so`", which the census already answers at full-corpus scale. §T-VAL-5 below
+records that as a defect of the band, not a finding.
 
-### 4.3 The DEX 039 finding
+### 4.3 The DEX 039 finding — withdrawn
 
-This is the most consequential structural observation in the whole analysis, and
-it is a property of the format rather than of the apps.
+An earlier version of this section reported that `call_site_id_item` and
+`method_handle_item` sections are absent from all 120 files *while* the same
+files contain thousands of `const-method-handle` instructions, and that the
+`method@` operand of `invoke-polymorphic` is the `NO_INDEX` sentinel `0xffff`,
+"verified at byte level". It showed a disassembly of `com.co3` with
+`index_operand = 65535` and no resolvable pool entry.
+
+**Both halves of that are artefacts of the opcode mislabelling, and the
+conclusion drawn from them is withdrawn.**
+
+The apparent contradiction resolves trivially once the opcodes are correct:
+the files genuinely contain zero `const-method-handle` instructions, so zero
+`call_site_id_item` sections is *expected*, not anomalous. The `0xffff`
+operands were read out of bytes that were never `invoke-polymorphic` at all.
+
+The 107 real `invoke-polymorphic` instructions that do exist all carry a
+**valid `method_id` index**, not a sentinel, resolving into
+`java.lang.invoke.{MethodHandle,VarHandle}`:
 
 ```
-DEX version of the first classes.dex, over the 120 sampled APKs:
-  035   56 apps
-  037   30 apps
-  038   19 apps
-  039   15 apps
-
-map_list contains call_site_id_item      0/120
-map_list contains method_handle_item     0/120
+method_ids[48862] -> Ljava/lang/invoke/MethodHandle;->invoke
+method_ids[48863] -> Ljava/lang/invoke/MethodHandle;->invokeExact
+method_ids[48884] -> Ljava/lang/invoke/VarHandle;->get
+method_ids[48887] -> Ljava/lang/invoke/VarHandle;->set
 ```
 
-Zero of 120 files have either section, *including* files with 13,951
-`const-method-handle` instructions and 14 `invoke-custom` sites. And the
-`method@` operand of `invoke-polymorphic` is written as the `NO_INDEX` sentinel:
+They occur in exactly two apps — `com.defname.localshare_15` (106) and
+`org.nsh07.wikireader_53` (1) — and every one sits inside netty's
+`VarHandle` reflection shim or `scala/runtime/Null$.releaseFence`, behind a
+guard. These are *reflective* `MethodHandle`/`VarHandle` accesses, not the
+`desugar`-time `invokedynamic` story the previous section described.
 
-```
-$ cargo run --release --example dex-sections -- <apk>
-# and, byte level, com.co3 classes.dex:
-== Lek2; .run code_item@3537020 units[464..474]
- 0003 0000 000d 0000 fffa ffff 0003 0000
-target: invoke-polymorphic fmt=Some("F45CC") index_operand=Some(65535)
-  as method_id : None
-  as string_id : None
-  as field_id  : None
-  as type_id   : None
-  method_count=32605
-```
+What a substrate therefore needs here is the **`MethodHandle`/`VarHandle`
+reflection surface**, not `CallSite` bootstrap machinery
+(`LambdaMetafactory`, `InnerClassLambdaMetafactory`). Separately, **12/120**
+apps reference `java.lang.invoke.*` types in their pool; that reference-level
+count is unaffected by the opcode bug and is the sound invokedynamic-adjacent
+figure in this sample.
 
-`0xffff` is `NO_INDEX`. There is no pool to resolve it against, because the pool
-it would refer to is not in the file.
+The earlier claim — that "the dependency is real and near-universal" at 99.2%
+and "not enumerable from the DEX" — was an artefact and is retracted. So is
+the conclusion that a substrate "has no subset it can pick."
 
-Three consequences, and they matter for what a substrate must build:
-
-1. **The dependency is real and near-universal.** 99.2% of apps contain at least
-   one dynamic-invoke opcode. `SUB.FW.INVOKEDYNAMIC` is not a niche 2017-era
-   problem; it is the default output of `d8`.
-2. **The dependency is not enumerable from the DEX.** Because there is no
-   `call_site_ids` section, the *set* of bootstrap methods an app needs cannot be
-   read off the pool. The only statically available signal is a **count of
-   opcodes**. A substrate has to implement `MethodHandle`, `MethodType`,
-   `CallSite` and the `LambdaMetafactory` / `InnerClassLambdaMetafactory`
-   bootstrappers for all of them; there is no subset it can pick.
-3. **The taxonomy rule table under-reports it by 6×.** `SUB.FW.INVOKEDYNAMIC`
-   from the rule table (which keys on `java.lang.invoke.*` *classes*) fires on
-   **12/120** apps, because in DEX 039 nothing references those classes by name.
-   The opcode count says 119/120. The rule table is not wrong; it is answering a
-   different, weaker question, and the gap between 12 and 119 is the honest
-   measure of what name-based analysis loses.
-
-An unexplained regularity, recorded rather than glossed: `minSdk` does **not**
-predict the opcodes. `invoke-custom` appears in 29/34 apps with `minSdk >= 26`
-and 51/86 with `minSdk < 26`. Whatever the mechanism, the usual "d8 desugars
-below 26" story does not explain this sample, and the mechanism was not
-investigated further.
+**Caveat not resolved here:** whether the two positive apps' call sites are
+*reachable* on a real device needs a call graph, which is out of scope for
+static DEX scanning. 1.7% is an upper bound and the true reachable figure is
+at most that.
 
 ### 4.4 Three real examples per top signal, with the DEX evidence
 
 `predict <apk>` prints the full document; each line below is copied from
 `sample/rows.jsonl`.
 
-#### Signal A — dynamic invoke (`const-method-handle` 119/120)
+#### Signal A — dynamic invoke (`const-method-handle` 0/120, withdrawn)
+
+The worked examples under this heading illustrated a signal that does not
+exist: `const-method-handle` is 0/120 in the corrected measurement, so there
+is nothing to show. The examples are retained below as a record of what the
+artefact looked like, and are labelled accordingly.
+
 
 **`com.katiearose.sobriety` v22**, DEX 035, 23,821 methods with code,
 `invoke-polymorphic` and `invoke-custom` present, 0 methods undecodable. Library
@@ -664,7 +687,7 @@ The mitigation is not better static analysis; it is that the *substrate* must be
 built to answer these at run time, and the predictor's job reduces to
 shortlisting which apps are worth attempting.
 
-### T-VAL-5 — The rubric's weights are an opinion, and 99.2% REFUSE makes the band nearly vacuous
+### T-VAL-5 — The rubric's weights are an opinion, and the band is now vacuous for a different reason
 
 The weights in §3 sum to 1.000 and are internally consistent. They are also
 **unvalidated**, and the ordering — native code and invokedynamic worse than Play

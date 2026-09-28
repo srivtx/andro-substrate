@@ -1,0 +1,32 @@
+andro-substrate — real APK run report
+================================================================
+package                com.oF2pks.neolinker
+substrate policy       default
+lifecycle.terminal     L0_PROCESS_STARTED
+
+STOPPED BECAUSE
+  it stopped in Lcom/oF2pks/neolinker/MainActivity;.onCreate() [(Landroid/os/Bundle;)V] with undeclared: Lcom/oF2pks/neolinker/MainActivity;.getIntent()Landroid/content/Intent;. The engine reported: uncaught Ljava/lang/NoSuchMethodError;: Lcom/oF2pks/neolinker/MainActivity;.getIntent()Landroid/content/Intent; is not implemented by Lcom/oF2pks/neolinker/MainActivity; (Lcom/oF2pks/neolinker/MainActivity;.onCreate(Landroid/os/Bundle;)V at unit 12 (opcode 0x6e))
+
+STAGES
+  constructor            Lcom/oF2pks/neolinker/MainActivity;.<init>()V        ok                             2 ins       1 fw
+  activity_onCreate      Lcom/oF2pks/neolinker/MainActivity;.onCreate(Landroid/os/Bundle;)V exception_raised               7 ins       1 fw
+                         framework surface first requested here: 1
+      undeclared: Lcom/oF2pks/neolinker/MainActivity;.getIntent()Landroid/content/Intent;
+                         error: uncaught Ljava/lang/NoSuchMethodError;: Lcom/oF2pks/neolinker/MainActivity;.getIntent()Landroid/content/Intent; is not implemented by Lcom/oF2pks/neolinker/MainActivity; (Lcom/oF2pks/neolinker/MainActivity;.onCreate(Landroid/os/Bundle;)V at unit 12 (opcode 0x6e))
+
+ENGINE
+  instructions executed      9
+  distinct opcodes           6
+  framework calls            2
+  … of those unimplemented   0
+  … args untranslatable     0
+  extra classes*.dex skipped 0
+
+SHIM SURFACE THIS APK NEEDED AND DID NOT HAVE — 1
+  undeclared: Lcom/oF2pks/neolinker/MainActivity;.getIntent()Landroid/content/Intent;
+
+UNRESOLVED — nothing declared these, engine-wide: 1
+  Lcom/oF2pks/neolinker/MainActivity;.getIntent()Landroid/content/Intent;
+
+SUPERSEDE — app classes the shim shadowed: 0
+INVOKEDYNAMIC — bootstrap owners refused: 0

@@ -102,6 +102,33 @@ pub struct Call<'a> {
     pub kind: InvokeKind,
     /// The arguments, receiver first for the instance forms.
     pub args: &'a [Value],
+    /// The same arguments, rendered as [`HostValue`]s, parallel to `args`.
+    ///
+    /// **Empty unless the host asked for it** with
+    /// [`Host::wants_rendered_args`], because rendering clones every string
+    /// argument and a host that only needs primitives should not pay for it.
+    /// A host that does ask gets this because there is otherwise no way for it
+    /// to know what a `Ljava/lang/String;` argument says: a `Value::Ref` is a
+    /// heap index, and only the engine can resolve it. That is the whole reason
+    /// the two arrays are parallel rather than a replacement — `args` keeps the
+    /// exact register values, which is what an instrument should record.
+    pub rendered: &'a [HostValue],
+}
+
+impl Call<'_> {
+    /// The rendered form of argument `i`, or `None` when the host did not ask
+    /// for rendering. Never panics on an out-of-range index.
+    pub fn rendered_arg(&self, i: usize) -> Option<&HostValue> {
+        self.rendered.get(i)
+    }
+
+    /// The rendered receiver, for the instance forms.
+    pub fn rendered_receiver(&self) -> Option<&HostValue> {
+        match self.kind {
+            InvokeKind::Static | InvokeKind::Custom => None,
+            _ => self.rendered.first(),
+        }
+    }
 }
 
 impl Call<'_> {
@@ -295,7 +322,16 @@ pub struct ResolvedCallSite {
 /// because a shim that needs to call back into app code is better served by
 /// returning [`HostOutcome::Value`] with a value it computed, which is what
 /// every shim that exists actually does.)
-pub trait Host {
+///
+/// The [`Any`] supertrait is what makes
+/// [`Interpreter::take_host`](crate::Interpreter::take_host) recoverable: the
+/// engine hands back a `Box<dyn Host>`, and a driver that ran a lifecycle in
+/// stages needs the concrete host afterwards to read the shim's event stream. A
+/// trait upcast from `dyn Host` to `dyn Any` is the only lossless way to do
+/// that, and it needs the supertrait. It costs a host nothing — `Any` has no
+/// methods — and it is satisfied by every `'static` host, which every host is,
+/// because the engine owns it in a `Box`.
+pub trait Host: std::any::Any {
     /// Answer a call the engine has no bytecode for.
     fn invoke(&mut self, _call: &Call<'_>) -> HostOutcome {
         HostOutcome::NotImplemented
@@ -326,6 +362,26 @@ pub trait Host {
     /// builtin table. Declaring a class makes `new-instance` work on it and
     /// stops the engine fabricating a phantom placeholder.
     fn class_known(&mut self, _descriptor: &str) -> bool {
+        false
+    }
+
+    /// Whether the engine should render every argument of every call into
+    /// [`Call::rendered`].
+    ///
+    /// `false` by default, and the default costs the engine nothing. `true`
+    /// costs one allocation and one `String` clone per reference argument, and
+    /// the only thing it buys a host is the ability to read a string's
+    /// characters — which a framework shim needs constantly (`Intent.getAction`,
+    /// `Bundle.getString`, `Uri.getQuery`, every one of them) and which is
+    /// otherwise impossible, because a `Value::Ref` is an index into a heap only
+    /// the engine can see.
+    ///
+    /// Declining is not free of consequence either: a host that says `false`
+    /// receives raw `Value`s and can only recognise primitives. It is a
+    /// declaration, not a capability probe, and it is recorded in
+    /// [`Stats`](crate::config::Stats) so a reader can tell which hosts saw
+    /// what.
+    fn wants_rendered_args(&self) -> bool {
         false
     }
 }

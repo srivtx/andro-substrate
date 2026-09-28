@@ -1232,7 +1232,11 @@ mod opcode_constant_tests {
             (OP_CONST_METHOD_HANDLE, "const-method-handle"),
             (OP_CONST_METHOD_TYPE, "const-method-type"),
         ] {
-            assert_eq!(dexcore::opcodes::opcode(byte).mnemonic, mnemonic, "0x{byte:02x}");
+            assert_eq!(
+                dexcore::opcodes::opcode(byte).mnemonic,
+                mnemonic,
+                "0x{byte:02x}"
+            );
         }
     }
 

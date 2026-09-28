@@ -175,11 +175,39 @@ impl std::fmt::Debug for Interpreter<'_> {
 /// decode all of them.
 pub fn new_interpreter<'a>(dex: DexReader<'a>, config: Config) -> ExecResult<Interpreter<'a>> {
     let program = Program::build(&dex)?;
+    Ok(from_program(dex, program, config))
+}
+
+/// Build an interpreter over an app DEX with the **framework layer** in front of
+/// it.
+///
+/// `host` is the shim's class table, read out of the shim's own DEX with
+/// [`crate::program::host_classes_from_dex`]. Every app class that the layer
+/// also declares is dropped, so the shim's definition supersedes the app's — the
+/// boundary ADR 0005 chose over merging, and the one under which a hostile APK
+/// cannot delete the shim's `startActivity` by shipping its own `Activity`.
+///
+/// The shadowed set is on [`Stats::shadowed_classes`], not only in the
+/// `Program`, because a run report that does not carry it would let a silent
+/// class disappearance stay silent exactly where it matters.
+pub fn new_layered_interpreter<'a>(
+    dex: DexReader<'a>,
+    host: &[crate::program::HostClass],
+    config: Config,
+) -> ExecResult<Interpreter<'a>> {
+    let program = Program::build_layered(&dex, host)?;
+    Ok(from_program(dex, program, config))
+}
+
+/// The common tail of both constructors, so the two paths cannot drift.
+fn from_program<'a>(dex: DexReader<'a>, program: Program, config: Config) -> Interpreter<'a> {
     let stats = Stats {
         instruction_budget: config.instruction_budget,
+        shadowed_classes: program.shadowed.clone(),
+        host_bodies_refused: program.host_classes_with_bodies.clone(),
         ..Stats::default()
     };
-    Ok(Interpreter {
+    Interpreter {
         dex,
         program,
         heap: Heap::new(),
@@ -192,7 +220,7 @@ pub fn new_interpreter<'a>(dex: DexReader<'a>, config: Config) -> ExecResult<Int
         opaque: HashMap::new(),
         statics: HashMap::new(),
         pending_throw: None,
-    })
+    }
 }
 
 impl<'a> Interpreter<'a> {
@@ -211,6 +239,24 @@ impl<'a> Interpreter<'a> {
     /// The resolved program: classes, vtables, pools.
     pub fn program(&self) -> &Program {
         &self.program
+    }
+
+    /// The resolved program, mutably.
+    ///
+    /// `Program::class_for` fabricates a phantom and so takes `&mut self`. A
+    /// caller that only reads should use [`Interpreter::program`]; this exists so
+    /// a diagnostic can ask "does the class table know this descriptor" without
+    /// the caller having to construct the class first.
+    pub fn program_mut(&mut self) -> &mut Program {
+        &mut self.program
+    }
+
+    /// Every prototype descriptor `class` can be called with as `name`.
+    ///
+    /// See [`Program::prototypes`]. Exposed on the interpreter because a
+    /// lifecycle driver has to name a real signature and cannot invent one.
+    pub fn prototypes(&self, class: &str, name: &str) -> Vec<String> {
+        self.program.prototypes(class, name)
     }
 
     /// The heap, for a caller that wants to inspect what an app built.
@@ -424,7 +470,7 @@ impl<'a> Interpreter<'a> {
         let decl = self
             .class_id_known(class)
             .and_then(|c| self.program.find_method(c, name, signature).cloned());
-        if let Some(d) = decl {
+        if let Some(d) = decl.clone() {
             if d.has_code() {
                 self.push_frame(&d, args)?;
                 return self.run();
@@ -433,22 +479,61 @@ impl<'a> Interpreter<'a> {
         // The file either does not declare it, or declares it with no body. Both
         // are the same shape of question for a shim — `Bundle.getString` and a
         // `native` method on the app's own class differ only in who is asking.
+        //
+        // When resolution *did* find a bodiless declaration, the host is asked
+        // about the class that declares it rather than the class that was named.
+        // See `dispatch` for why: an inherited framework method is only declared
+        // on the superclass, and a host asked about the subclass can never find
+        // it.
         let kind = if args.is_empty() {
             InvokeKind::Static
         } else {
             InvokeKind::Direct
         };
+        let owner: String = match &decl {
+            Some(d) => self.class_name_of_id(d.class).to_string(),
+            None => {
+                self.note_unresolved(class, name, signature);
+                class.to_string()
+            }
+        };
+        self.stats.framework_calls += 1;
+        let args_rendered: Vec<HostValue> = if self.host.wants_rendered_args() {
+            args.iter().map(|v| self.to_host_value(*v)).collect()
+        } else {
+            Vec::new()
+        };
         let call = Call {
-            class,
+            class: &owner,
             name,
             signature,
             kind,
             args,
+            rendered: &args_rendered,
         };
-        self.stats.framework_calls += 1;
         let outcome = self.host.invoke(&call);
         self.record_call(&call, &outcome);
         self.host_result_value(outcome, signature, &Site::default())
+    }
+
+    /// Record a `(class, name, signature)` nothing could answer.
+    ///
+    /// Bounded, deduplicated and sorted, because a hostile or merely repetitive
+    /// program can name the same missing method a million times and the set is
+    /// the useful form. The cap exists for the same reason every other bound in
+    /// this engine exists: a record that grows without limit is a memory
+    /// exhaustion, not a measurement.
+    fn note_unresolved(&mut self, class: &str, name: &str, signature: &str) {
+        const MAX: usize = 8192;
+        let s = format!("{class}.{name}{signature}");
+        if self.stats.unresolved_methods.contains(&s) {
+            return;
+        }
+        if self.stats.unresolved_methods.len() >= MAX {
+            return;
+        }
+        self.stats.unresolved_methods.push(s);
+        self.stats.unresolved_methods.sort();
     }
 
     /// Turn a host outcome into a value or an error.
@@ -2154,6 +2239,11 @@ impl<'a> Interpreter<'a> {
                 let rc = self.class_id_of_object(Value::Ref(r));
                 let found = rc.and_then(|c| self.vtable_target(c, name, signature));
                 if found.is_none() {
+                    // Recorded before the throwable, because a method the
+                    // receiver's vtable does not have is compatibility surface
+                    // the framework layer does not provide, and the only place
+                    // that fact exists is here.
+                    self.note_unresolved(class_desc, name, signature);
                     if let Some(c) = rc {
                         if self.has_bytecode(c) {
                             return Ok(Flow::Thrown(self.new_throwable(
@@ -2182,13 +2272,39 @@ impl<'a> Interpreter<'a> {
                 self.push_frame(&decl, &args)?;
                 Ok(Flow::Call)
             }
-            Some(_) => {
+            Some(decl) => {
                 // Declared with no body: abstract, native, or on a class with no
                 // bytecode. All three are the shim's problem, and the same
                 // problem, so they take the same path.
-                self.call_host(kind, class_desc, name, signature, &args, site)
+                //
+                // The host is asked about the class that **declares** the method,
+                // not the class the call site named, and the difference is not
+                // cosmetic. An app's `MainApplication extends
+                // Landroid/app/Application;` does not override `onCreate`; the
+                // only declaration of `onCreate()V` on that class is inherited
+                // from the framework. Asking the host about the static type would
+                // make every inherited framework call look like a missing method
+                // on the app's own class, and a shim whose superclass walk starts
+                // at a class it does not define can never find anything.
+                // Resolution happened before the host was consulted, so the
+                // declaring class is known and is the right question.
+                let owner = self.class_name(decl.class);
+                self.call_host(kind, &owner, name, signature, &args, site)
             }
             None => {
+                // Only `virtual`, `interface` and `static` contribute to the
+                // compatibility surface. A `super` or `direct` call that resolves
+                // to nothing is a statement about the *call site's* resolution
+                // — the named class, the lookup rule and the receiver all
+                // participate — and recording it as "the framework does not
+                // provide this method" would put a number in the study that is
+                // about the engine's `invoke-super` rule instead.
+                if matches!(
+                    kind,
+                    InvokeKind::Virtual | InvokeKind::Interface | InvokeKind::Static
+                ) {
+                    self.note_unresolved(class_desc, name, signature);
+                }
                 if let Some(n) = named {
                     if self.has_bytecode(n) {
                         // The file declares the class but not the method. On a
@@ -2214,13 +2330,45 @@ impl<'a> Interpreter<'a> {
             .unwrap_or(false)
     }
 
-    /// The vtable entry's target: a concrete declaration, or `None` when the slot
-    /// is abstract or absent.
+    /// The vtable entry's target.
+    ///
+    /// A slot resolves to a *declaration*, concrete or not, and an
+    /// [`VTableEntry::Abstract`] entry is **not** `None`. It means the receiver's
+    /// class inherits a method it does not implement, which is the single most
+    /// common shape a framework call has, and the caller routes a bodiless
+    /// declaration to the host.
+    ///
+    /// Collapsing it to `None` made every inherited framework method on an app
+    /// class look like a method nothing declares: `Activity.setContentView(int)`,
+    /// which the shim implements, was reported as
+    /// `NoSuchMethodError: …ChooseChaptersActivity;.setContentView(I)V is not
+    /// implemented by …ChooseChaptersActivity;` for a real F-Droid app. That is
+    /// a measurement error of exactly the kind this project must not make — a
+    /// recorded "the shim lacks this" that the shim does not lack.
     fn vtable_target(&self, class: ClassId, name: &str, signature: &str) -> Option<MethodDecl> {
-        match self.program.vtable_lookup(class, name, signature)? {
-            VTableEntry::Concrete { method_idx } => self.program.decl(*method_idx).cloned(),
-            VTableEntry::Abstract { .. } => None,
-        }
+        let entry = self.program.vtable_lookup(class, name, signature)?;
+        let (declaring, dname, dsig) = match entry {
+            VTableEntry::Concrete { method_idx } => {
+                return self.program.decl(*method_idx).cloned();
+            }
+            VTableEntry::Abstract {
+                class,
+                name,
+                signature,
+            } => (class, name, signature),
+        };
+        Some(MethodDecl {
+            class: *declaring,
+            // `u32::MAX` marks "not an index into the method pool", which is
+            // true: an abstract vtable entry names a method whose declaration
+            // came from a class with no bytecode, so there is no `code_item` and
+            // nothing reads the index.
+            method_idx: u32::MAX,
+            name: dname.clone(),
+            signature: dsig.clone(),
+            access_flags: dexcore::model::access::ACC_ABSTRACT,
+            code_off: 0,
+        })
     }
 
     /// Hand a call the engine cannot execute to the shim.
@@ -2234,12 +2382,18 @@ impl<'a> Interpreter<'a> {
         site: &Site,
     ) -> ExecResult<Flow> {
         self.stats.framework_calls += 1;
+        let args_rendered: Vec<HostValue> = if self.host.wants_rendered_args() {
+            args.iter().map(|v| self.to_host_value(*v)).collect()
+        } else {
+            Vec::new()
+        };
         let call = Call {
             class,
             name,
             signature,
             kind,
             args,
+            rendered: &args_rendered,
         };
         let outcome = self.host.invoke(&call);
         self.record_call(&call, &outcome);
@@ -3133,6 +3287,14 @@ impl<'a> Interpreter<'a> {
             .unwrap_or_else(|| "<unknown>".to_string())
     }
 
+    /// The descriptor of a class, as a borrow.
+    fn class_name_of_id(&self, id: ClassId) -> &str {
+        self.program
+            .class(id)
+            .map(|m| m.descriptor.as_str())
+            .unwrap_or("<unknown>")
+    }
+
     fn class_id_of_object(&self, v: Value) -> Option<ClassId> {
         match v {
             Value::Ref(r) => self.heap.get(r).map(|o| o.class),
@@ -3263,7 +3425,7 @@ impl<'a> Interpreter<'a> {
                 },
                 Some(ObjectKind::Instance { .. }) => HostValue::Opaque {
                     class: self.class_name_of(r),
-                    key: format!("id:{r}"),
+                    key: format!("id:{}", r.id()),
                 },
                 _ => HostValue::Ref(v),
             },

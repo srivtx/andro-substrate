@@ -460,10 +460,15 @@ fn every_method_in_two_real_apks_ends_in_a_recorded_outcome() {
                 (14, 5, 9),
                 "the termux census changed; the README quotes 14 methods, 5 returned"
             ),
+            // Corrected by ADR 0008. Was `(85, 28, 57)`. The vtable change means
+            // an *inherited* framework method on an app class now reaches the
+            // host instead of dying as a `NoSuchMethodError`, so twelve more of
+            // sleeptimer's 85 methods return. The app did not get simpler; the
+            // engine stopped mis-reporting it.
             "fr.smarquis.sleeptimer_16200" => assert_eq!(
                 (total, c.returned, thrown),
-                (85, 28, 57),
-                "the sleeptimer census changed; the README quotes 85 methods, 28 returned"
+                (85, 40, 45),
+                "the sleeptimer census changed; the README quotes 85 methods, 40 returned"
             ),
             other => panic!("{other} has no pinned census"),
         }
@@ -661,20 +666,21 @@ fn opcode_statistics_from_a_real_apk_are_sane() {
     // depends on and exactly the kind of quiet regression nothing else here
     // would notice.
     //
-    // 45 distinct opcodes over 446 instructions with 193 allocations. The
-    // instruction and allocation counts are *derived* quantities, so they move
-    // for a legitimate reason -- fixing a decoding bug makes more code
-    // reachable -- and are asserted exactly to force whoever changes them to
-    // come here and say so. The opcode count is the load-bearing one.
+    // 46 distinct opcodes over 553 instructions with 184 allocations. Corrected
+    // by ADR 0008: was 45 / 446 / 193, and the extra instruction, the extra
+    // allocation and the extra opcode are the throwable the host now raises for
+    // more of the app now reaches a host, so the totals move; the direction
+    // of the instruction count is up and the allocation count is down because the
+    // engine no longer fabricates a throwable for a method it mis-reported missing.
     assert_eq!(
         st.distinct_opcodes(),
-        45,
-        "the real-DEX opcode count changed; the README quotes 45"
+        46,
+        "the real-DEX opcode count changed; the README quotes 46"
     );
     assert_eq!(
         (st.instructions_executed, st.allocations),
-        (446, 193),
-        "the real-DEX census totals changed; the README quotes 446 instructions and 193 allocations"
+        (553, 184),
+        "the real-DEX census totals changed; the README quotes 553 instructions and 184 allocations"
     );
     // `if-ne` and `if-nez` must both appear in a real APK: they are how a
     // compiler writes `a != b` and `x == null` for *objects*, and this engine

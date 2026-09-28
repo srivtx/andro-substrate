@@ -1,0 +1,28 @@
+andro-substrate — real APK run report
+================================================================
+package                com.page.bizzle
+substrate policy       default
+lifecycle.terminal     L0_PROCESS_STARTED
+
+STOPPED BECAUSE
+  it stopped in Lcom/page/bizzle/MainActivity;.<init>() [()V] with no framework method was missing at this stage. The engine reported: uncaught Ljava/lang/NoSuchMethodError;: the framework shim has no Ljava/util/Timer;.<init>()V (Lcom/page/bizzle/MainActivity;.<init>()V at unit 5 (opcode 0x70))
+
+STAGES
+  constructor            Lcom/page/bizzle/MainActivity;.<init>()V             exception_raised               3 ins       2 fw
+                         error: uncaught Ljava/lang/NoSuchMethodError;: the framework shim has no Ljava/util/Timer;.<init>()V (Lcom/page/bizzle/MainActivity;.<init>()V at unit 5 (opcode 0x70))
+
+ENGINE
+  instructions executed      3
+  distinct opcodes           2
+  framework calls            2
+  … of those unimplemented   0
+  … args untranslatable     0
+  extra classes*.dex skipped 0
+
+SHIM SURFACE THIS APK NEEDED AND DID NOT HAVE — 0
+  none: the app reached the end of the driver's stages without asking for a framework method the shim lacks
+
+UNRESOLVED — nothing declared these, engine-wide: 0
+
+SUPERSEDE — app classes the shim shadowed: 0
+INVOKEDYNAMIC — bootstrap owners refused: 0

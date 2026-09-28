@@ -1,0 +1,32 @@
+andro-substrate — real APK run report
+================================================================
+package                tk.al54.dev.badpixels
+substrate policy       default
+lifecycle.terminal     L0_PROCESS_STARTED
+
+STOPPED BECAUSE
+  it stopped in Ltk/al54/dev/badpixels/MainActivity;.onCreate() [(Landroid/os/Bundle;)V] with undeclared: Ltk/al54/dev/badpixels/MainActivity;.requestWindowFeature(I)Z. The engine reported: uncaught Ljava/lang/NoSuchMethodError;: Ltk/al54/dev/badpixels/MainActivity;.requestWindowFeature(I)Z is not implemented by Ltk/al54/dev/badpixels/MainActivity; (Ltk/al54/dev/badpixels/MainActivity;.onCreate(Landroid/os/Bundle;)V at unit 4 (opcode 0x6e))
+
+STAGES
+  constructor            Ltk/al54/dev/badpixels/MainActivity;.<init>()V       ok                             6 ins       1 fw
+  activity_onCreate      Ltk/al54/dev/badpixels/MainActivity;.onCreate(Landroid/os/Bundle;)V exception_raised               3 ins       1 fw
+                         framework surface first requested here: 1
+      undeclared: Ltk/al54/dev/badpixels/MainActivity;.requestWindowFeature(I)Z
+                         error: uncaught Ljava/lang/NoSuchMethodError;: Ltk/al54/dev/badpixels/MainActivity;.requestWindowFeature(I)Z is not implemented by Ltk/al54/dev/badpixels/MainActivity; (Ltk/al54/dev/badpixels/MainActivity;.onCreate(Landroid/os/Bundle;)V at unit 4 (opcode 0x6e))
+
+ENGINE
+  instructions executed      9
+  distinct opcodes           7
+  framework calls            2
+  … of those unimplemented   0
+  … args untranslatable     0
+  extra classes*.dex skipped 0
+
+SHIM SURFACE THIS APK NEEDED AND DID NOT HAVE — 1
+  undeclared: Ltk/al54/dev/badpixels/MainActivity;.requestWindowFeature(I)Z
+
+UNRESOLVED — nothing declared these, engine-wide: 1
+  Ltk/al54/dev/badpixels/MainActivity;.requestWindowFeature(I)Z
+
+SUPERSEDE — app classes the shim shadowed: 0
+INVOKEDYNAMIC — bootstrap owners refused: 0

@@ -1,0 +1,26 @@
+andro-substrate — real APK run report
+================================================================
+package                com.martinmimigames.tinymusicplayer
+substrate policy       default
+lifecycle.terminal     L0_PROCESS_STARTED
+
+STOPPED BECAUSE
+  every stage the driver attempted completed
+
+STAGES
+
+ENGINE
+  instructions executed      0
+  distinct opcodes           0
+  framework calls            0
+  … of those unimplemented   0
+  … args untranslatable     0
+  extra classes*.dex skipped 0
+
+SHIM SURFACE THIS APK NEEDED AND DID NOT HAVE — 0
+  none: the app reached the end of the driver's stages without asking for a framework method the shim lacks
+
+UNRESOLVED — nothing declared these, engine-wide: 0
+
+SUPERSEDE — app classes the shim shadowed: 0
+INVOKEDYNAMIC — bootstrap owners refused: 0

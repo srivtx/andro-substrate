@@ -105,12 +105,20 @@ crate can claim.
 `tests/real_dex.rs` runs every method of two real APKs in the corpus and
 reports which returned, which raised, and which faulted.
 
-**`fr.smarquis.sleeptimer_16200`** — 85 methods with code: **28 returned**, 57
-raised, **zero `EngineFault`**. Every one of the 57 is a statement about the
-shim's surface, not about the decoder: 25 `NullPointerException`, 16
+**`fr.smarquis.sleeptimer_16200`** — 85 methods with code: **40 returned**, 45
+raised, **zero `EngineFault`**. Every one of the 45 is a statement about the
+shim's surface, not about the decoder: 25 `NullPointerException`, 4
 `NoSuchMethodError`, 13 `UnsupportedOperationException`, 2
 `IndexOutOfBoundsException`, 1 `NoSuchElementException`. The full census
-dispatches 45 distinct opcodes over 446 instructions and 193 allocations.
+dispatches 46 distinct opcodes over 553 instructions and 184 allocations.
+
+> **Corrected by [ADR 0008](../docs/decisions/0008-interpreter-shim-integration.md);
+> these figures were 28 returned / 57 raised, 45 opcodes, 446 instructions and
+> 193 allocations.** An inherited framework method whose vtable slot was
+> `Abstract` was reported as `NoSuchMethodError` *before* the host was consulted,
+> so twelve methods the shim can serve were counted as methods nothing can
+> serve. The app did not change; the engine stopped mis-reporting it. The count
+> that moved most is `NoSuchMethodError`, 16 → 4.
 
 **`com.termux.boot_1000`** — 14 methods with code: **5 returned**, 9 raised
 (8 `NullPointerException`, 1 `NoSuchMethodError`), **zero `EngineFault`**. Its

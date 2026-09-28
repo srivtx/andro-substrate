@@ -162,6 +162,39 @@ pub struct Stats {
     /// declared them. Sorted and deduplicated.
     pub phantom_classes: Vec<String>,
 
+    /// Framework classes the app's own DEX defined and the shim's DEX also
+    /// defines, where the shim's definition won.
+    ///
+    /// The supersede event, in the one place a caller reads counters rather than
+    /// a document. Empty for every well-formed APK, and non-empty means an app
+    /// shipped its own `android.*` class that therefore never ran.
+    pub shadowed_classes: Vec<String>,
+
+    /// Framework-layer classes whose DEX declaration carried a `code_item`.
+    ///
+    /// Always empty for the shim's own DEX, which marks every method
+    /// `ACC_NATIVE` on purpose. A non-empty value is the engine saying it found
+    /// a body in the framework layer and refused to execute it.
+    pub host_bodies_refused: Vec<String>,
+
+    /// `(class, name, signature)` triples a call named that **no** declaration
+    /// in the file and **no** host provided, sorted and deduplicated.
+    ///
+    /// A distinct bucket from `shim_log`, because the two answer different
+    /// questions. `shim_log` records what a host was *asked*; this records what
+    /// nothing could answer — an inherited framework method neither the app's DEX
+    /// nor the framework layer declares. It is the compatibility surface stated
+    /// as a set rather than as a sequence of calls, and it is the number a study
+    /// needs before it can say anything about how far an app got.
+    pub unresolved_methods: Vec<String>,
+
+    /// Arguments the engine could not render for a host that asked for them.
+    ///
+    /// A `Value` the renderer does not know becomes a `HostValue::Ref`, which is
+    /// a faithful handle; this counter is for arguments that were *dropped*,
+    /// which is a data loss and belongs in a number.
+    pub unrenderable_arguments: u64,
+
     /// How many times each opcode was dispatched, indexed by opcode byte.
     /// The zero entries are the 32 `(unused)` opcodes.
     pub opcode_counts: [u32; 256],
@@ -188,6 +221,10 @@ impl Default for Stats {
             framework_field_accesses: 0,
             shim_log: Vec::new(),
             phantom_classes: Vec::new(),
+            shadowed_classes: Vec::new(),
+            host_bodies_refused: Vec::new(),
+            unresolved_methods: Vec::new(),
+            unrenderable_arguments: 0,
             opcode_counts: [0; 256],
         }
     }

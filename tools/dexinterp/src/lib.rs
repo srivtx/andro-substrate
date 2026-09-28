@@ -99,11 +99,14 @@ pub mod value;
 
 pub use config::{Config, ShimRecord, Stats, DEFAULT_INSTRUCTION_BUDGET, DEFAULT_MAX_CALL_DEPTH};
 pub use error::{Budget, ExecError, ExecResult, Malformed, Site, Termination, Unsupported};
-pub use exec::{new_interpreter, Interpreter};
+pub use exec::{new_interpreter, new_layered_interpreter, Interpreter};
 pub use heap::{ClassId, Heap, Monitor, Object, ObjectKind};
 pub use host::{
     with_host, Call, CallSite, FieldAccess, Host, HostOutcome, HostValue, InvokeKind, NoHost,
     ResolvedCallSite, ThrowSpec,
 };
-pub use program::{ClassMeta, ClassSource, DecodedCode, Insn, MethodDecl, Program, VTableEntry};
+pub use program::{
+    host_classes_from_dex, ClassMeta, ClassSource, DecodedCode, HostClass, Insn, MethodDecl,
+    Program, VTableEntry,
+};
 pub use value::{JType, Ref, Value};

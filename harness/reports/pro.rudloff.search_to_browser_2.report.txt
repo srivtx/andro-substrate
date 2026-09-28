@@ -1,0 +1,34 @@
+andro-substrate — real APK run report
+================================================================
+package                pro.rudloff.search_to_browser
+substrate policy       default
+lifecycle.terminal     L0_PROCESS_STARTED
+
+STOPPED BECAUSE
+  it stopped in Lpro/rudloff/search_to_browser/MainActivity;.onCreate() [(Landroid/os/Bundle;)V] with undeclared: Lpro/rudloff/search_to_browser/MainActivity;.getIntent()Landroid/content/Intent;. The engine reported: uncaught Ljava/lang/NoSuchMethodError;: Lpro/rudloff/search_to_browser/MainActivity;.getIntent()Landroid/content/Intent; is not implemented by Lpro/rudloff/search_to_browser/MainActivity; (Lpro/rudloff/search_to_browser/MainActivity;.onCreate(Landroid/os/Bundle;)V at unit 3 (opcode 0x6e))
+
+STAGES
+  constructor            Lpro/rudloff/search_to_browser/MainApplication;.<init>()V ok                             2 ins       1 fw
+  application_onCreate   Lpro/rudloff/search_to_browser/MainApplication;.onCreate()V ok                             0 ins       1 fw
+  constructor            Lpro/rudloff/search_to_browser/MainActivity;.<init>()V ok                             2 ins       1 fw
+  activity_onCreate      Lpro/rudloff/search_to_browser/MainActivity;.onCreate(Landroid/os/Bundle;)V exception_raised               2 ins       1 fw
+                         framework surface first requested here: 1
+      undeclared: Lpro/rudloff/search_to_browser/MainActivity;.getIntent()Landroid/content/Intent;
+                         error: uncaught Ljava/lang/NoSuchMethodError;: Lpro/rudloff/search_to_browser/MainActivity;.getIntent()Landroid/content/Intent; is not implemented by Lpro/rudloff/search_to_browser/MainActivity; (Lpro/rudloff/search_to_browser/MainActivity;.onCreate(Landroid/os/Bundle;)V at unit 3 (opcode 0x6e))
+
+ENGINE
+  instructions executed      6
+  distinct opcodes           4
+  framework calls            4
+  … of those unimplemented   1
+  … args untranslatable     0
+  extra classes*.dex skipped 0
+
+SHIM SURFACE THIS APK NEEDED AND DID NOT HAVE — 1
+  undeclared: Lpro/rudloff/search_to_browser/MainActivity;.getIntent()Landroid/content/Intent;
+
+UNRESOLVED — nothing declared these, engine-wide: 1
+  Lpro/rudloff/search_to_browser/MainActivity;.getIntent()Landroid/content/Intent;
+
+SUPERSEDE — app classes the shim shadowed: 0
+INVOKEDYNAMIC — bootstrap owners refused: 0

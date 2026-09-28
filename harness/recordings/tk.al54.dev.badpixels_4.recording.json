@@ -1,0 +1,693 @@
+{
+  "record_format": "andro-substrate.ground-truth/1",
+  "synthetic": false,
+  "capture_id": "tk.al54.dev.badpixels__8dcc801faed47a1d__substrate_interp_run0001",
+  "substrate_policy": {
+    "policy_format": "andro-substrate.substrate-policy/1",
+    "policy_version": 1,
+    "shim_version": "0.1.0",
+    "policy_digest": "fnv1a64:3831a4e300ed0c91",
+    "reproducible": true,
+    "identity": "fabricated",
+    "system_fs": "fabricated",
+    "cross_app_packages": "subject_only",
+    "network": "record_and_deny",
+    "time": {
+      "mode": "virtual"
+    },
+    "axis_declarations": [
+      {
+        "axis": "identity",
+        "value": "fabricated",
+        "governs": [
+          "environment_identity",
+          "identity_probe"
+        ],
+        "statement": "Build.* and getprop answer a plausible, self-consistent synthetic device (fingerprint 'andro-substrate/shim/0.1.0:substrate/0.1.0:user/release-keys', model 'Substrate', SDK 34). ro.kernel.qemu is ABSENT and ro.debuggable is 0, both fixed by this value and by no other axis."
+      },
+      {
+        "axis": "system_fs",
+        "value": "fabricated",
+        "governs": [
+          "system_fs"
+        ],
+        "statement": "The fabricated tree holds 12 paths with plausible contents. TracerPid is 0 and /proc/self/maps is empty, which is a recorded lie."
+      },
+      {
+        "axis": "cross_app_packages",
+        "value": "subject_only",
+        "governs": [
+          "cross_app_packages"
+        ],
+        "statement": "The substrate holds exactly one app, so every cross-app query answers 'not installed' with no exception and an app's inter-app feature is silently gone."
+      },
+      {
+        "axis": "network",
+        "value": "record_and_deny",
+        "governs": [
+          "network"
+        ],
+        "statement": "Every attempt is recorded at the egress sink and refused with ConnectException. No socket, no DNS, no packet; structurally, for every policy."
+      },
+      {
+        "axis": "time",
+        "value": "virtual",
+        "governs": [
+          "time"
+        ],
+        "statement": "The virtual clock: elapsedRealtime is the recorded schedule's time and currentTimeMillis is 0. Exactly reproducible."
+      }
+    ],
+    "invariants": {
+      "egress": "structurally_impossible",
+      "bodies_captured": false,
+      "header_values_captured": false,
+      "query_values_captured": false,
+      "note": "Declared by the policy type, not by this document: no axis value can widen a capability or a capture surface. EgressSink::request returns Err on every axis, there is no std::fs or std::net surface in the crate, and no field in it can hold a body, a header value or a query value."
+    },
+    "notes": "Every value the shim fabricated during this run was produced by one of the five axes declared above, and every such value is labelled at emission with the axis that produced it. A fact in this document that is NOT in a governed class was not decided by the substrate. A fact that IS in a governed class is a joint property of the app and this declaration, and the two arms of the differential in shim/recordings/ are what separate them. policy_version is 1 and the axis vocabulary is defined in docs/decisions/0006-substrate-policy.md."
+  },
+  "provenance": {
+    "execution_performed": true,
+    "synthetic_reason": null,
+    "toolchain_revision": "andro-substrate harness; shim 0.1.0; interpreter 0.1.0; dexinterp+shim+dexcore built from this working tree",
+    "capture_script_sha256": "c6b616f83349b6c89c2346fd56d0c89c003ee01f88b11a583136228941f8bfd4",
+    "authored_by": "andro-substrate interpreter harness (harness/src/bin/apk-run.rs)",
+    "host_os": "no Android kernel, no display, no Binder, no egress; the substrate is the process",
+    "notes": "Real APK bytecode executed by tools/dexinterp with the shim's own DEX as the framework layer (supersede, ADR 0005). The run stopped because: it stopped in Ltk/al54/dev/badpixels/MainActivity;.onCreate() [(Landroid/os/Bundle;)V] with undeclared: Ltk/al54/dev/badpixels/MainActivity;.requestWindowFeature(I)Z. The engine reported: uncaught Ljava/lang/NoSuchMethodError;: Ltk/al54/dev/badpixels/MainActivity;.requestWindowFeature(I)Z is not implemented by Ltk/al54/dev/badpixels/MainActivity; (Ltk/al54/dev/badpixels/MainActivity;.onCreate(Landroid/os/Bundle;)V at unit 4 (opcode 0x6e)). environment.kind is 'synthetic' because the schema's enum has no substrate token and a substrate is not a device; synthetic is false because this document is not a fixture. capture.root_shell is true because that field is the schema's only proxy for in-process observation authority, which a substrate has in full and a shell does not improve on; it does not mean a shell was opened. recorder.implementation is 'synthetic' because the enum predates substrates and no other value is less wrong."
+  },
+  "recorder": {
+    "name": "shim-recorder",
+    "version": "0.1.0",
+    "implementation": "synthetic",
+    "options": {
+      "path_policy": "path=full",
+      "text_policy": "shape-only",
+      "egress": "denied",
+      "vfs": "in-memory",
+      "shim_dex_sha256": "c6b616f83349b6c89c2346fd56d0c89c003ee01f88b11a583136228941f8bfd4",
+      "toolchain": "andro-substrate-shim",
+      "substrate_policy": "fnv1a64:3831a4e300ed0c91",
+      "substrate_policy_format": "andro-substrate.substrate-policy/1",
+      "substrate_policy_version": 1,
+      "substrate_policy_identity": "fabricated",
+      "substrate_policy_system_fs": "fabricated",
+      "substrate_policy_cross_app_packages": "subject_only",
+      "substrate_policy_network": "record_and_deny",
+      "substrate_policy_time": "virtual"
+    },
+    "adb_version": null,
+    "notes": "Emits a ground-truth/1 document so a substrate capture and a device capture are the same shape and can be diffed directly. The substrate's own behaviour is declared in the top-level `substrate_policy` object, which is optional in the schema and absent from a device capture: a device has no substrate policy because a device is not one."
+  },
+  "capture": {
+    "started_utc": "2026-09-28T00:00:00.000Z",
+    "ended_utc": "2026-09-28T00:00:04.000Z",
+    "duration_ms": 4001,
+    "observation_window_ms": 1,
+    "boot_wait_ms": 0,
+    "install": {
+      "method": "pm_install_created",
+      "succeeded": true,
+      "flags": [],
+      "apks_replaced_existing": null,
+      "install_source": "andro-substrate harness: the APK was read into memory, never installed",
+      "error": null
+    },
+    "launch": {
+      "method": "pm_lifecycle",
+      "component": "tk.al54.dev.badpixels.MainActivity",
+      "requested_activity_resolved_by": "the harness, from the manifest's <intent-filter> MAIN/LAUNCHER",
+      "succeeded": true,
+      "error": null
+    },
+    "device_serial": "none (no device; the substrate is the process)",
+    "shell_uid": null,
+    "root_shell": true,
+    "snapshot_at_ms": null,
+    "clock": {
+      "monotonic_source": "substrate_instrumentation",
+      "monotonic_resolution_ms": 1,
+      "wall_clock_source": "none",
+      "monotonic_epoch_ref": null,
+      "t_zero_definition": "t=0 is the moment the interpreter was handed the app's classes.dex. The clock is the substrate's virtual clock, which advances only when a shim method advances it; the engine's instruction count is recorded separately and is not a wall clock.",
+      "notes": "Relative intervals are exact. Absolute wall-clock latency is meaningless in a substrate and is deliberately not reported."
+    },
+    "observer_effects": [
+      {
+        "kind": "debug_attach",
+        "applied": true,
+        "detail": "The substrate is the process. It denies egress, substitutes a synthetic device identity, has no /proc or /sys, has no display, and answers every PackageManager query about another app with 'not installed'. Each of these is an observer effect in the oracle's sense and each plausibly changes app behaviour, so all are declared here rather than discovered by an analyst.",
+        "expected_to_change_behaviour": true
+      },
+      {
+        "kind": "none",
+        "applied": false,
+        "detail": "No MITM proxy and no user CA: the substrate has no network to intercept, which is strictly stronger than proxying and needs no trust-store change.",
+        "expected_to_change_behaviour": false
+      }
+    ],
+    "interventions_during_run": []
+  },
+  "app": {
+    "package": "tk.al54.dev.badpixels",
+    "apk_sha256": "8dcc801faed47a1d8043083117a09eeee972e0d1affabcacb88eee286e4df0a5",
+    "apk_size_bytes": 13949,
+    "apk_paths": [],
+    "apk_digest_on_device": "8dcc801faed47a1d8043083117a09eeee972e0d1affabcacb88eee286e4df0a5",
+    "version_code": 0,
+    "version_name": "",
+    "min_sdk": 8,
+    "target_sdk": 24,
+    "shared_user_id": null,
+    "user_id": 10123,
+    "install_flags": [],
+    "private_flags": [],
+    "debuggable": false,
+    "declared_permissions": [],
+    "granted_permissions": [],
+    "requested_features": [],
+    "split_apks": [],
+    "main_activity": "tk.al54.dev.badpixels.MainActivity",
+    "activities": [
+      "pro.rudloff.search_to_browser.MainActivity"
+    ],
+    "services": [],
+    "receivers": [],
+    "providers": [],
+    "native_libs_declared": [],
+    "uses_non_sdk_api": null,
+    "signature_sha256": [],
+    "data_dir": "/data/data/tk.al54.dev.badpixels",
+    "code_path": "/data/app/../base.apk (the substrate holds the APK in memory)",
+    "device_protected_data_dir": null,
+    "is_synthetic": false
+  },
+  "environment": {
+    "kind": "synthetic",
+    "android_release": "14",
+    "security_patch": null,
+    "sdk_int": 34,
+    "build_fingerprint": "andro-substrate/shim/0.1.0:substrate/0.1.0:user/release-keys",
+    "build_id": null,
+    "build_type": null,
+    "build_tags": "release-keys",
+    "model": "Substrate",
+    "manufacturer": "andro-substrate",
+    "brand": "substrate",
+    "product": "substrate",
+    "device": "substrate",
+    "hardware": "substrate",
+    "board": "substrate",
+    "serial": null,
+    "bootloader": null,
+    "abis": [
+      "wasm32"
+    ],
+    "cpu_count": 4,
+    "total_ram_bytes": 1073741824,
+    "low_ram_device": true,
+    "is_emulator": false,
+    "is_physical_device": false,
+    "bootloader_unlocked": null,
+    "ro_secure": null,
+    "verified_boot_state": null,
+    "selinux": null,
+    "selinux_enforcing": null,
+    "verified_boot_hash": null,
+    "image_digest": null,
+    "image_fingerprint": null,
+    "google_play_services": {
+      "present": false,
+      "version_name": null,
+      "version_code": null,
+      "enabled": false,
+      "detected_by": "unknown"
+    },
+    "play_store_present": false,
+    "attestation": {
+      "play_integrity_supported": false,
+      "safetynet_available": false,
+      "max_expected_verdict": "NONE",
+      "observed_verdict": null,
+      "basis": "documented_requirement",
+      "notes": "NONE is a ceiling, not an observation. No hardware attestation exists in a browser and none can be faked convincingly; the shim does not try, because a shim that could pass MEETS_DEVICE_INTEGRITY would not be a shim. safetynet_available is false because SafetyNet was turned down for every app on 2025-01-31 and now always fails, on any device."
+    },
+    "locale": null,
+    "timezone": null,
+    "font_scale": null,
+    "density_dpi": 420,
+    "screen": {
+      "width_px": 1080,
+      "height_px": 2340,
+      "density_dpi": 420,
+      "refresh_rate_hz": null,
+      "supported_refresh_rates_hz": []
+    },
+    "graphics": {
+      "gles_version": null,
+      "vulkan_version": null,
+      "egl_vendor": null,
+      "gl_renderer": null,
+      "extensions_known": false,
+      "hardware_accelerated_default": false
+    },
+    "network": {
+      "egress_available": false,
+      "default_network_type": null,
+      "validated": false
+    },
+    "sensors_present": [
+      "android.hardware.touchscreen",
+      "android.hardware.faketouch",
+      "android.software.leanback"
+    ],
+    "sensors_absent": [
+      "android.hardware.camera",
+      "android.hardware.camera.any",
+      "android.hardware.location",
+      "android.hardware.location.gps",
+      "android.hardware.sensor.accelerometer",
+      "android.hardware.sensor.gyroscope",
+      "android.hardware.sensor.compass",
+      "android.hardware.nfc",
+      "android.hardware.bluetooth",
+      "android.hardware.telephony",
+      "android.hardware.telephony.gsm",
+      "android.hardware.fingerprint",
+      "android.hardware.usb.host",
+      "android.software.leanback",
+      "android.hardware.vulkan.level"
+    ],
+    "properties_observed": {
+      "ro.build.fingerprint": "andro-substrate/shim/0.1.0:substrate/0.1.0:user/release-keys",
+      "ro.kernel.qemu": "<absent: not modelled by any policy axis>",
+      "ro.debuggable": "0",
+      "ro.build.version.sdk": "34"
+    }
+  },
+  "clock": {
+    "monotonic_source": "synthetic_fixture",
+    "monotonic_resolution_ms": 1,
+    "wall_clock_source": "none",
+    "monotonic_epoch_ref": null,
+    "t_zero_definition": "t=0 is the substrate's virtual clock origin.",
+    "notes": "Virtual and exactly reproducible. Deliberately NOT substrate_instrumentation: a fixture cannot claim a real substrate clock."
+  },
+  "privacy": {
+    "policy": "andro-substrate/oracle-privacy/1",
+    "bodies_captured": false,
+    "hostnames": "none",
+    "secrets_redacted": true,
+    "user_ca_trusted": false,
+    "notes": "Policy applied at the point of capture, not downstream: the shim's URL parser drops the query string's values and the fragment before any struct can hold them, and its header type has no parameter that would accept a value. Path policy: path=full. Text policy for view trees: shape-only. BODIES ARE NOT DIGESTED, unlike the oracle format which permits body_sha256: a digest over a low-entropy body is reversible by brute force, so only the length is kept and body_sha256 is null. RESIDUAL RISK: a request path is recorded verbatim under path=full, and REST designs do put identifiers in path segments; switch to path=shape-only or path=opaque to remove that. Exception messages are truncated at 2000 characters, which is the one place an app's own formatting can leak user data into a message; the shim's own messages contain no app data, and a message thrown by the INTERPRETER is out of this crate's control. Hostnames are recorded plainly because every host in this document is an RFC 2606 reserved name ending in .invalid, so there is nothing to re-identify."
+  },
+  "lifecycle": {
+    "events": [
+      {
+        "type": "process_start",
+        "t_mono_ms": 0,
+        "t_wall_utc": null,
+        "component": "tk.al54.dev.badpixels",
+        "pid": 1,
+        "source": "synthetic_fixture",
+        "tier": "T0_DIRECT",
+        "log_tag": null,
+        "log_priority": null,
+        "matched_pattern": "LIFECYCLE_PAT.SUBSTRATE_T0",
+        "detail": "process_start at t=0 ms"
+      }
+    ],
+    "terminal": "L0_PROCESS_STARTED",
+    "activity_started": null,
+    "activity_resumed": null,
+    "first_frame_drawn": null,
+    "window_focused": null,
+    "first_input_delivered": null,
+    "reached_steady_state": false,
+    "quiet_window_ms": 0,
+    "sustained_log_spam": null,
+    "jank_events": 0
+  },
+  "network": {
+    "capture_method": "none",
+    "hostname_resolution": "plain",
+    "attempts": [],
+    "byte_totals_observed": {
+      "source": "synthetic_fixture",
+      "tx_bytes": 0,
+      "rx_bytes": 0,
+      "connection_count": 0,
+      "destination_resolvable": true,
+      "uid": 10123,
+      "note": "Zero bytes moved. Every attempt terminated at the substrate's egress sink before any socket was created, so the counters are structurally zero rather than unmeasured. The destination is resolvable because the shim parsed the hostname; it was never looked up."
+    },
+    "limits": [
+      "The substrate has no network. There is no capture method to choose: attempts are recorded at the sink and refused, so a substrate capture can never show a response, a status code, a TLS session or a redirect.",
+      "SUB.NET.EGRESS is therefore structurally unsatisfiable here, and every network-dependent app is expected to fail identically in every substrate run. That is a property of the architecture, not a finding about any app.",
+      "No DNS query is ever issued, so a request to a host that does not resolve and a request to a host that does are indistinguishable in this document.",
+      "Byte totals are zero by construction, so a recording cannot distinguish an app that sends nothing from an app that sends and is refused before transmission."
+    ]
+  },
+  "filesystem": {
+    "accesses": [],
+    "access_trace_obtained": true,
+    "app_dir_listing": [
+      {
+        "path": "/",
+        "entry_type": "dir",
+        "size_bytes": 9,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/apex",
+        "entry_type": "file",
+        "size_bytes": 0,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/cache",
+        "entry_type": "file",
+        "size_bytes": 0,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/data",
+        "entry_type": "file",
+        "size_bytes": 2,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/data/data",
+        "entry_type": "file",
+        "size_bytes": 1,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/data/data/tk.al54.dev.badpixels",
+        "entry_type": "file",
+        "size_bytes": 4,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/data/data/tk.al54.dev.badpixels/cache",
+        "entry_type": "file",
+        "size_bytes": 0,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/data/data/tk.al54.dev.badpixels/files",
+        "entry_type": "file",
+        "size_bytes": 0,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/data/data/tk.al54.dev.badpixels/no_backup",
+        "entry_type": "file",
+        "size_bytes": 0,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/data/data/tk.al54.dev.badpixels/shared_prefs",
+        "entry_type": "file",
+        "size_bytes": 0,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/data/user",
+        "entry_type": "file",
+        "size_bytes": 1,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/data/user/0",
+        "entry_type": "file",
+        "size_bytes": 0,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/dev",
+        "entry_type": "file",
+        "size_bytes": 0,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/proc",
+        "entry_type": "file",
+        "size_bytes": 0,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/sdcard",
+        "entry_type": "file",
+        "size_bytes": 0,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/sys",
+        "entry_type": "file",
+        "size_bytes": 0,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/system",
+        "entry_type": "file",
+        "size_bytes": 1,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/system/app",
+        "entry_type": "file",
+        "size_bytes": 0,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      },
+      {
+        "path": "/vendor",
+        "entry_type": "file",
+        "size_bytes": 0,
+        "mode": "755",
+        "owner_uid": null,
+        "selinux_context": null
+      }
+    ],
+    "open_fds_at_snapshot": [],
+    "limits": [
+      "There is no real disk. The VFS is an in-memory map, so a file an app would have persisted across a process death is lost at the end of the run and any state-restoration path takes its fallback branch.",
+      "The /proc and /sys trees are FABRICATED. Which fabrication is decided by the substrate_policy system_fs axis: 'fabricated' is synthetic but plausible content, 'empty' is a path that exists and reads as zero bytes, 'absent' is ENOENT.",
+      "No SELinux labels, no uid/gid ownership and no POSIX modes beyond a single synthetic mode per node, so SUB.FS.PERM_MODEL and SUB.FS.SELINUX_CONTEXT cannot be assessed from this document at all.",
+      "Path contents are never recorded. Only paths, operations and byte counts, so a recording supports no claim about what an app stored."
+    ]
+  },
+  "classes": {
+    "loaded": [],
+    "loaded_obtained": true,
+    "total_loaded_count": 0,
+    "framework_classes_touched": [],
+    "third_party_package_prefixes": [
+      "pro.rudloff.search_to_browser"
+    ],
+    "dex_files": [
+      "<app classes.dex, parsed by dexcore>"
+    ],
+    "dynamic_dex_loaded": [],
+    "limits": [
+      "SUB.FW.CLASS_LOADER: the shim defines a small fraction of the java.* surface. A class the shim does not define resolves to nothing and is recorded as unresolvable, which on a device would have been a NoClassDefFoundError from the app's own dex.",
+      "A class the APP defines that the shim also defines is shadowed. The shim's definition wins, so the app's own class disappears silently; the resolution is recorded as shim_supersedes_app precisely so that this is visible.",
+      "No invokedynamic, no method handles, no call sites. Modern dex is saturated with invokedynamic, so a large fraction of contemporary app behaviour never reaches a shim method at all and is therefore structurally unobservable by this layer.",
+      "Reflection is dispatched through the same table as a direct call, so a reflective call and a direct one are indistinguishable in this document. That is a feature for coverage and a blind spot for attribution.",
+      "The loaded list is what the shim's loader saw, which is not the same as what ART would have loaded: there is no verification, no resolution of a method reference to a class that was never initialised, and no separate compilation."
+    ]
+  },
+  "native": {
+    "libraries_loaded": [],
+    "obtained": true,
+    "mapping_obtained": true,
+    "exec_segments_observed": false,
+    "dlopen_failures": [],
+    "system_libraries_mapped": [],
+    "jit_or_aot_activity_observed": false,
+    "thread_count_at_snapshot": 1,
+    "limits": [
+      "The substrate has no ELF loader, no .so and no /system/lib, so SUB.NATIVE.LOAD_LIBRARY and SUB.NATIVE.JNI_ENTRY are structurally unsatisfiable and every native attempt is UNSATISFIED.",
+      "mapping_obtained is true because the shim knows its own (empty) mapping set exhaustively. A device arm can only read /proc/<pid>/maps, and only with root or a debuggable build.",
+      "No JIT and no AOT: the substrate's execution model is whatever the interpreter is, so SUB.CPU.TIERING cannot be measured here at all. A slow app in a substrate is the interpreter's cost, not ART's, and this document cannot separate the two."
+    ]
+  },
+  "jni": {
+    "calls": [],
+    "obtained": true,
+    "limits": [
+      "Every call is java_to_native and every outcome is UNSATISFIED. The substrate implements no native code, so there is no native_to_java direction to record.",
+      "obtained is true because the shim is the process and sees every call site the interpreter routes through it. A device arm can only claim this with in-process instrumentation, which the oracle protocol explicitly declines to use."
+    ]
+  },
+  "exceptions": [],
+  "probes": [],
+  "diagnostics": [
+    {
+      "pattern": "SIGNAL_PAT.LIFECYCLE",
+      "family": "SUB.FW",
+      "t_mono_ms": 0,
+      "detail": "Landroid/app/Activity;.onCreate() called, in the documented order",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.FW_SURFACE_MISSING",
+      "family": "SUB.FW",
+      "t_mono_ms": 0,
+      "detail": "framework surface this app needed and the shim did not have: 1 distinct entries; app classes the shim shadowed: 0; invokedynamic bootstraps refused: 0; extra classes*.dex present but not loaded: 0.",
+      "source": "analyst_annotation",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.FW_CLASS_LOADER",
+      "family": "SUB.FW",
+      "t_mono_ms": 0,
+      "detail": "the run stopped on framework surface the shim lacks. First: undeclared: Ltk/al54/dev/badpixels/MainActivity;.requestWindowFeature(I)Z. Nothing was added to the shim to get past it; the full set is in the run report.",
+      "source": "analyst_annotation",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.INTERP_COUNTERS",
+      "family": null,
+      "t_mono_ms": 0,
+      "detail": "9 instructions executed, 2 framework calls, 7 distinct opcodes dispatched by the interpreter for this run.",
+      "source": "analyst_annotation",
+      "tier": "T0_DIRECT"
+    }
+  ],
+  "substrate_probe_hits": [
+    {
+      "assumption_id": "SUB.FW.CLASS_LOADER",
+      "family": "SUB.FW",
+      "symptom_class": "refuse",
+      "first_t_mono_ms": 0,
+      "last_t_mono_ms": 0,
+      "hit_count": 1,
+      "evidence": [
+        "/diagnostics/0"
+      ],
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "confidence": "certain",
+      "notes": "observed by the substrate's own instrumentation, not inferred. A device arm can only establish the environment half of this ID; the substrate establishes the app half."
+    }
+  ],
+  "capture_quality": {
+    "completeness": "partial",
+    "max_tier_reached": "T0_DIRECT",
+    "signals_expected": [
+      "class_load_census",
+      "file_access_trace",
+      "jni_transitions",
+      "network_attempts",
+      "build_field_reads",
+      "proc_sys_reads",
+      "package_manager_queries",
+      "layout_pass",
+      "message_queue_depth"
+    ],
+    "signals_obtained": [],
+    "unobserved": [
+      {
+        "signal": "lifecycle.terminal >= L2_FIRST_FRAME_DRAWN",
+        "reason_code": "not_implemented",
+        "reason": "There is no display, no vsync and no rasteriser. The shim runs a real measure/layout/draw cycle and emits a box tree, every node of which carries painted: false, but no frame is ever composited, so first_frame_drawn is not emitted and L2 is unreachable by construction."
+      },
+      {
+        "signal": "invokedynamic call sites",
+        "reason_code": "not_implemented",
+        "reason": "No bootstrap method is executed. A call site is decoded, its method handle and bootstrap owner are named in the recording, and the call is refused. Kills SUB.FW.INVOKEDYNAMIC, which the taxonomy marks COMMON in modern apps."
+      },
+      {
+        "signal": "Binder / IPC to another process",
+        "reason_code": "not_implemented",
+        "reason": "There is one process and no binder driver. A ContentProvider query, a system service call across a process boundary and a broadcast to another app are all absent. Kills SUB.IPC."
+      },
+      {
+        "signal": "input delivery and accessibility",
+        "reason_code": "not_implemented",
+        "reason": "No touch, no key, no motion, no IME commit and no accessibility node tree. An app whose behaviour is a function of a gesture is unobservable here. Kills SUB.INPUT."
+      },
+      {
+        "signal": "resources.arsc",
+        "reason_code": "not_implemented",
+        "reason": "resources.arsc is not parsed, so getString, getIdentifier and setContentView(int) are 0 or null. Every layout the app inflates is therefore unresolvable, which is the structural reason no view tree is built. Kills SUB.RES."
+      },
+      {
+        "signal": "native code",
+        "reason_code": "not_implemented",
+        "reason": "No ELF loader. System.loadLibrary and every app-declared native method are UNSATISFIED, which is recorded as an attempt. Kills SUB.NATIVE."
+      },
+      {
+        "signal": "sensors, telephony, camera, Bluetooth, accounts",
+        "reason_code": "not_implemented",
+        "reason": "No hardware. An app that probes for a sensor manager, a camera, a SIM or an account is asking a question with no subject. Kills SUB.HW."
+      },
+      {
+        "signal": "wall-clock latency and energy",
+        "reason_code": "not_implemented",
+        "reason": "The clock is virtual and the host has no battery. Any conclusion about how long the app takes or how much it costs is about the interpreter, not the app. Kills SUB.PWR and the time half of SUB.TIME."
+      }
+    ],
+    "warnings": [
+      "A substrate capture, not a device capture. Every fact here is a joint property of the app and the shim; the shim terminates egress, virtualises the clock, holds the filesystem in memory and never drains the message queue, so the app's control flow after any of those is the substrate's choice. Read exceptions[] as 'the app reached a place the shim does not have' rather than as 'the app threw'.",
+      "environment.kind is 'synthetic' and top-level synthetic is false. The flag means 'no bytecode was executed'; the environment field names a substrate, which the schema's enum has no token for.",
+      "The run reached framework surface the shim does not implement: 1 distinct class/name pairs. The first is undeclared: Ltk/al54/dev/badpixels/MainActivity;.requestWindowFeature(I)Z. The run stopped at the first of them that the app could not handle; the shim was not extended to get further."
+    ],
+    "empty_failure": false,
+    "exit_code": 0
+  },
+  "summary": {
+    "lifecycle_terminal": "L0_PROCESS_STARTED",
+    "time_to_first_frame_ms": null,
+    "event_count": 1,
+    "network_attempt_count": 0,
+    "network_destinations": 0,
+    "exception_count": 0,
+    "fatal_count": 0,
+    "class_count": 0,
+    "native_library_count": 0,
+    "distinct_families_touched": 1,
+    "families_touched": [
+      "SUB.FW"
+    ]
+  },
+  "notes": "EXECUTED. Real APK bytecode from tk.al54.dev.badpixels ran under tools/dexinterp with the shim's own DEX as the framework layer (supersede, ADR 0005). The run stopped because: it stopped in Ltk/al54/dev/badpixels/MainActivity;.onCreate() [(Landroid/os/Bundle;)V] with undeclared: Ltk/al54/dev/badpixels/MainActivity;.requestWindowFeature(I)Z. The engine reported: uncaught Ljava/lang/NoSuchMethodError;: Ltk/al54/dev/badpixels/MainActivity;.requestWindowFeature(I)Z is not implemented by Ltk/al54/dev/badpixels/MainActivity; (Ltk/al54/dev/badpixels/MainActivity;.onCreate(Landroid/os/Bundle;)V at unit 4 (opcode 0x6e)). environment.kind is 'synthetic' because the schema's enum has no substrate token and a substrate is not a device; top-level synthetic is false because this is not a fixture. capture.root_shell is true because that field is the schema's only proxy for in-process observation authority, which a substrate has in full; no shell was opened. capture_script_sha256 is the digest of the shim DEX the framework layer was built from, which is the code that decided every answer this app received. Recorder implementation is 'synthetic' because that enum predates substrates and no other value is less wrong. -- SUBSTRATE POLICY: fnv1a64:3831a4e300ed0c91. Every fabricated value in this document was produced by one of the five axes declared in the top-level substrate_policy object, and none of those axes can widen a capability or a capture surface. The two-arm worked differential is in shim/recordings/differential-*.recording.json; read their substrate_policy blocks before diffing anything else."
+}

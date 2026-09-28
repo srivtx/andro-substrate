@@ -29,6 +29,7 @@ path = "src/bin/shim-sync-differential.rs"
 
 [dependencies]
 dexcore = { path = "../tools/dexcore" }
+dexinterp = { path = "../tools/dexinterp" }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
 

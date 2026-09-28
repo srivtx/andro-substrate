@@ -1,0 +1,28 @@
+andro-substrate — real APK run report
+================================================================
+package                de.cweiske.headphoneindicator
+substrate policy       default
+lifecycle.terminal     L0_PROCESS_STARTED
+
+STOPPED BECAUSE
+  it stopped in Lde/cweiske/headphoneindicator/MainActivity;.<init>() [()V] with no framework method was missing at this stage. The engine reported: uncaught Ljava/lang/AbstractMethodError;: Landroid/content/BroadcastReceiver;.<init>()V is abstract in the framework shim; the substrate does not implement the framework, it observes it (Lde/cweiske/headphoneindicator/MainActivity$1;.<init>(Lde/cweiske/headphoneindicator/MainActivity;)V at unit 2 (opcode 0x70))
+
+STAGES
+  constructor            Lde/cweiske/headphoneindicator/MainActivity;.<init>()V exception_raised               5 ins       2 fw
+                         error: uncaught Ljava/lang/AbstractMethodError;: Landroid/content/BroadcastReceiver;.<init>()V is abstract in the framework shim; the substrate does not implement the framework, it observes it (Lde/cweiske/headphoneindicator/MainActivity$1;.<init>(Lde/cweiske/headphoneindicator/MainActivity;)V at unit 2 (opcode 0x70))
+
+ENGINE
+  instructions executed      5
+  distinct opcodes           3
+  framework calls            2
+  … of those unimplemented   0
+  … args untranslatable     0
+  extra classes*.dex skipped 0
+
+SHIM SURFACE THIS APK NEEDED AND DID NOT HAVE — 0
+  none: the app reached the end of the driver's stages without asking for a framework method the shim lacks
+
+UNRESOLVED — nothing declared these, engine-wide: 0
+
+SUPERSEDE — app classes the shim shadowed: 0
+INVOKEDYNAMIC — bootstrap owners refused: 0

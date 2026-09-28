@@ -1,0 +1,29 @@
+andro-substrate — real APK run report
+================================================================
+package                com.termux.boot
+substrate policy       default
+lifecycle.terminal     L0_PROCESS_STARTED
+
+STOPPED BECAUSE
+  it stopped in Lcom/termux/boot/BootActivity;.onCreate() [(Landroid/os/Bundle;)V] with no framework method was missing at this stage. The engine reported: uncaught Ljava/net/MalformedURLException;: the WebView was given a URL the substrate cannot parse (Lcom/termux/boot/BootActivity;.onCreate(Landroid/os/Bundle;)V at unit 10 (opcode 0x6e))
+
+STAGES
+  constructor            Lcom/termux/boot/BootActivity;.<init>()V             ok                             2 ins       1 fw
+  activity_onCreate      Lcom/termux/boot/BootActivity;.onCreate(Landroid/os/Bundle;)V exception_raised               5 ins       3 fw
+                         error: uncaught Ljava/net/MalformedURLException;: the WebView was given a URL the substrate cannot parse (Lcom/termux/boot/BootActivity;.onCreate(Landroid/os/Bundle;)V at unit 10 (opcode 0x6e))
+
+ENGINE
+  instructions executed      7
+  distinct opcodes           6
+  framework calls            4
+  … of those unimplemented   0
+  … args untranslatable     0
+  extra classes*.dex skipped 0
+
+SHIM SURFACE THIS APK NEEDED AND DID NOT HAVE — 0
+  none: the app reached the end of the driver's stages without asking for a framework method the shim lacks
+
+UNRESOLVED — nothing declared these, engine-wide: 0
+
+SUPERSEDE — app classes the shim shadowed: 0
+INVOKEDYNAMIC — bootstrap owners refused: 0

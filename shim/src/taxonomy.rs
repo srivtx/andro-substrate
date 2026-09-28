@@ -191,6 +191,15 @@ pub enum AssumptionId {
     FwSerialization,
     /// `android.webkit.WebView` touched.
     FwWebview,
+    /// An `invokedynamic` call site the substrate could not resolve.
+    ///
+    /// Added with the interpreter integration, because until something executed
+    /// `INVOKE-DYNAMIC` the shim had no occasion to *observe* one: a class merely
+    /// existing is not an observation, and the enum is a subset chosen for what
+    /// was observed. Now that bytecode runs, the refusal is observed on every
+    /// Java 8+ lambda and method reference, and `SUB.FW.INVOKEDYNAMIC` — marked
+    /// COMMON in the taxonomy — has a count behind it.
+    FwInvokeDynamic,
     // --- SUB.NET
     /// Any outbound request.
     NetEgress,
@@ -213,7 +222,7 @@ pub enum AssumptionId {
 
 impl AssumptionId {
     /// Every ID the shim can emit.
-    pub const ALL: [AssumptionId; 27] = [
+    pub const ALL: [AssumptionId; 28] = [
         AssumptionId::BuildFingerprint,
         AssumptionId::BuildSdkInt,
         AssumptionId::BuildEmulator,
@@ -234,6 +243,7 @@ impl AssumptionId {
         AssumptionId::FwDynamicCode,
         AssumptionId::FwSerialization,
         AssumptionId::FwWebview,
+        AssumptionId::FwInvokeDynamic,
         AssumptionId::NetEgress,
         AssumptionId::NetDns,
         AssumptionId::NativeLoadLibrary,
@@ -266,6 +276,7 @@ impl AssumptionId {
             AssumptionId::FwDynamicCode => "SUB.FW.DYNAMIC_CODE",
             AssumptionId::FwSerialization => "SUB.FW.SERIALIZATION",
             AssumptionId::FwWebview => "SUB.FW.WEBVIEW",
+            AssumptionId::FwInvokeDynamic => "SUB.FW.INVOKEDYNAMIC",
             AssumptionId::NetEgress => "SUB.NET.EGRESS",
             AssumptionId::NetDns => "SUB.NET.DNS",
             AssumptionId::NativeLoadLibrary => "SUB.NATIVE.LOAD_LIBRARY",
@@ -307,6 +318,7 @@ impl AssumptionId {
             | AssumptionId::FwClassLoader
             | AssumptionId::FwDynamicCode
             | AssumptionId::FwWebview
+            | AssumptionId::FwInvokeDynamic
             | AssumptionId::NetEgress
             | AssumptionId::NetDns
             | AssumptionId::NativeLoadLibrary

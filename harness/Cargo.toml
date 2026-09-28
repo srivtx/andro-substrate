@@ -1,0 +1,32 @@
+[package]
+name = "substrate-harness"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+description = "Runs a real APK under the andro-substrate shim: reads the APK, drives the lifecycle, and emits a ground-truth/1 recording"
+license = "Apache-2.0"
+publish = false
+
+# Standalone for the same reason `shim` is: `tools/dexcore` and `tools/dexinterp`
+# are owned elsewhere and a shared workspace would couple three agents' builds.
+[workspace]
+
+[lib]
+name = "substrate_harness"
+path = "src/lib.rs"
+
+[[bin]]
+name = "apk-run"
+path = "src/bin/apk-run.rs"
+
+[dependencies]
+shim = { path = "../shim" }
+dexcore = { path = "../tools/dexcore" }
+dexinterp = { path = "../tools/dexinterp" }
+serde_json = { version = "1", features = ["preserve_order"] }
+# The only dependency in the project that can decompress bytes, and it is used
+# for exactly one thing: reading a `classes.dex` out of a ZIP. `shim`'s own
+# manifest has no I/O-capable dependency and `tests/egress_denial.rs` asserts
+# that; this crate is the recorder, not the instrument, and it has its own
+# source scan in `tests/no_side_channels.rs` that forbids everything else.
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }

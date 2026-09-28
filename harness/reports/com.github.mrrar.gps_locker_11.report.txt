@@ -1,0 +1,28 @@
+andro-substrate — real APK run report
+================================================================
+package                com.github.mrrar.gps_locker
+substrate policy       default
+lifecycle.terminal     L0_PROCESS_STARTED
+
+STOPPED BECAUSE
+  it stopped in Lcom/github/mrrar/gps_locker/MainActivity;.<init>() [()V] with no framework method was missing at this stage. The engine reported: uncaught Ljava/lang/AbstractMethodError;: Ljava/lang/Object;.<init>()V is abstract in the framework shim; the substrate does not implement the framework, it observes it (La/k;.<init>(Lcom/github/mrrar/gps_locker/MainActivity;)V at unit 0 (opcode 0x70))
+
+STAGES
+  constructor            Lcom/github/mrrar/gps_locker/MainActivity;.<init>()V exception_raised               7 ins       3 fw
+                         error: uncaught Ljava/lang/AbstractMethodError;: Ljava/lang/Object;.<init>()V is abstract in the framework shim; the substrate does not implement the framework, it observes it (La/k;.<init>(Lcom/github/mrrar/gps_locker/MainActivity;)V at unit 0 (opcode 0x70))
+
+ENGINE
+  instructions executed      7
+  distinct opcodes           3
+  framework calls            3
+  … of those unimplemented   0
+  … args untranslatable     0
+  extra classes*.dex skipped 0
+
+SHIM SURFACE THIS APK NEEDED AND DID NOT HAVE — 0
+  none: the app reached the end of the driver's stages without asking for a framework method the shim lacks
+
+UNRESOLVED — nothing declared these, engine-wide: 0
+
+SUPERSEDE — app classes the shim shadowed: 0
+INVOKEDYNAMIC — bootstrap owners refused: 0

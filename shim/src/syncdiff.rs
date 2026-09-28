@@ -102,6 +102,21 @@ pub enum Workload {
     /// clock. Deterministic by construction, so a zero noise floor is a fact
     /// about the *input* and not about any app.
     Script,
+    /// A real `classes.dex` executed by the interpreter under one substrate.
+    ///
+    /// This is the workload the sync control was *for*. ADR 0006 named the
+    /// missing arm precisely — "run the same APK twice under the same policy and
+    /// diff whatever moves is the app plus the interpreter" — and
+    /// [`crate::realdex`] is what makes it a workload rather than a sentence.
+    ///
+    /// A noise floor measured here is a different kind of fact from one measured
+    /// under [`Workload::Script`], and the licence text says so: the input now
+    /// contains the app's own control flow, its own data structures and the
+    /// interpreter's own scheduling, so a leaf that moves is genuinely the
+    /// program rather than a fixture's clock. It is still not a *device* floor,
+    /// because every one of those decisions is being made inside a substrate
+    /// that terminates the side effects the app depends on.
+    RealDex,
 }
 
 impl Workload {
@@ -111,6 +126,10 @@ impl Workload {
             Workload::Script => {
                 "shim::scenario::run_with (one function, no per-policy branch, virtual clock \
                  advanced by literals)"
+            }
+            Workload::RealDex => {
+                "shim::realdex::run over a real classes.dex, with the shim's own DEX as the \
+                 framework layer (supersede, ADR 0005)"
             }
         }
     }
@@ -126,6 +145,18 @@ impl Workload {
                  reorder, no retry, no locale, no frame callback. The earlier 1432-of-1617 figure \
                  therefore remains a demonstration of the attribution mechanism, and the existence \
                  of this control does not upgrade it to a measurement."
+            }
+            Workload::RealDex => {
+                "A noise floor measured here is a statement about an app's bytecode under one \
+                 substrate, repeated N times, on this interpreter. It is the first control in \
+                 this project whose input contains the app's own control flow, its own \
+                 collection iteration order and the engine's own dispatch, so a leaf that moves \
+                 here is a fact about the program rather than about a fixture. It is NOT a device \
+                 floor: every side effect the app depends on - the clock, the message queue, \
+                 egress, the filesystem - is terminated by the substrate, so the app's \
+                 nondeterminism is measured only along the paths the substrate leaves open. A \
+                 zero result means this app did not vary on these leaves under this substrate, \
+                 not that it is deterministic."
             }
         }
     }
@@ -635,6 +666,51 @@ pub fn repeat(policy: SubstratePolicy, n: usize) -> Result<Arm, crate::error::Sh
         documents.push(crate::scenario::run_with(policy)?.document);
     }
     Ok(Arm { policy, documents })
+}
+
+/// Repeat an arbitrary real-DEX workload N times under one policy.
+///
+/// The closure is called N times with the same policy and is expected to
+/// produce a *new* document each time — a fresh `Shim`, a fresh heap, a fresh
+/// interpreter — because an arm that reuses one engine measures nothing. The
+/// signature makes the caller supply the whole run, so there is no way to
+/// accidentally point this at a cached document.
+pub fn repeat_real<F>(
+    policy: SubstratePolicy,
+    n: usize,
+    mut run: F,
+) -> Result<Arm, crate::error::ShimError>
+where
+    F: FnMut(SubstratePolicy) -> Result<J, crate::error::ShimError>,
+{
+    if n < 2 {
+        return Err(crate::error::ShimError::Encode(format!(
+            "a sync arm with n={n} is a single run, which is the thing this module exists to \
+             replace; n >= 2 is the hard minimum and n >= {MIN_RUNS} is the minimum for a \
+             claim"
+        )));
+    }
+    let mut documents = Vec::with_capacity(n);
+    for _ in 0..n {
+        documents.push(run(policy)?);
+    }
+    Ok(Arm { policy, documents })
+}
+
+/// The whole experiment on a real-DEX workload: repeat both policies N times and
+/// decompose the leaves.
+pub fn run_real<F>(
+    left: SubstratePolicy,
+    right: SubstratePolicy,
+    n: usize,
+    mut run_left: F,
+) -> Result<SyncDifferential, crate::error::ShimError>
+where
+    F: FnMut(SubstratePolicy) -> Result<J, crate::error::ShimError>,
+{
+    let la = repeat_real(left, n, &mut run_left)?;
+    let ra = repeat_real(right, n, run_left)?;
+    decompose(la, ra, Workload::RealDex)
 }
 
 /// The whole experiment: repeat both policies N times and decompose the leaves.

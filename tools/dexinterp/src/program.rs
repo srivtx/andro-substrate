@@ -48,7 +48,7 @@
 //! `VALUE_BOOLEAN` occupies one byte whose `value_arg` nibble is the value.
 //! [`parse_encoded_array`] implements the table from the specification.
 
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 use std::rc::Rc;
 
 use dexcore::error::Error as DexError;
@@ -71,13 +71,71 @@ pub enum ClassSource {
     Builtin,
     /// Fabricated because nothing declared it.
     Phantom,
+    /// Declared by the **framework layer**: a class the shim's own DEX defines.
+    ///
+    /// Distinct from `Dex` because the difference is the whole boundary. A
+    /// `Dex` class has a body and the engine runs it; a `Host` class never has
+    /// a body the engine will execute — every one of its methods is
+    /// `ACC_NATIVE` with no `code_item`, so a call on it is a call on the host.
+    /// Blurring the two is how an instrument ends up running shim code as if it
+    /// were the app's, which would make every observation after that point
+    /// unattributable.
+    Host,
 }
 
 impl ClassSource {
-    /// True when the class carries no bytecode and no field layout, so every
-    /// member access on it belongs to the host.
+    /// True when the class carries bytecode the engine itself will run.
     pub fn has_bytecode(self) -> bool {
         matches!(self, ClassSource::Dex(_))
+    }
+}
+
+/// A class the framework layer declares, with no bytecode.
+///
+/// This is the *declaration half* of the supersede boundary described in
+/// [`crate::host`] and `docs/decisions/0005-shim-and-observation.md`: the shim's
+/// DEX is read for its `class_def_item`s — superclass, interfaces, instance
+/// fields, method prototypes — and those are the parts the engine needs in
+/// order to lay out a class, build a vtable and resolve a `catch` type. The
+/// bodies are never read, because there are none: `shim::emit` marks every
+/// method `ACC_NATIVE`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct HostClass {
+    /// The type descriptor, e.g. `Landroid/app/Activity;`.
+    pub descriptor: String,
+    /// Superclass descriptor as declared, or `None` for a root.
+    pub superclass: Option<String>,
+    /// Directly implemented interface descriptors, as declared.
+    pub interfaces: Vec<String>,
+    /// `access_flags` from the `class_def_item`.
+    pub access_flags: u32,
+    /// Instance fields as `(name, type descriptor)`, in declaration order.
+    pub instance_fields: Vec<(String, String)>,
+    /// Static fields as `(name, type descriptor)`, in declaration order.
+    ///
+    /// Read for the census, not for a value: a host class's static storage is
+    /// the shim's business and is answered by `ShimCaller::read_static`.
+    pub static_fields: Vec<(String, String)>,
+    /// Methods as `(name, prototype descriptor, access_flags)`, in declaration
+    /// order. `access_flags` is preserved so `ACC_STATIC` decides whether a
+    /// vtable slot exists and `ACC_ABSTRACT` is preserved so a host can tell an
+    /// abstract method from a native one.
+    pub methods: Vec<(String, String, u32)>,
+    /// Whether any declared method carried a `code_item` in the DEX this was
+    /// read from.
+    ///
+    /// Recorded and then **ignored**: the engine never gives a `ClassSource::Host`
+    /// method a `code_off`, so a framework body is unreachable by construction.
+    /// The flag exists so the refusal is countable instead of invisible.
+    pub has_body: bool,
+}
+
+impl HostClass {
+    /// Whether the class declares a non-static method with the given prototype.
+    pub fn declares(&self, name: &str, signature: &str) -> bool {
+        self.methods
+            .iter()
+            .any(|(n, s, _)| n == name && s == signature)
     }
 }
 
@@ -359,6 +417,22 @@ pub struct Program {
     pub method_handles: HashMap<u32, MethodHandleMeta>,
     /// Descriptors of the phantom classes that were fabricated, sorted.
     pub phantoms: Vec<String>,
+    /// Classes the framework layer declared, sorted by descriptor.
+    pub host_classes: Vec<HostClass>,
+    /// Classes the app's own DEX defined **and** the framework layer also
+    /// defines, so the shim's definition superseded the app's. Sorted.
+    ///
+    /// The security property from ADR 0005, made measurable: a non-empty vector
+    /// is a list of framework classes an app tried to define, and each one is a
+    /// class whose body did not run.
+    pub shadowed: Vec<String>,
+    /// Declared members of a host class that carried a `code_item`.
+    ///
+    /// Always empty for a well-formed shim DEX, where every method is
+    /// `ACC_NATIVE`. Non-empty means the shim's own DEX has a body the layered
+    /// build refused to make executable, which is worth a number rather than a
+    /// silent truncation.
+    pub host_classes_with_bodies: Vec<String>,
     /// Lazily decoded method bodies, keyed by `code_off`.
     code_cache: HashMap<u32, Rc<DecodedCode>>,
     /// The raw file, for the sections dexcore does not decode.
@@ -372,97 +446,242 @@ impl Program {
     /// because a v40 header has no fields for them: they are located by
     /// `map_item` alone, exactly as dexlib2 does it.
     pub fn build(dex: &DexReader<'_>) -> ExecResult<Program> {
-        let mut classes: Vec<ClassMeta> = Vec::new();
-        let mut by_descriptor: HashMap<String, ClassId> = HashMap::new();
-
-        let push = |classes: &mut Vec<ClassMeta>,
-                    by_descriptor: &mut HashMap<String, ClassId>,
-                    descriptor: String,
-                    source: ClassSource,
-                    access_flags: u32,
-                    is_interface: bool| {
-            let id = ClassId(classes.len() as u32);
-            by_descriptor.insert(descriptor.clone(), id);
-            classes.push(ClassMeta {
-                descriptor,
-                superclass: None,
-                interfaces: Vec::new(),
-                declared_superclass: None,
-                declared_interfaces: Vec::new(),
-                is_interface,
-                source,
-                access_flags,
-                instance_fields: Vec::new(),
-                instance_slots: 0,
-                static_defaults: HashMap::new(),
-                virtual_order: Vec::new(),
-                vtable: Vec::new(),
-                vtable_index: HashMap::new(),
-            });
-        };
-
-        for i in 0..dex.class_def_count() {
-            let def = dex.class_def(i).map_err(dex_err)?;
-            push(
-                &mut classes,
-                &mut by_descriptor,
-                def.descriptor.clone(),
-                ClassSource::Dex(i),
-                def.access_flags,
-                def.access_flags & access::ACC_INTERFACE != 0,
-            );
-        }
-        for b in classes::BUILTINS {
-            if by_descriptor.contains_key(b.descriptor) {
-                // The file defines it. The file wins: a DEX that declares
-                // `Ljava/lang/String;` is unusual but legal, and the file's
-                // version is the one the app was compiled against.
-                continue;
-            }
-            push(
-                &mut classes,
-                &mut by_descriptor,
-                b.descriptor.to_string(),
-                ClassSource::Builtin,
-                access::ACC_PUBLIC,
-                false,
-            );
-            // Record the builtin table's own parent as a *declaration*, so the
-            // edge-filling pass below resolves it. Without this a builtin is
-            // pushed with no superclass at all, and `is_a` answers `false` for
-            // every hierarchy question about it -- which shows up as a
-            // `catch (Error)` clause silently failing to catch a
-            // `NoSuchMethodError` the shim raised.
-            let last = classes.len() - 1;
-            classes[last].declared_superclass = b.superclass.map(|s| s.to_string());
-            classes[last].declared_interfaces =
-                b.interfaces.iter().map(|i| (*i).to_string()).collect();
-        }
-
-        let mut p = Program {
-            classes,
-            by_descriptor,
-            strings: Vec::new(),
-            types: Vec::new(),
-            fields: Vec::new(),
-            methods: Vec::new(),
-            decls: Vec::new(),
-            call_sites_section: None,
-            method_handles_section: None,
-            call_sites: HashMap::new(),
-            method_handles: HashMap::new(),
-            phantoms: Vec::new(),
-            code_cache: HashMap::new(),
-            bytes: dex.bytes().to_vec(),
-        };
-        p.read_pools(dex).map_err(dex_err)?;
-        p.read_class_defs(dex)?;
-        p.find_invoke_dynamic_sections(dex)?;
-        p.link_hierarchy(dex, true);
-        p.resolve_all(dex, true)?;
-        Ok(p)
+        build_program(dex, &[])
     }
 
+    /// Resolve a `classes.dex` with a **framework layer** in front of it.
+    ///
+    /// This is the supersede boundary (ADR 0005) expressed as a class-table
+    /// rule rather than as a merge. `host` supplies the shim's classes; every
+    /// app class whose descriptor also appears in `host` is **dropped**, so the
+    /// app's own `Landroid/app/Activity;` never becomes a runnable class and
+    /// every call on it goes to the host. [`Program::shadowed`] names each one.
+    ///
+    /// The alternative — merging the two files into one DEX — is not attempted
+    /// and is not a container operation; ADR 0005 enumerates the six missing
+    /// writer features. This path needs none of them, because it never renumbers
+    /// a pool: the app's `method_ids` indices are untouched, and a host method
+    /// the app's instructions reference is already in the app's pool as a bodiless
+    /// entry, which is exactly how the engine decided to ask a host even before
+    /// this existed.
+    pub fn build_layered(dex: &DexReader<'_>, host: &[HostClass]) -> ExecResult<Program> {
+        build_program(dex, host)
+    }
+}
+
+/// The one build, with an optional framework layer.
+fn build_program(dex: &DexReader<'_>, host: &[HostClass]) -> ExecResult<Program> {
+    let mut classes: Vec<ClassMeta> = Vec::new();
+    let mut by_descriptor: HashMap<String, ClassId> = HashMap::new();
+    let mut shadowed: Vec<String> = Vec::new();
+
+    let push = |classes: &mut Vec<ClassMeta>,
+                by_descriptor: &mut HashMap<String, ClassId>,
+                descriptor: String,
+                source: ClassSource,
+                access_flags: u32,
+                is_interface: bool| {
+        let id = ClassId(classes.len() as u32);
+        by_descriptor.insert(descriptor.clone(), id);
+        classes.push(ClassMeta {
+            descriptor,
+            superclass: None,
+            interfaces: Vec::new(),
+            declared_superclass: None,
+            declared_interfaces: Vec::new(),
+            is_interface,
+            source,
+            access_flags,
+            instance_fields: Vec::new(),
+            instance_slots: 0,
+            static_defaults: HashMap::new(),
+            virtual_order: Vec::new(),
+            vtable: Vec::new(),
+            vtable_index: HashMap::new(),
+        });
+    };
+
+    // The app's own classes first, minus anything the framework layer claims.
+    // A `BTreeSet` rather than a linear scan: a real APK's DEX has thousands of
+    // `class_def_item`s and a shim has hundreds of classes, so the naive shape
+    // is millions of string comparisons before anything runs.
+    let shadow_set: BTreeSet<&str> = host.iter().map(|h| h.descriptor.as_str()).collect();
+    for i in 0..dex.class_def_count() {
+        let def = dex.class_def(i).map_err(dex_err)?;
+        if shadow_set.contains(def.descriptor.as_str()) {
+            shadowed.push(def.descriptor.clone());
+            continue;
+        }
+        push(
+            &mut classes,
+            &mut by_descriptor,
+            def.descriptor.clone(),
+            ClassSource::Dex(i),
+            def.access_flags,
+            def.access_flags & access::ACC_INTERFACE != 0,
+        );
+    }
+    // Then the framework layer, which therefore wins every collision.
+    for h in host {
+        push(
+            &mut classes,
+            &mut by_descriptor,
+            h.descriptor.clone(),
+            ClassSource::Host,
+            h.access_flags,
+            h.access_flags & access::ACC_INTERFACE != 0,
+        );
+    }
+    for b in classes::BUILTINS {
+        if by_descriptor.contains_key(b.descriptor) {
+            // The file — or the framework layer — defines it, and wins: a DEX
+            // that declares `Ljava/lang/String;` is unusual but legal, and the
+            // file's version is the one the app was compiled against. Under
+            // supersede the *framework layer's* version outranks the app's for
+            // the same reason it outranks an app's own `Landroid/app/Activity;`.
+            continue;
+        }
+        push(
+            &mut classes,
+            &mut by_descriptor,
+            b.descriptor.to_string(),
+            ClassSource::Builtin,
+            access::ACC_PUBLIC,
+            false,
+        );
+        // Record the builtin table's own parent as a *declaration*, so the
+        // edge-filling pass below resolves it. Without this a builtin is
+        // pushed with no superclass at all, and `is_a` answers `false` for
+        // every hierarchy question about it -- which shows up as a
+        // `catch (Error)` clause silently failing to catch a
+        // `NoSuchMethodError` the shim raised.
+        let last = classes.len() - 1;
+        classes[last].declared_superclass = b.superclass.map(|s| s.to_string());
+        classes[last].declared_interfaces = b.interfaces.iter().map(|i| (*i).to_string()).collect();
+    }
+
+    let mut p = Program {
+        classes,
+        by_descriptor,
+        strings: Vec::new(),
+        types: Vec::new(),
+        fields: Vec::new(),
+        methods: Vec::new(),
+        decls: Vec::new(),
+        call_sites_section: None,
+        method_handles_section: None,
+        call_sites: HashMap::new(),
+        method_handles: HashMap::new(),
+        phantoms: Vec::new(),
+        host_classes: host.to_vec(),
+        shadowed: {
+            shadowed.sort();
+            shadowed.dedup();
+            shadowed
+        },
+        host_classes_with_bodies: Vec::new(),
+        code_cache: HashMap::new(),
+        bytes: dex.bytes().to_vec(),
+    };
+    p.read_pools(dex).map_err(dex_err)?;
+    p.read_class_defs(dex)?;
+    p.read_host_classes();
+    p.find_invoke_dynamic_sections(dex)?;
+    p.link_hierarchy(dex, true);
+    p.resolve_all(dex, true)?;
+    Ok(p)
+}
+
+/// Read a shim DEX's `class_def_item`s into framework-layer declarations.
+///
+/// The returned `HostClass`es carry **no `code_off`**, by construction: see
+/// [`Program::build_layered`]. A `code_item` in the framework DEX is therefore
+/// invisible to the engine by design, and [`HostClass::has_body`] says whether
+/// one was there so the refusal is a number.
+///
+/// Reading declarations from a second DEX is a *read*, not a merge: no index
+/// from the second file is ever mixed into the first file's operand space, so
+/// the app's instructions keep meaning exactly what they meant.
+pub fn host_classes_from_dex(shim: &DexReader<'_>) -> ExecResult<Vec<HostClass>> {
+    let mut out: Vec<HostClass> = Vec::new();
+    for i in 0..shim.class_def_count() {
+        let def = shim.class_def(i).map_err(dex_err)?;
+        let data = match &def.class_data {
+            Some(d) => d,
+            None => {
+                out.push(HostClass {
+                    descriptor: def.descriptor.clone(),
+                    superclass: if def.superclass.is_empty() {
+                        None
+                    } else {
+                        Some(def.superclass.clone())
+                    },
+                    interfaces: def.interfaces.clone(),
+                    access_flags: def.access_flags,
+                    instance_fields: Vec::new(),
+                    static_fields: Vec::new(),
+                    methods: Vec::new(),
+                    has_body: false,
+                });
+                continue;
+            }
+        };
+        let mut instance_fields = Vec::new();
+        for f in &data.instance_fields {
+            let (name, ty) = match shim
+                .field_at(f.field_idx)
+                .map(|x| (x.name, x.type_descriptor))
+            {
+                Ok(v) => v,
+                Err(_) => continue,
+            };
+            instance_fields.push((name, ty));
+        }
+        let mut static_fields = Vec::new();
+        for f in &data.static_fields {
+            if let Ok(x) = shim.field_at(f.field_idx) {
+                static_fields.push((x.name, x.type_descriptor));
+            }
+        }
+        let mut methods = Vec::new();
+        let mut has_body = false;
+        for m in data
+            .direct_methods
+            .iter()
+            .chain(data.virtual_methods.iter())
+        {
+            let (name, sig) = match shim.method_at(m.method_idx) {
+                Ok(x) => (
+                    x.name,
+                    format!("({}){}", x.parameters.join(""), x.return_type),
+                ),
+                Err(_) => continue,
+            };
+            if m.code_off != 0 {
+                has_body = true;
+            }
+            methods.push((name, sig, m.access_flags));
+        }
+        out.push(HostClass {
+            descriptor: def.descriptor.clone(),
+            superclass: if def.superclass.is_empty() {
+                None
+            } else {
+                Some(def.superclass.clone())
+            },
+            interfaces: def.interfaces.clone(),
+            access_flags: def.access_flags,
+            instance_fields,
+            static_fields,
+            methods,
+            has_body,
+        });
+    }
+    out.sort_by(|a, b| a.descriptor.cmp(&b.descriptor));
+    Ok(out)
+}
+
+impl Program {
     fn read_pools(&mut self, dex: &DexReader<'_>) -> dexcore::Result<()> {
         self.strings = dex.strings()?.into_iter().map(|s| s.value).collect();
         self.types = (0..dex.type_count())
@@ -583,6 +802,147 @@ impl Program {
             }
         }
         Ok(())
+    }
+
+    /// Copy every framework-layer class's fields and methods into the table.
+    ///
+    /// Field and method entries are **appended** to the app's pools rather than
+    /// replacing anything, so every index an app instruction carries still means
+    /// what it meant. A host method therefore lives at an index the app's
+    /// bytecode never names — which is correct, because an instruction can only
+    /// name a method the app's own `method_ids` already contained, and a
+    /// bodiless entry there is exactly what makes the engine ask a host in the
+    /// first place.
+    ///
+    /// Every host method gets `code_off = 0` unconditionally. A `code_item` in
+    /// the framework DEX is a body the engine refuses to run, and a host class
+    /// that has one is recorded in [`Program::host_classes_with_bodies`] so the
+    /// refusal is a number and not a silence.
+    fn read_host_classes(&mut self) {
+        let layer: Vec<HostClass> = self.host_classes.clone();
+        for h in &layer {
+            let id = match self.by_descriptor.get(&h.descriptor).copied() {
+                Some(id) => id,
+                None => continue,
+            };
+            if h.has_body {
+                self.host_classes_with_bodies.push(h.descriptor.clone());
+            }
+            // A class the app also defined was dropped at push time, so the id
+            // found here is always the host's. Belt and braces: a host class the
+            // app defined *and* that somehow survived must not have the app's
+            // field layout left in place.
+            if self.classes.get(id.0 as usize).map(|m| m.source) != Some(ClassSource::Host) {
+                continue;
+            }
+            let mut own_fields: Vec<FieldSlot> = Vec::new();
+            for (name, desc) in &h.instance_fields {
+                let field_idx = self.intern_field(&h.descriptor, name, desc);
+                let ty = JType::parse(desc);
+                own_fields.push(FieldSlot {
+                    field_idx,
+                    slots: ty.slots().max(1),
+                    ty,
+                    descriptor: desc.clone(),
+                });
+            }
+            // Static fields are declared but not given a slot: a host class's
+            // static storage is answered by `ShimCaller::read_static`, and a
+            // value invented here would be a fabrication the shim never made.
+            let mut virtual_order: Vec<u32> = Vec::new();
+            let mut decls: Vec<(u32, String, String, u32)> = Vec::new();
+            for (name, sig, flags) in &h.methods {
+                let method_idx = self.intern_method(&h.descriptor, name, sig);
+                if flags & access::ACC_STATIC == 0 {
+                    // Every non-static method goes into the virtual order, in
+                    // declaration order. The shim's writer puts its native
+                    // methods wherever `class_data` says, and a vtable slot that
+                    // a `invoke-virtual` cannot find is a `NoSuchMethodError` the
+                    // app would never see on a device.
+                    virtual_order.push(method_idx);
+                }
+                decls.push((method_idx, name.clone(), sig.clone(), *flags));
+            }
+            for (method_idx, name, sig, flags) in decls {
+                if let Some(slot) = self.decls.get_mut(method_idx as usize) {
+                    *slot = Some(MethodDecl {
+                        class: id,
+                        method_idx,
+                        name,
+                        signature: sig,
+                        access_flags: flags,
+                        code_off: 0,
+                    });
+                }
+            }
+
+            if let Some(meta) = self.classes.get_mut(id.0 as usize) {
+                meta.declared_superclass = h.superclass.clone();
+                meta.declared_interfaces = h.interfaces.clone();
+                meta.instance_fields = own_fields;
+                meta.virtual_order = virtual_order;
+                meta.is_interface = h.access_flags & access::ACC_INTERFACE != 0;
+            }
+        }
+    }
+
+    /// Append a `(class, name, type)` triple to the field pool if it is not
+    /// already there, and return its index.
+    ///
+    /// Deduplication matters: the app's own DEX very often declares
+    /// `Landroid/os/Build;.SDK_INT` in its `field_ids` because it reads it, and
+    /// reusing that index keeps one pool entry per real field instead of two.
+    fn intern_field(&mut self, class: &str, name: &str, ty: &str) -> u32 {
+        if let Some(i) = self
+            .fields
+            .iter()
+            .position(|(c, n, t)| c == class && n == name && t == ty)
+        {
+            return i as u32;
+        }
+        self.fields
+            .push((class.to_string(), name.to_string(), ty.to_string()));
+        (self.fields.len() - 1) as u32
+    }
+
+    /// Append a `(class, name, signature)` triple to the method pool, reusing an
+    /// existing entry when the app's DEX already declared it **bodiless**.
+    ///
+    /// Reuse is the common case and the right one: the app's `method_ids` pool
+    /// already contains `(Landroid/app/Activity;, onCreate, (Landroid/os/Bundle;)V)`
+    /// for any app that calls `super.onCreate(b)`, and attaching a bodiless
+    /// declaration to that entry is what turns the app's `invoke-super` into a
+    /// host call instead of a `Malformed`.
+    ///
+    /// An existing entry that *does* have a body is left alone and a fresh index
+    /// is allocated instead. That cannot happen for a shadowed class — its
+    /// `class_data` was never read — but "cannot happen" is not a property a
+    /// boundary should depend on, and clobbering a runnable method because a
+    /// class table changed shape is exactly the failure mode supersede exists to
+    /// prevent, in the other direction.
+    fn intern_method(&mut self, class: &str, name: &str, signature: &str) -> u32 {
+        if let Some(i) = self
+            .methods
+            .iter()
+            .position(|(c, n, s)| c == class && n == name && s == signature)
+        {
+            let runnable = self
+                .decls
+                .get(i)
+                .and_then(|d| d.as_ref())
+                .map(|d| d.has_code())
+                .unwrap_or(false);
+            if !runnable {
+                return i as u32;
+            }
+        }
+        self.methods
+            .push((class.to_string(), name.to_string(), signature.to_string()));
+        let idx = (self.methods.len() - 1) as u32;
+        // `decls` is positional over the method pool, so growing one without the
+        // other would leave `decl(idx)` reading whatever the previous entry said.
+        self.decls.push(None);
+        idx
     }
 
     /// Resolve superclass and interface descriptors to [`ClassId`]s, creating
@@ -1105,6 +1465,53 @@ impl Program {
             .flatten()
             .filter(|d| d.class == class)
             .collect()
+    }
+
+    /// The `code_item` offset of `class`.`name``signature`, resolved through the
+    /// hierarchy, or `None` for a declaration with no body.
+    ///
+    /// Exposed for the one thing a `Program` consumer cannot otherwise do:
+    /// ask *where* a method's bytes are, so a tool can decode them without
+    /// running anything. A method's address is not a secret and is not a risk;
+    /// the alternative is a re-implementation of the resolver.
+    pub fn method_code_offset(&self, class: &str, name: &str, signature: &str) -> Option<u32> {
+        let c = self.by_descriptor.get(class).copied()?;
+        let d = self.find_method(c, name, signature)?;
+        if d.has_code() {
+            Some(d.code_off)
+        } else {
+            None
+        }
+    }
+
+    /// Every prototype descriptor `class` can be asked for as `name`, including
+    /// inherited ones. Sorted and deduplicated.
+    ///
+    /// A driver, not a verifier: the DEX says `Activity` has two
+    /// `onCreate(Bundle)` overloads only in the sense that an app may declare
+    /// `onCreate(Bundle)`, `onCreate(Bundle,PersistableBundle)` and
+    /// `onCreate(Bundle,PersistableBundle,ProcessState)` and a hard-coded
+    /// signature in a lifecycle runner is a lie about which one it called. The
+    /// engine can execute a method only when the caller names its real
+    /// prototype, so the caller has to be able to ask.
+    pub fn prototypes(&self, class: &str, name: &str) -> Vec<String> {
+        let mut out: Vec<String> = Vec::new();
+        let mut cursor = self.by_descriptor.get(class).copied();
+        let mut guard = 0u32;
+        while let Some(c) = cursor {
+            guard += 1;
+            if guard > 4096 {
+                break;
+            }
+            for d in self.own_methods(c) {
+                if d.name == name && !out.contains(&d.signature) {
+                    out.push(d.signature.clone());
+                }
+            }
+            cursor = self.classes.get(c.0 as usize).and_then(|m| m.superclass);
+        }
+        out.sort();
+        out
     }
 
     /// The vtable entry for `(name, signature)` on `class`, inherited
@@ -1789,6 +2196,9 @@ mod tests {
             call_sites: HashMap::new(),
             method_handles: HashMap::new(),
             phantoms: Vec::new(),
+            host_classes: Vec::new(),
+            shadowed: Vec::new(),
+            host_classes_with_bodies: Vec::new(),
             code_cache: HashMap::new(),
             bytes: Vec::new(),
         }

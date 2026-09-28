@@ -1,0 +1,14 @@
+# Captured traces are large and are never committed.
+#
+# `trace/runs/*.trace` is tens to hundreds of megabytes per campaign, and an APK
+# is never copied in. What IS worth keeping is the small, derived record:
+# `trace/REPORT.md` is regenerated from the traces by `trace/measure.mjs`, and
+# every number in `trace/FINDINGS.md` is quotable from it.
+runs/
+runs2/
+
+# Python bytecode from `trace/parse.py`.
+__pycache__/
+trace/runs/*.trace
+__pycache__/
+*.pyc

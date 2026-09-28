@@ -1,0 +1,1939 @@
+{
+  "inventory": {
+    "capturesUsed": [
+      {
+        "file": "low_gita_r1.trace",
+        "sha256": "dc4348d025e01172a37c060d9a615bddfb2753b9aa3fd8f6b82f4b3cb09fa099",
+        "bytes": 35267
+      },
+      {
+        "file": "low_gita_r2.trace",
+        "sha256": "30822ba41ffe2761b210b1d1ad67222a40399b95c7ad67ccdd7e018f979e4dd2",
+        "bytes": 54491
+      },
+      {
+        "file": "low_gita_r3.trace",
+        "sha256": "3458470593c51c2aa619ba11d8bcaf172926b7618eb28980f3cbf9ef677f0591",
+        "bytes": 54321
+      },
+      {
+        "file": "low_gita_r4.trace",
+        "sha256": "a8db86b95ef65bab7efde7b4d9e16649371cda7520ecbb04bd51b9c5d0c6af62",
+        "bytes": 66382
+      },
+      {
+        "file": "low_gita_r5.trace",
+        "sha256": "73e19dcf8042f4506397a24e02dcf73aeb1a9e0da3101f2b39d19d846fe4fdc8",
+        "bytes": 57964
+      },
+      {
+        "file": "low_gita_r6.trace",
+        "sha256": "68f5db9904ea0298cfb6ce536d73ffe944eaf172dd3f51e952341a45977d06eb",
+        "bytes": 56060
+      },
+      {
+        "file": "cand_com.jeffliu.balancetheball_1.trace",
+        "sha256": "3100f50e42eff6b0aabf11a406f655ee847ec645d4cba59ec375385800b9ee89",
+        "bytes": 107643
+      },
+      {
+        "file": "cand_com.jeffliu.balancetheball_3.trace",
+        "sha256": "28357031986197e9a7fc54c7d548828416786e22e0c82c8ee39d584d74bb1692",
+        "bytes": 113521
+      },
+      {
+        "file": "cand_org.debian.eugen.headingcalculator_1.trace",
+        "sha256": "94b84bc54d2997e2292850187edf7d11c93780ec8799b39a461772d33243bd29",
+        "bytes": 31123
+      },
+      {
+        "file": "cand_org.debian.eugen.headingcalculator_2.trace",
+        "sha256": "9ce220264f680e9eaa89e917381799a2a071743d3c7b16785003a9f43f8105e2",
+        "bytes": 38831
+      },
+      {
+        "file": "cand_org.debian.eugen.headingcalculator_3.trace",
+        "sha256": "e70465d237f0863093ab4661c4a74c43ce79a82a3eae640e0b53a507e612683d",
+        "bytes": 33939
+      },
+      {
+        "file": "cand_tk.al54.dev.badpixels_1.trace",
+        "sha256": "507d2a1552cfb847de8612c1d7c9cb05578a5150b83ce9e397b5e9df227ad7fe",
+        "bytes": 29599
+      },
+      {
+        "file": "cand_tk.al54.dev.badpixels_2.trace",
+        "sha256": "b11ac6a3e700d41d1d085a7e87ee5d28a26724afe4f6006daff5f5756c4aecd2",
+        "bytes": 21835
+      },
+      {
+        "file": "cand_tk.al54.dev.badpixels_3.trace",
+        "sha256": "dde26f6404789ea5e19be8e4ba04b730e63015655dc7f61f009fd6c6c4867763",
+        "bytes": 25376
+      },
+      {
+        "file": "hi_gita_r1.trace",
+        "sha256": "28695c27a5f400e8a93eca13e61dbcd44a2f307e139362b864ebdfb11a9f9713",
+        "bytes": 7630627
+      },
+      {
+        "file": "hi_gita_r2.trace",
+        "sha256": "c4f99d9f0a6da5022debaf63d8b2302459ebdc6e72414f9109dfa2dd410692f1",
+        "bytes": 7515724
+      },
+      {
+        "file": "hi_gita_r3.trace",
+        "sha256": "12d26b43b2e08e295061d8115b84732cd47a78c3d7ca406b2fbe822f7966ad61",
+        "bytes": 7398612
+      },
+      {
+        "file": "lo_gita_c1.trace",
+        "sha256": "3b505636d21eedb85125b49b9a35b14cc5bfb2aba57cfdbd9327b6d5e7e7d555",
+        "bytes": 1524665
+      },
+      {
+        "file": "lo_gita_c2.trace",
+        "sha256": "45ff03538d3de90e66d13852373ae54b065209d9e959633ec74fceebb554ba27",
+        "bytes": 1524860
+      },
+      {
+        "file": "hi_gita_a.trace",
+        "sha256": "228fc80cd640f6c118ad433a4bef5991d7ae8aea01d2c25a811e01c1245e857e",
+        "bytes": 7619012
+      },
+      {
+        "file": "hi_gita_b.trace",
+        "sha256": "37c6d959be424130f18a4bfe70da4526cc5e120bb5e910952f553f03f8bb89d8",
+        "bytes": 8525534
+      }
+    ],
+    "lost": [
+      {
+        "file": "cand_com.jeffliu.balancetheball_2.trace",
+        "bytes": 0
+      },
+      {
+        "file": "/tmp/clean.trace",
+        "bytes": 0
+      },
+      {
+        "file": "/tmp/gita_full.trace",
+        "bytes": 0
+      }
+    ],
+    "recordsEqualHeaderCount": [
+      {
+        "file": "low_gita_r1.trace",
+        "records": 915,
+        "header": 915,
+        "equal": true
+      },
+      {
+        "file": "low_gita_r2.trace",
+        "records": 1372,
+        "header": 1372,
+        "equal": true
+      },
+      {
+        "file": "low_gita_r3.trace",
+        "records": 1295,
+        "header": 1295,
+        "equal": true
+      },
+      {
+        "file": "low_gita_r4.trace",
+        "records": 1591,
+        "header": 1591,
+        "equal": true
+      },
+      {
+        "file": "low_gita_r5.trace",
+        "records": 1473,
+        "header": 1473,
+        "equal": true
+      },
+      {
+        "file": "low_gita_r6.trace",
+        "records": 1393,
+        "header": 1393,
+        "equal": true
+      },
+      {
+        "file": "cand_com.jeffliu.balancetheball_1.trace",
+        "records": 5486,
+        "header": 5486,
+        "equal": true
+      },
+      {
+        "file": "cand_com.jeffliu.balancetheball_3.trace",
+        "records": 5450,
+        "header": 5450,
+        "equal": true
+      },
+      {
+        "file": "cand_org.debian.eugen.headingcalculator_1.trace",
+        "records": 648,
+        "header": 648,
+        "equal": true
+      },
+      {
+        "file": "cand_org.debian.eugen.headingcalculator_2.trace",
+        "records": 782,
+        "header": 782,
+        "equal": true
+      },
+      {
+        "file": "cand_org.debian.eugen.headingcalculator_3.trace",
+        "records": 674,
+        "header": 674,
+        "equal": true
+      },
+      {
+        "file": "cand_tk.al54.dev.badpixels_1.trace",
+        "records": 563,
+        "header": 563,
+        "equal": true
+      },
+      {
+        "file": "cand_tk.al54.dev.badpixels_2.trace",
+        "records": 392,
+        "header": 392,
+        "equal": true
+      },
+      {
+        "file": "cand_tk.al54.dev.badpixels_3.trace",
+        "records": 525,
+        "header": 525,
+        "equal": true
+      },
+      {
+        "file": "hi_gita_r1.trace",
+        "records": 512758,
+        "header": 512758,
+        "equal": true
+      },
+      {
+        "file": "hi_gita_r2.trace",
+        "records": 504552,
+        "header": 504552,
+        "equal": true
+      },
+      {
+        "file": "hi_gita_r3.trace",
+        "records": 496189,
+        "header": 496189,
+        "equal": true
+      },
+      {
+        "file": "lo_gita_c1.trace",
+        "records": 96713,
+        "header": 96713,
+        "equal": true
+      },
+      {
+        "file": "lo_gita_c2.trace",
+        "records": 96644,
+        "header": 96644,
+        "equal": true
+      },
+      {
+        "file": "hi_gita_a.trace",
+        "records": 511961,
+        "header": 511961,
+        "equal": true
+      },
+      {
+        "file": "hi_gita_b.trace",
+        "records": 566180,
+        "header": 566180,
+        "equal": true
+      }
+    ]
+  },
+  "lowBudget": {
+    "gita": {
+      "nRuns": 6,
+      "sizes": [
+        206,
+        323,
+        325,
+        395,
+        331,
+        333
+      ],
+      "records": [
+        915,
+        1372,
+        1295,
+        1591,
+        1473,
+        1393
+      ],
+      "windowMs": [
+        1985,
+        7121,
+        2021,
+        7121,
+        7129,
+        2010
+      ],
+      "threads": [
+        7,
+        9,
+        7,
+        7,
+        6,
+        7
+      ],
+      "union": 683,
+      "intersection": 112,
+      "jaccards": [
+        0.3325,
+        0.3828,
+        0.3659,
+        0.4282,
+        0.3577,
+        0.4661,
+        0.4653,
+        0.4469,
+        0.423,
+        0.4969,
+        0.4481,
+        0.5482,
+        0.4756,
+        0.501,
+        0.4788
+      ],
+      "meanJ": 0.4411,
+      "jLo": 0.4111,
+      "jHi": 0.4697,
+      "jSd": 0.06,
+      "sizeMean": 318.8,
+      "sizeSd": 61.5,
+      "sizeVar": 3787.37,
+      "curveSizeSorted": [
+        206,
+        397,
+        490,
+        566,
+        617,
+        683
+      ],
+      "budgetR2loglog": 0.9635
+    },
+    "balancetheball": {
+      "nRuns": 2,
+      "sizes": [
+        274,
+        335
+      ],
+      "records": [
+        5486,
+        5450
+      ],
+      "windowMs": [
+        6241,
+        6326
+      ],
+      "threads": [
+        8,
+        11
+      ],
+      "union": 403,
+      "intersection": 206,
+      "jaccards": [
+        0.5112
+      ],
+      "meanJ": 0.5112,
+      "jLo": 0.5112,
+      "jHi": 0.5112,
+      "jSd": 0,
+      "sizeMean": 304.5,
+      "sizeSd": 43.1,
+      "sizeVar": 1860.5,
+      "curveSizeSorted": [
+        274,
+        403
+      ],
+      "budgetR2loglog": 1
+    },
+    "headingcalculator": {
+      "nRuns": 3,
+      "sizes": [
+        199,
+        242,
+        219
+      ],
+      "records": [
+        648,
+        782,
+        674
+      ],
+      "windowMs": [
+        6163,
+        993,
+        6322
+      ],
+      "threads": [
+        6,
+        8,
+        8
+      ],
+      "union": 355,
+      "intersection": 104,
+      "jaccards": [
+        0.5155,
+        0.3887,
+        0.4451
+      ],
+      "meanJ": 0.4498,
+      "jLo": 0.3887,
+      "jHi": 0.5155,
+      "jSd": 0.0635,
+      "sizeMean": 220,
+      "sizeSd": 21.5,
+      "sizeVar": 463,
+      "curveSizeSorted": [
+        199,
+        301,
+        355
+      ],
+      "budgetR2loglog": 0.9059
+    },
+    "badpixels": {
+      "nRuns": 3,
+      "sizes": [
+        192,
+        145,
+        158
+      ],
+      "records": [
+        563,
+        392,
+        525
+      ],
+      "windowMs": [
+        6169,
+        6153,
+        6156
+      ],
+      "threads": [
+        7,
+        7,
+        7
+      ],
+      "union": 265,
+      "intersection": 110,
+      "jaccards": [
+        0.5388,
+        0.4706,
+        0.5699
+      ],
+      "meanJ": 0.5264,
+      "jLo": 0.4706,
+      "jHi": 0.5699,
+      "jSd": 0.0508,
+      "sizeMean": 165,
+      "sizeSd": 24.3,
+      "sizeVar": 589,
+      "curveSizeSorted": [
+        145,
+        193,
+        265
+      ],
+      "budgetR2loglog": 0.7167
+    }
+  },
+  "highBudget": {
+    "nRuns": 3,
+    "files": [
+      "hi_gita_r1.trace",
+      "hi_gita_r2.trace",
+      "hi_gita_r3.trace"
+    ],
+    "records": [
+      512758,
+      504552,
+      496189
+    ],
+    "windowMs": [
+      6216,
+      6191,
+      6245
+    ],
+    "sizes": [
+      4649,
+      4649,
+      4648
+    ],
+    "union": 4649,
+    "intersection": 4648,
+    "jaccards": [
+      1,
+      0.999785,
+      0.999785
+    ],
+    "meanJ": 0.999857,
+    "minJ": 0.999785,
+    "sizeSd": 0.577,
+    "sizeVar": 0.333,
+    "maxSymDiff": 4649,
+    "spreadMethods": 1
+  },
+  "appState": {
+    "create": {
+      "nRuns": 2,
+      "records": [
+        96713,
+        96644
+      ],
+      "windowMs": [
+        6210,
+        6197
+      ],
+      "sizes": [
+        1853,
+        1862
+      ],
+      "union": 1872,
+      "intersection": 1843,
+      "meanJ": 0.9845
+    },
+    "cross": {
+      "sizesCreateVsRecreate": [
+        1853,
+        1862,
+        4649,
+        4649,
+        4648
+      ],
+      "meanJ": 0.6313,
+      "intersection": 1814,
+      "union": 4688,
+      "jaccard": 0.3869
+    }
+  },
+  "saturation": [
+    {
+      "file": "hi_gita_r1.trace",
+      "records": 512758,
+      "pool": 4649,
+      "windowMs": 6216,
+      "curve": [
+        {
+          "n": 125,
+          "size": 105,
+          "sd": 4,
+          "fracOfPool": 0.0225
+        },
+        {
+          "n": 250,
+          "size": 189,
+          "sd": 8,
+          "fracOfPool": 0.0406
+        },
+        {
+          "n": 500,
+          "size": 322,
+          "sd": 13,
+          "fracOfPool": 0.0692
+        },
+        {
+          "n": 915,
+          "size": 496,
+          "sd": 12,
+          "fracOfPool": 0.1067
+        },
+        {
+          "n": 1000,
+          "size": 522,
+          "sd": 17,
+          "fracOfPool": 0.1123
+        },
+        {
+          "n": 2000,
+          "size": 778,
+          "sd": 12,
+          "fracOfPool": 0.1673
+        },
+        {
+          "n": 4000,
+          "size": 1102,
+          "sd": 14,
+          "fracOfPool": 0.237
+        },
+        {
+          "n": 8000,
+          "size": 1457,
+          "sd": 20,
+          "fracOfPool": 0.3134
+        },
+        {
+          "n": 16000,
+          "size": 1839,
+          "sd": 24,
+          "fracOfPool": 0.3955
+        },
+        {
+          "n": 32000,
+          "size": 2297,
+          "sd": 27,
+          "fracOfPool": 0.494
+        },
+        {
+          "n": 64000,
+          "size": 2829,
+          "sd": 27,
+          "fracOfPool": 0.6084
+        },
+        {
+          "n": 128000,
+          "size": 3494,
+          "sd": 17,
+          "fracOfPool": 0.7515
+        },
+        {
+          "n": 256000,
+          "size": 4191,
+          "sd": 23,
+          "fracOfPool": 0.9015
+        },
+        {
+          "n": 400000,
+          "size": 4561,
+          "sd": 10,
+          "fracOfPool": 0.9811
+        },
+        {
+          "n": 480000,
+          "size": 4642,
+          "sd": 3,
+          "fracOfPool": 0.9985
+        }
+      ]
+    },
+    {
+      "file": "hi_gita_r2.trace",
+      "records": 504552,
+      "pool": 4649,
+      "windowMs": 6191,
+      "curve": [
+        {
+          "n": 125,
+          "size": 104,
+          "sd": 4,
+          "fracOfPool": 0.0224
+        },
+        {
+          "n": 250,
+          "size": 190,
+          "sd": 5,
+          "fracOfPool": 0.0409
+        },
+        {
+          "n": 500,
+          "size": 328,
+          "sd": 10,
+          "fracOfPool": 0.0706
+        },
+        {
+          "n": 915,
+          "size": 491,
+          "sd": 13,
+          "fracOfPool": 0.1056
+        },
+        {
+          "n": 1000,
+          "size": 519,
+          "sd": 11,
+          "fracOfPool": 0.1116
+        },
+        {
+          "n": 2000,
+          "size": 780,
+          "sd": 13,
+          "fracOfPool": 0.1677
+        },
+        {
+          "n": 4000,
+          "size": 1097,
+          "sd": 18,
+          "fracOfPool": 0.236
+        },
+        {
+          "n": 8000,
+          "size": 1453,
+          "sd": 17,
+          "fracOfPool": 0.3125
+        },
+        {
+          "n": 16000,
+          "size": 1838,
+          "sd": 23,
+          "fracOfPool": 0.3954
+        },
+        {
+          "n": 32000,
+          "size": 2299,
+          "sd": 28,
+          "fracOfPool": 0.4945
+        },
+        {
+          "n": 64000,
+          "size": 2850,
+          "sd": 21,
+          "fracOfPool": 0.6131
+        },
+        {
+          "n": 128000,
+          "size": 3497,
+          "sd": 27,
+          "fracOfPool": 0.7521
+        },
+        {
+          "n": 256000,
+          "size": 4211,
+          "sd": 19,
+          "fracOfPool": 0.9057
+        },
+        {
+          "n": 400000,
+          "size": 4575,
+          "sd": 6,
+          "fracOfPool": 0.9842
+        },
+        {
+          "n": 480000,
+          "size": 4644,
+          "sd": 1,
+          "fracOfPool": 0.9989
+        }
+      ]
+    },
+    {
+      "file": "hi_gita_r3.trace",
+      "records": 496189,
+      "pool": 4648,
+      "windowMs": 6245,
+      "curve": [
+        {
+          "n": 125,
+          "size": 104,
+          "sd": 4,
+          "fracOfPool": 0.0224
+        },
+        {
+          "n": 250,
+          "size": 186,
+          "sd": 7,
+          "fracOfPool": 0.0399
+        },
+        {
+          "n": 500,
+          "size": 325,
+          "sd": 8,
+          "fracOfPool": 0.0699
+        },
+        {
+          "n": 915,
+          "size": 495,
+          "sd": 14,
+          "fracOfPool": 0.1065
+        },
+        {
+          "n": 1000,
+          "size": 518,
+          "sd": 16,
+          "fracOfPool": 0.1115
+        },
+        {
+          "n": 2000,
+          "size": 778,
+          "sd": 13,
+          "fracOfPool": 0.1673
+        },
+        {
+          "n": 4000,
+          "size": 1098,
+          "sd": 14,
+          "fracOfPool": 0.2363
+        },
+        {
+          "n": 8000,
+          "size": 1448,
+          "sd": 18,
+          "fracOfPool": 0.3114
+        },
+        {
+          "n": 16000,
+          "size": 1842,
+          "sd": 17,
+          "fracOfPool": 0.3963
+        },
+        {
+          "n": 32000,
+          "size": 2292,
+          "sd": 23,
+          "fracOfPool": 0.493
+        },
+        {
+          "n": 64000,
+          "size": 2861,
+          "sd": 27,
+          "fracOfPool": 0.6154
+        },
+        {
+          "n": 128000,
+          "size": 3496,
+          "sd": 20,
+          "fracOfPool": 0.7521
+        },
+        {
+          "n": 256000,
+          "size": 4219,
+          "sd": 14,
+          "fracOfPool": 0.9078
+        },
+        {
+          "n": 400000,
+          "size": 4581,
+          "sd": 8,
+          "fracOfPool": 0.9857
+        },
+        {
+          "n": 480000,
+          "size": 4645,
+          "sd": 1,
+          "fracOfPool": 0.9994
+        }
+      ]
+    }
+  ],
+  "saturationAgreement": [
+    {
+      "n": 125,
+      "sizes": [
+        105,
+        104,
+        104
+      ],
+      "maxSpread": 1
+    },
+    {
+      "n": 250,
+      "sizes": [
+        189,
+        190,
+        186
+      ],
+      "maxSpread": 4
+    },
+    {
+      "n": 500,
+      "sizes": [
+        322,
+        328,
+        325
+      ],
+      "maxSpread": 6
+    },
+    {
+      "n": 915,
+      "sizes": [
+        496,
+        491,
+        495
+      ],
+      "maxSpread": 5
+    },
+    {
+      "n": 1000,
+      "sizes": [
+        522,
+        519,
+        518
+      ],
+      "maxSpread": 4
+    },
+    {
+      "n": 2000,
+      "sizes": [
+        778,
+        780,
+        778
+      ],
+      "maxSpread": 2
+    },
+    {
+      "n": 4000,
+      "sizes": [
+        1102,
+        1097,
+        1098
+      ],
+      "maxSpread": 5
+    },
+    {
+      "n": 8000,
+      "sizes": [
+        1457,
+        1453,
+        1448
+      ],
+      "maxSpread": 9
+    },
+    {
+      "n": 16000,
+      "sizes": [
+        1839,
+        1838,
+        1842
+      ],
+      "maxSpread": 4
+    },
+    {
+      "n": 32000,
+      "sizes": [
+        2297,
+        2299,
+        2292
+      ],
+      "maxSpread": 7
+    },
+    {
+      "n": 64000,
+      "sizes": [
+        2829,
+        2850,
+        2861
+      ],
+      "maxSpread": 32
+    },
+    {
+      "n": 128000,
+      "sizes": [
+        3494,
+        3497,
+        3496
+      ],
+      "maxSpread": 3
+    },
+    {
+      "n": 256000,
+      "sizes": [
+        4191,
+        4211,
+        4219
+      ],
+      "maxSpread": 28
+    },
+    {
+      "n": 400000,
+      "sizes": [
+        4561,
+        4575,
+        4581
+      ],
+      "maxSpread": 20
+    },
+    {
+      "n": 480000,
+      "sizes": [
+        4642,
+        4644,
+        4645
+      ],
+      "maxSpread": 3
+    }
+  ],
+  "aliasing": {
+    "windowMs": 2000,
+    "cap": 915,
+    "windowRecords": 456153,
+    "windowPool": 4365,
+    "periodic": {
+      "1000": {
+        "meanJ": 0.5652,
+        "sdJ": 0.14,
+        "sizeMean": 184.4,
+        "sizeSd": 47.6,
+        "union12": 311
+      },
+      "10000": {
+        "meanJ": 0.4123,
+        "sdJ": 0.3082,
+        "sizeMean": 158.8,
+        "sizeSd": 34.6,
+        "union12": 432
+      },
+      "35000": {
+        "meanJ": 0.4873,
+        "sdJ": 0.2861,
+        "sizeMean": 187.1,
+        "sizeSd": 60.2,
+        "union12": 427
+      },
+      "350000": {
+        "meanJ": 0.3357,
+        "sdJ": 0.3902,
+        "sizeMean": 175.4,
+        "sizeSd": 40.8,
+        "union12": 799
+      }
+    },
+    "memoryless": {
+      "meanJ": 0.3192,
+      "sdJ": 0.0143,
+      "sizeMean": 473.3,
+      "sizeSd": 8.2,
+      "union12": 1564
+    }
+  },
+  "nulls": {
+    "windowMs": 2000,
+    "resample": {
+      "915": {
+        "meanJ": 0.3067,
+        "sdJ": 0.0161,
+        "sizeMean": 454.4,
+        "sizeSd": 12.5
+      },
+      "1300": {
+        "meanJ": 0.3552,
+        "sdJ": 0.0147,
+        "sizeMean": 570.2,
+        "sizeSd": 14.8
+      },
+      "1591": {
+        "meanJ": 0.382,
+        "sdJ": 0.0136,
+        "sizeMean": 642,
+        "sizeSd": 15.7
+      }
+    },
+    "phase": {
+      "915": {
+        "meanJ": 0.3119,
+        "sdJ": 0.0228,
+        "sizeMean": 464.9,
+        "sizeSd": 9.8
+      },
+      "1300": {
+        "meanJ": 0.3783,
+        "sdJ": 0.0272,
+        "sizeMean": 561.9,
+        "sizeSd": 12
+      },
+      "1591": {
+        "meanJ": 0.3863,
+        "sdJ": 0.023,
+        "sizeMean": 646.8,
+        "sizeSd": 12.5
+      }
+    }
+  },
+  "window": {
+    "sweep": [
+      {
+        "windowMs": 100,
+        "size": 44,
+        "sizeSd": 0,
+        "pool": 44,
+        "meanJ": 1
+      },
+      {
+        "windowMs": 250,
+        "size": 44,
+        "sizeSd": 0,
+        "pool": 44,
+        "meanJ": 1
+      },
+      {
+        "windowMs": 500,
+        "size": 44,
+        "sizeSd": 0,
+        "pool": 44,
+        "meanJ": 1
+      },
+      {
+        "windowMs": 1000,
+        "size": 44,
+        "sizeSd": 0,
+        "pool": 44,
+        "meanJ": 1
+      },
+      {
+        "windowMs": 2000,
+        "size": 570,
+        "sizeSd": 15,
+        "pool": 4365,
+        "meanJ": 0.3557
+      },
+      {
+        "windowMs": 4000,
+        "size": 590,
+        "sizeSd": 14,
+        "pool": 4643,
+        "meanJ": 0.3551
+      },
+      {
+        "windowMs": 6200,
+        "size": 590,
+        "sizeSd": 14,
+        "pool": 4643,
+        "meanJ": 0.3551
+      }
+    ],
+    "quarters": {
+      "sizes": [
+        3624,
+        2937,
+        368,
+        62
+      ],
+      "jaccards": [
+        0.4131,
+        0.0539,
+        0.0154,
+        0.1253,
+        0.0187,
+        0.0777
+      ],
+      "union": 4649
+    }
+  },
+  "periodicity": {
+    "note": "detrended with a 25 ms moving average; raw autocorrelation decays monotonically and is not evidence of a period",
+    "runs": [
+      {
+        "file": "hi_gita_r1.trace",
+        "residualSd": 268.3,
+        "topLags": [
+          {
+            "lagMs": 52,
+            "ac": 0.115
+          },
+          {
+            "lagMs": 50,
+            "ac": 0.114
+          },
+          {
+            "lagMs": 51,
+            "ac": 0.11
+          },
+          {
+            "lagMs": 48,
+            "ac": 0.107
+          },
+          {
+            "lagMs": 49,
+            "ac": 0.104
+          }
+        ],
+        "ac16": -0.257,
+        "ac17": -0.253,
+        "ac33": -0.032
+      },
+      {
+        "file": "hi_gita_r2.trace",
+        "residualSd": 270.5,
+        "topLags": [
+          {
+            "lagMs": 46,
+            "ac": 0.184
+          },
+          {
+            "lagMs": 47,
+            "ac": 0.181
+          },
+          {
+            "lagMs": 48,
+            "ac": 0.176
+          },
+          {
+            "lagMs": 45,
+            "ac": 0.17
+          },
+          {
+            "lagMs": 44,
+            "ac": 0.162
+          }
+        ],
+        "ac16": -0.183,
+        "ac17": -0.224,
+        "ac33": 0.043
+      },
+      {
+        "file": "hi_gita_r3.trace",
+        "residualSd": 254.6,
+        "topLags": [
+          {
+            "lagMs": 52,
+            "ac": 0.208
+          },
+          {
+            "lagMs": 56,
+            "ac": 0.195
+          },
+          {
+            "lagMs": 53,
+            "ac": 0.194
+          },
+          {
+            "lagMs": 54,
+            "ac": 0.179
+          },
+          {
+            "lagMs": 58,
+            "ac": 0.177
+          }
+        ],
+        "ac16": -0.18,
+        "ac17": -0.218,
+        "ac33": -0.136
+      }
+    ],
+    "lowBudgetCadence": {
+      "gita": [
+        {
+          "windowMs": 1985,
+          "records": 915,
+          "meanStackDepth": 13.26,
+          "sampleIntervalMs": 28.8
+        },
+        {
+          "windowMs": 7121,
+          "records": 1372,
+          "meanStackDepth": 14,
+          "sampleIntervalMs": 72.7
+        },
+        {
+          "windowMs": 2021,
+          "records": 1295,
+          "meanStackDepth": 14.89,
+          "sampleIntervalMs": 23.2
+        },
+        {
+          "windowMs": 7121,
+          "records": 1591,
+          "meanStackDepth": 16.4,
+          "sampleIntervalMs": 73.4
+        },
+        {
+          "windowMs": 7129,
+          "records": 1473,
+          "meanStackDepth": 17.33,
+          "sampleIntervalMs": 83.9
+        },
+        {
+          "windowMs": 2010,
+          "records": 1393,
+          "meanStackDepth": 15.65,
+          "sampleIntervalMs": 22.6
+        }
+      ],
+      "balancetheball": [
+        {
+          "windowMs": 6241,
+          "records": 5486,
+          "meanStackDepth": 15.07,
+          "sampleIntervalMs": 17.1
+        },
+        {
+          "windowMs": 6326,
+          "records": 5450,
+          "meanStackDepth": 14.77,
+          "sampleIntervalMs": 17.1
+        }
+      ],
+      "headingcalculator": [
+        {
+          "windowMs": 6163,
+          "records": 648,
+          "meanStackDepth": 12.46,
+          "sampleIntervalMs": 118.5
+        },
+        {
+          "windowMs": 993,
+          "records": 782,
+          "meanStackDepth": 12.41,
+          "sampleIntervalMs": 15.8
+        },
+        {
+          "windowMs": 6322,
+          "records": 674,
+          "meanStackDepth": 11.62,
+          "sampleIntervalMs": 109
+        }
+      ],
+      "badpixels": [
+        {
+          "windowMs": 6169,
+          "records": 563,
+          "meanStackDepth": 10.62,
+          "sampleIntervalMs": 116.4
+        },
+        {
+          "windowMs": 6153,
+          "records": 392,
+          "meanStackDepth": 9.12,
+          "sampleIntervalMs": 143.1
+        },
+        {
+          "windowMs": 6156,
+          "records": 525,
+          "meanStackDepth": 9.55,
+          "sampleIntervalMs": 111.9
+        }
+      ]
+    }
+  },
+  "categories": {
+    "gita": {
+      "jaccard": [
+        {
+          "cat": "other",
+          "sizes": [
+            101,
+            208,
+            208,
+            261,
+            214,
+            219
+          ],
+          "union": 463,
+          "meanJ": 0.38,
+          "jLo": 0.26,
+          "jHi": 0.48
+        },
+        {
+          "cat": "animation",
+          "sizes": [
+            48,
+            46,
+            49,
+            45,
+            49,
+            47
+          ],
+          "union": 65,
+          "meanJ": 0.742,
+          "jLo": 0.67,
+          "jHi": 0.85
+        },
+        {
+          "cat": "looper_msg",
+          "sizes": [
+            42,
+            35,
+            39,
+            45,
+            30,
+            37
+          ],
+          "union": 74,
+          "meanJ": 0.607,
+          "jLo": 0.54,
+          "jHi": 0.72
+        },
+        {
+          "cat": "resource_inflate",
+          "sizes": [
+            4,
+            18,
+            14,
+            30,
+            25,
+            21
+          ],
+          "union": 55,
+          "meanJ": 0.183,
+          "jLo": 0,
+          "jHi": 0.35
+        },
+        {
+          "cat": "binder_ipc",
+          "sizes": [
+            7,
+            8,
+            5,
+            4,
+            6,
+            2
+          ],
+          "union": 12,
+          "meanJ": 0.426,
+          "jLo": 0.21,
+          "jHi": 0.68
+        },
+        {
+          "cat": "classload",
+          "sizes": [
+            2,
+            4,
+            7,
+            8,
+            5,
+            4
+          ],
+          "union": 8,
+          "meanJ": 0.579,
+          "jLo": 0.27,
+          "jHi": 0.91
+        },
+        {
+          "cat": "gc",
+          "sizes": [
+            2,
+            2,
+            3,
+            2,
+            2,
+            2
+          ],
+          "union": 3,
+          "meanJ": 0.889,
+          "jLo": 0.67,
+          "jHi": 1
+        }
+      ],
+      "budget": [
+        {
+          "cat": "other",
+          "sizes": [
+            101,
+            208,
+            208,
+            261,
+            214,
+            219
+          ],
+          "total": 1211,
+          "var": 2837.4,
+          "r2": 0.955,
+          "unexplained": 128.7
+        },
+        {
+          "cat": "animation",
+          "sizes": [
+            48,
+            46,
+            49,
+            45,
+            49,
+            47
+          ],
+          "total": 284,
+          "var": 2.7,
+          "r2": 0.172,
+          "unexplained": 2.2
+        },
+        {
+          "cat": "looper_msg",
+          "sizes": [
+            42,
+            35,
+            39,
+            45,
+            30,
+            37
+          ],
+          "total": 228,
+          "var": 28,
+          "r2": 0.039,
+          "unexplained": 26.9
+        },
+        {
+          "cat": "resource_inflate",
+          "sizes": [
+            4,
+            18,
+            14,
+            30,
+            25,
+            21
+          ],
+          "total": 112,
+          "var": 82.3,
+          "r2": 0.953,
+          "unexplained": 3.9
+        },
+        {
+          "cat": "binder_ipc",
+          "sizes": [
+            7,
+            8,
+            5,
+            4,
+            6,
+            2
+          ],
+          "total": 32,
+          "var": 4.7,
+          "r2": 0.17,
+          "unexplained": 3.9
+        },
+        {
+          "cat": "classload",
+          "sizes": [
+            2,
+            4,
+            7,
+            8,
+            5,
+            4
+          ],
+          "total": 30,
+          "var": 4.8,
+          "r2": 0.535,
+          "unexplained": 2.2
+        },
+        {
+          "cat": "gc",
+          "sizes": [
+            2,
+            2,
+            3,
+            2,
+            2,
+            2
+          ],
+          "total": 13,
+          "var": 0.2,
+          "r2": 0.009,
+          "unexplained": 0.2
+        }
+      ]
+    },
+    "headingcalculator": {
+      "jaccard": [
+        {
+          "cat": "other",
+          "sizes": [
+            120,
+            136,
+            110
+          ],
+          "union": 211,
+          "meanJ": 0.388,
+          "jLo": 0.33,
+          "jHi": 0.48
+        },
+        {
+          "cat": "looper_msg",
+          "sizes": [
+            31,
+            38,
+            45
+          ],
+          "union": 51,
+          "meanJ": 0.679,
+          "jLo": 0.65,
+          "jHi": 0.72
+        },
+        {
+          "cat": "animation",
+          "sizes": [
+            37,
+            35,
+            35
+          ],
+          "union": 52,
+          "meanJ": 0.521,
+          "jLo": 0.45,
+          "jHi": 0.59
+        },
+        {
+          "cat": "binder_ipc",
+          "sizes": [
+            5,
+            12,
+            11
+          ],
+          "union": 14,
+          "meanJ": 0.401,
+          "jLo": 0.17,
+          "jHi": 0.62
+        },
+        {
+          "cat": "resource_inflate",
+          "sizes": [
+            0,
+            14,
+            10
+          ],
+          "union": 18,
+          "meanJ": 0.111,
+          "jLo": 0,
+          "jHi": 0.3
+        },
+        {
+          "cat": "classload",
+          "sizes": [
+            4,
+            4,
+            5
+          ],
+          "union": 5,
+          "meanJ": 0.867,
+          "jLo": 0.8,
+          "jHi": 0.98
+        },
+        {
+          "cat": "gc",
+          "sizes": [
+            2,
+            2,
+            2
+          ],
+          "union": 2,
+          "meanJ": 1,
+          "jLo": 1,
+          "jHi": 1
+        }
+      ],
+      "budget": [
+        {
+          "cat": "other",
+          "sizes": [
+            120,
+            136,
+            110
+          ],
+          "total": 366,
+          "var": 172,
+          "r2": 0.704,
+          "unexplained": 50.9
+        },
+        {
+          "cat": "looper_msg",
+          "sizes": [
+            31,
+            38,
+            45
+          ],
+          "total": 114,
+          "var": 49,
+          "r2": 0.033,
+          "unexplained": 47.4
+        },
+        {
+          "cat": "animation",
+          "sizes": [
+            37,
+            35,
+            35
+          ],
+          "total": 107,
+          "var": 1.3,
+          "r2": 0.422,
+          "unexplained": 0.8
+        },
+        {
+          "cat": "binder_ipc",
+          "sizes": [
+            5,
+            12,
+            11
+          ],
+          "total": 28,
+          "var": 14.3,
+          "r2": 0.555,
+          "unexplained": 6.4
+        },
+        {
+          "cat": "resource_inflate",
+          "sizes": [
+            0,
+            14,
+            10
+          ],
+          "total": 24,
+          "var": 52,
+          "r2": 0.698,
+          "unexplained": 15.7
+        },
+        {
+          "cat": "classload",
+          "sizes": [
+            4,
+            4,
+            5
+          ],
+          "total": 13,
+          "var": 0.3,
+          "r2": 0.111,
+          "unexplained": 0.3
+        },
+        {
+          "cat": "gc",
+          "sizes": [
+            2,
+            2,
+            2
+          ],
+          "total": 6,
+          "var": 0,
+          "r2": null,
+          "unexplained": 0
+        }
+      ]
+    },
+    "badpixels": {
+      "jaccard": [
+        {
+          "cat": "other",
+          "sizes": [
+            110,
+            74,
+            77
+          ],
+          "union": 160,
+          "meanJ": 0.401,
+          "jLo": 0.35,
+          "jHi": 0.45
+        },
+        {
+          "cat": "animation",
+          "sizes": [
+            31,
+            30,
+            41
+          ],
+          "union": 46,
+          "meanJ": 0.699,
+          "jLo": 0.62,
+          "jHi": 0.83
+        },
+        {
+          "cat": "looper_msg",
+          "sizes": [
+            33,
+            30,
+            30
+          ],
+          "union": 33,
+          "meanJ": 0.939,
+          "jLo": 0.91,
+          "jHi": 0.99
+        },
+        {
+          "cat": "binder_ipc",
+          "sizes": [
+            7,
+            3,
+            6
+          ],
+          "union": 11,
+          "meanJ": 0.299,
+          "jLo": 0.19,
+          "jHi": 0.41
+        },
+        {
+          "cat": "resource_inflate",
+          "sizes": [
+            7,
+            1,
+            0
+          ],
+          "union": 8,
+          "meanJ": 0,
+          "jLo": 0,
+          "jHi": 0
+        },
+        {
+          "cat": "gc",
+          "sizes": [
+            2,
+            3,
+            2
+          ],
+          "union": 3,
+          "meanJ": 0.778,
+          "jLo": 0.67,
+          "jHi": 0.97
+        },
+        {
+          "cat": "classload",
+          "sizes": [
+            2,
+            3,
+            2
+          ],
+          "union": 3,
+          "meanJ": 0.778,
+          "jLo": 0.67,
+          "jHi": 0.97
+        }
+      ],
+      "budget": [
+        {
+          "cat": "other",
+          "sizes": [
+            110,
+            74,
+            77
+          ],
+          "total": 261,
+          "var": 399,
+          "r2": 0.527,
+          "unexplained": 188.9
+        },
+        {
+          "cat": "animation",
+          "sizes": [
+            31,
+            30,
+            41
+          ],
+          "total": 102,
+          "var": 37,
+          "r2": 0.146,
+          "unexplained": 31.6
+        },
+        {
+          "cat": "looper_msg",
+          "sizes": [
+            33,
+            30,
+            30
+          ],
+          "total": 93,
+          "var": 3,
+          "r2": 0.451,
+          "unexplained": 1.6
+        },
+        {
+          "cat": "binder_ipc",
+          "sizes": [
+            7,
+            3,
+            6
+          ],
+          "total": 16,
+          "var": 4.3,
+          "r2": 0.999,
+          "unexplained": 0
+        },
+        {
+          "cat": "resource_inflate",
+          "sizes": [
+            7,
+            1,
+            0
+          ],
+          "total": 8,
+          "var": 14.3,
+          "r2": 0.323,
+          "unexplained": 9.7
+        },
+        {
+          "cat": "gc",
+          "sizes": [
+            2,
+            3,
+            2
+          ],
+          "total": 7,
+          "var": 0.3,
+          "r2": 0.955,
+          "unexplained": 0
+        },
+        {
+          "cat": "classload",
+          "sizes": [
+            2,
+            3,
+            2
+          ],
+          "total": 7,
+          "var": 0.3,
+          "r2": 0.955,
+          "unexplained": 0
+        }
+      ]
+    }
+  },
+  "bounds": {
+    "bootClasspathJars": 37,
+    "bootClasspathMethods": 411072,
+    "bootClasspathClasses": 43137,
+    "frameworkJarMethods": 250010,
+    "servicesJarMethods": 111264,
+    "gitaClosure": 4649,
+    "fractionOfClasspath": 0.01131
+  },
+  "appOwn": {
+    "lowBudgetGita": [
+      0,
+      2,
+      1,
+      4,
+      4,
+      4
+    ],
+    "highBudgetGita": [
+      10,
+      10,
+      10
+    ],
+    "highBudgetCreate": [
+      0,
+      0
+    ],
+    "closureSizes": {
+      "low": [
+        206,
+        323,
+        325,
+        395,
+        331,
+        333
+      ],
+      "high": [
+        4649,
+        4649,
+        4648
+      ],
+      "create": [
+        1853,
+        1862
+      ]
+    },
+    "low": {
+      "gita": [
+        0,
+        2,
+        1,
+        4,
+        4,
+        4
+      ],
+      "balancetheball": [
+        6,
+        6
+      ],
+      "headingcalculator": [
+        2,
+        4,
+        2
+      ],
+      "badpixels": [
+        1,
+        0,
+        0
+      ]
+    }
+  },
+  "provenance": {
+    "tag": "derived",
+    "seeds": {
+      "resampleNull": 3,
+      "phaseNull": 5,
+      "aliasingRandom": 9,
+      "saturation": 13,
+      "bootstrap": "0x5eed"
+    },
+    "pythonEquivalent": "python3 lib/recheck.py  (recomputes a subset independently)"
+  }
+}

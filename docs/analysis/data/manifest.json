@@ -1,0 +1,120 @@
+{
+  "_comment": [
+    "Every capture this analysis reads, with the SHA-256 of the exact bytes used.",
+    "Traces are not committed. Copies were snapshotted to a scratch directory so",
+    "that concurrent work on trace/ could not change the numbers underneath us;",
+    "the hashes below identify those bytes independently of where they now live.",
+    "Set A15_TRACE_DIR to the directory holding the files, or the analysis will",
+    "look in the canonical locations recorded in origin."
+  ],
+  "low": {
+    "gita": {
+      "origin": "/tmp/run<N>.trace",
+      "files": [
+        "low_gita_r1.trace",
+        "low_gita_r2.trace",
+        "low_gita_r3.trace",
+        "low_gita_r4.trace",
+        "low_gita_r5.trace",
+        "low_gita_r6.trace"
+      ],
+      "sha256": [
+        "dc4348d025e01172a37c060d9a615bddfb2753b9aa3fd8f6b82f4b3cb09fa099",
+        "30822ba41ffe2761b210b1d1ad67222a40399b95c7ad67ccdd7e018f979e4dd2",
+        "3458470593c51c2aa619ba11d8bcaf172926b7618eb28980f3cbf9ef677f0591",
+        "a8db86b95ef65bab7efde7b4d9e16649371cda7520ecbb04bd51b9c5d0c6af62",
+        "73e19dcf8042f4506397a24e02dcf73aeb1a9e0da3101f2b39d19d846fe4fdc8",
+        "68f5db9904ea0298cfb6ce536d73ffe944eaf172dd3f51e952341a45977d06eb"
+      ]
+    },
+    "balancetheball": {
+      "origin": "/tmp/cand_com.jeffliu.balancetheball_<N>.trace",
+      "files": [
+        "cand_com.jeffliu.balancetheball_1.trace",
+        "cand_com.jeffliu.balancetheball_3.trace"
+      ],
+      "sha256": [
+        "3100f50e42eff6b0aabf11a406f655ee847ec645d4cba59ec375385800b9ee89",
+        "28357031986197e9a7fc54c7d548828416786e22e0c82c8ee39d584d74bb1692"
+      ]
+    },
+    "headingcalculator": {
+      "origin": "/tmp/cand_org.debian.eugen.headingcalculator_<N>.trace",
+      "files": [
+        "cand_org.debian.eugen.headingcalculator_1.trace",
+        "cand_org.debian.eugen.headingcalculator_2.trace",
+        "cand_org.debian.eugen.headingcalculator_3.trace"
+      ],
+      "sha256": [
+        "94b84bc54d2997e2292850187edf7d11c93780ec8799b39a461772d33243bd29",
+        "9ce220264f680e9eaa89e917381799a2a071743d3c7b16785003a9f43f8105e2",
+        "e70465d237f0863093ab4661c4a74c43ce79a82a3eae640e0b53a507e612683d"
+      ]
+    },
+    "badpixels": {
+      "origin": "/tmp/cand_tk.al54.dev.badpixels_<N>.trace",
+      "files": [
+        "cand_tk.al54.dev.badpixels_1.trace",
+        "cand_tk.al54.dev.badpixels_2.trace",
+        "cand_tk.al54.dev.badpixels_3.trace"
+      ],
+      "sha256": [
+        "507d2a1552cfb847de8612c1d7c9cb05578a5150b83ce9e397b5e9df227ad7fe",
+        "b11ac6a3e700d41d1d085a7e87ee5d28a26724afe4f6006daff5f5756c4aecd2",
+        "dde26f6404789ea5e19be8e4ba04b730e63015655dc7f61f009fd6c6c4867763"
+      ]
+    }
+  },
+  "high": {
+    "_comment": "matched capture config, 6.2 s window, ~500k stack records each",
+    "gita_recreate": {
+      "origin": "trace/runs/eu.quelltext.gita.recreate.run<N>.trace",
+      "files": [
+        "hi_gita_r1.trace",
+        "hi_gita_r2.trace",
+        "hi_gita_r3.trace"
+      ],
+      "sha256": [
+        "28695c27a5f400e8a93eca13e61dbcd44a2f307e139362b864ebdfb11a9f9713",
+        "c4f99d9f0a6da5022debaf63d8b2302459ebdc6e72414f9109dfa2dd410692f1",
+        "12d26b43b2e08e295061d8115b84732cd47a78c3d7ca406b2fbe822f7966ad61"
+      ]
+    },
+    "gita_create": {
+      "origin": "trace/runs/eu.quelltext.gita.create.run<N>.trace",
+      "files": [
+        "lo_gita_c1.trace",
+        "lo_gita_c2.trace"
+      ],
+      "sha256": [
+        "3b505636d21eedb85125b49b9a35b14cc5bfb2aba57cfdbd9327b6d5e7e7d555",
+        "45ff03538d3de90e66d13852373ae54b065209d9e959633ec74fceebb554ba27"
+      ]
+    },
+    "gita_other_window": {
+      "_comment": "earlier captures, different window lengths, not a matched set",
+      "files": [
+        "hi_gita_a.trace",
+        "hi_gita_b.trace"
+      ],
+      "sha256": [
+        "228fc80cd640f6c118ad433a4bef5991d7ae8aea01d2c25a811e01c1245e857e",
+        "37c6d959be424130f18a4bfe70da4526cc5e120bb5e910952f553f03f8bb89d8"
+      ]
+    }
+  },
+  "lost": [
+    {
+      "file": "cand_com.jeffliu.balancetheball_2.trace",
+      "bytes": 0
+    },
+    {
+      "file": "/tmp/clean.trace",
+      "bytes": 0
+    },
+    {
+      "file": "/tmp/gita_full.trace",
+      "bytes": 0
+    }
+  ]
+}

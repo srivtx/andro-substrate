@@ -205,9 +205,24 @@ impl MethodDecl {
     /// A `long`/`double` parameter counts as two, which is what decides where
     /// each argument lands in the callee's register window.
     pub fn incoming_slots(&self) -> usize {
-        let params: usize =
-            self.parameters().iter().map(|p| JType::parse(p).slots().max(1)).sum();
+        let params: usize = self
+            .parameters()
+            .iter()
+            .map(|p| JType::parse(p).slots().max(1))
+            .sum();
         params + usize::from(!self.is_static())
+    }
+
+    /// How many *values* a caller has to pass, `this` included.
+    ///
+    /// This is not [`MethodDecl::incoming_slots`]: a `long` parameter is two
+    /// register words but one `Value`, and the arity check has to count the thing
+    /// the caller actually supplies. Conflating the two makes every method with
+    /// a `long` or `double` parameter unreachable — with a real
+    /// `(Context, long, Notification)V` in `fr.smarquis.sleeptimer_16200` as the
+    /// witness, where the three-value call was rejected as "4 argument words".
+    pub fn incoming_values(&self) -> usize {
+        self.parameters().len() + usize::from(!self.is_static())
     }
 }
 
@@ -218,6 +233,30 @@ pub struct Insn {
     pub unit: u32,
     /// The instruction.
     pub instruction: Instruction,
+    /// How many code units this instruction occupies, as *this crate* computed
+    /// it.
+    ///
+    /// Recorded rather than re-derived from
+    /// [`Instruction::width`](dexcore::insn::Instruction::width) at run time,
+    /// because the run loop's program counter and the linear walk that produced
+    /// this list have to agree exactly. Two cases already force the engine to
+    /// override what the decoder claims, and both are in
+    /// [`Program::decode_code`]:
+    ///
+    /// * a `32x` instruction (`move/16`, `move-wide/16`, `move-object/16`) is
+    ///   encoded in **two** code units — `AA|op BBBB` — while
+    ///   `Format::F32X::width()` reports three, because the format's AOSP
+    ///   identifier happens to begin with a `3` that is not its width. Taking
+    ///   the claim at face value advances the pc one unit too far and
+    ///   desynchronises the whole rest of the method, so every branch target
+    ///   after it is wrong and the method dies as `missing_return` or
+    ///   `bad_branch_target`.
+    /// * a data payload's width follows from its own decoded contents, as the
+    ///   specification's layouts give.
+    ///
+    /// The run loop reads this field, so one place decides every width and the
+    /// two consumers cannot disagree.
+    pub units: u16,
 }
 
 /// One clause of an `encoded_catch_handler`.
@@ -337,11 +376,11 @@ impl Program {
         let mut by_descriptor: HashMap<String, ClassId> = HashMap::new();
 
         let push = |classes: &mut Vec<ClassMeta>,
-                        by_descriptor: &mut HashMap<String, ClassId>,
-                        descriptor: String,
-                        source: ClassSource,
-                        access_flags: u32,
-                        is_interface: bool| {
+                    by_descriptor: &mut HashMap<String, ClassId>,
+                    descriptor: String,
+                    source: ClassSource,
+                    access_flags: u32,
+                    is_interface: bool| {
             let id = ClassId(classes.len() as u32);
             by_descriptor.insert(descriptor.clone(), id);
             classes.push(ClassMeta {
@@ -396,7 +435,8 @@ impl Program {
             // `NoSuchMethodError` the shim raised.
             let last = classes.len() - 1;
             classes[last].declared_superclass = b.superclass.map(|s| s.to_string());
-            classes[last].declared_interfaces = b.interfaces.iter().map(|i| (*i).to_string()).collect();
+            classes[last].declared_interfaces =
+                b.interfaces.iter().map(|i| (*i).to_string()).collect();
         }
 
         let mut p = Program {
@@ -425,10 +465,14 @@ impl Program {
 
     fn read_pools(&mut self, dex: &DexReader<'_>) -> dexcore::Result<()> {
         self.strings = dex.strings()?.into_iter().map(|s| s.value).collect();
-        self.types =
-            (0..dex.type_count()).map(|i| dex.type_name(i)).collect::<dexcore::Result<_>>()?;
+        self.types = (0..dex.type_count())
+            .map(|i| dex.type_name(i))
+            .collect::<dexcore::Result<_>>()?;
         self.fields = (0..dex.field_count())
-            .map(|i| dex.field_at(i).map(|f| (f.class, f.name, f.type_descriptor)))
+            .map(|i| {
+                dex.field_at(i)
+                    .map(|f| (f.class, f.name, f.type_descriptor))
+            })
             .collect::<dexcore::Result<_>>()?;
         self.methods = (0..dex.method_count())
             .map(|i| {
@@ -494,7 +538,11 @@ impl Program {
             // needs. `class_data` orders direct methods before virtual ones, and
             // a `method_ids` index is declared at most once per class, so a
             // single pass over both lists is enough.
-            for m in data.direct_methods.iter().chain(data.virtual_methods.iter()) {
+            for m in data
+                .direct_methods
+                .iter()
+                .chain(data.virtual_methods.iter())
+            {
                 let (class_desc, name, sig) = match self.methods.get(m.method_idx as usize) {
                     Some(t) => t.clone(),
                     None => continue,
@@ -546,7 +594,10 @@ impl Program {
                     Some(m) => m,
                     None => continue,
                 };
-                (meta.declared_superclass.clone(), meta.declared_interfaces.clone())
+                (
+                    meta.declared_superclass.clone(),
+                    meta.declared_interfaces.clone(),
+                )
             };
             let _ = dex;
             let sup_id = match sup {
@@ -594,9 +645,13 @@ impl Program {
             if already {
                 continue;
             }
-            let sup_id = sup.as_deref().and_then(|s| self.by_descriptor.get(s).copied());
-            let iface_ids: Vec<ClassId> =
-                ifaces.iter().filter_map(|s| self.by_descriptor.get(s).copied()).collect();
+            let sup_id = sup
+                .as_deref()
+                .and_then(|s| self.by_descriptor.get(s).copied());
+            let iface_ids: Vec<ClassId> = ifaces
+                .iter()
+                .filter_map(|s| self.by_descriptor.get(s).copied())
+                .collect();
             if let Some(meta) = self.classes.get_mut(id.0 as usize) {
                 meta.superclass = sup_id;
                 meta.interfaces = iface_ids;
@@ -666,7 +721,7 @@ impl Program {
             if depth > MAX_DEPTH {
                 break;
             }
-            if seen.iter().any(|s| *s == current) {
+            if seen.contains(&current) {
                 continue;
             }
             seen.push(current.clone());
@@ -747,15 +802,19 @@ impl Program {
                 (meta.superclass, meta.interfaces.clone())
             };
             let mut missing = Vec::new();
+            // A class is missing a parent that has not been laid out yet, which
+            // means the parent's index is in range and its `done` flag is still
+            // false. Written as one expression so that it cannot be read two ways:
+            // the previous form was `if !(i) < n || !done[i] { if !done[i] { .. } }`,
+            // whose outer condition was an inverted comparison that only happened
+            // to behave because the inner test repeated it.
             if let Some(s) = sup {
-                if !(s.0 as usize) < n || !done[s.0 as usize] {
-                    if !done[s.0 as usize] {
-                        missing.push(s);
-                    }
+                if !done.get(s.0 as usize).copied().unwrap_or(true) {
+                    missing.push(s);
                 }
             }
             for iface in &ifaces {
-                if (iface.0 as usize) < n && !done[iface.0 as usize] {
+                if !done.get(iface.0 as usize).copied().unwrap_or(true) {
                     missing.push(*iface);
                 }
             }
@@ -778,7 +837,10 @@ impl Program {
     }
 
     fn layout_fields(&mut self, id: ClassId, sup: Option<ClassId>, _allow_phantom: bool) {
-        let sup_slots = sup.and_then(|s| self.classes.get(s.0 as usize)).map(|m| m.instance_slots).unwrap_or(0);
+        let sup_slots = sup
+            .and_then(|s| self.classes.get(s.0 as usize))
+            .map(|m| m.instance_slots)
+            .unwrap_or(0);
         let own = match self.classes.get(id.0 as usize) {
             Some(m) => m.instance_fields.clone(),
             None => return,
@@ -807,7 +869,11 @@ impl Program {
             }
         }
         for iface in ifaces {
-            let parent = self.classes.get(iface.0 as usize).map(|m| m.vtable.clone()).unwrap_or_default();
+            let parent = self
+                .classes
+                .get(iface.0 as usize)
+                .map(|m| m.vtable.clone())
+                .unwrap_or_default();
             for (name, sig, entry) in parent {
                 index.entry((name.clone(), sig.clone())).or_insert_with(|| {
                     let slot = vtable.len() as u32;
@@ -816,7 +882,11 @@ impl Program {
                 });
             }
         }
-        let order = self.classes.get(id.0 as usize).map(|m| m.virtual_order.clone()).unwrap_or_default();
+        let order = self
+            .classes
+            .get(id.0 as usize)
+            .map(|m| m.virtual_order.clone())
+            .unwrap_or_default();
         for method_idx in order {
             let decl = match self.decls.get(method_idx as usize).and_then(|d| d.as_ref()) {
                 Some(d) => d.clone(),
@@ -992,7 +1062,13 @@ impl Program {
         None
     }
 
-    fn find_inherited_method(&self, class: ClassId, name: &str, sig: &str, depth: u32) -> Option<&MethodDecl> {
+    fn find_inherited_method(
+        &self,
+        class: ClassId,
+        name: &str,
+        sig: &str,
+        depth: u32,
+    ) -> Option<&MethodDecl> {
         if depth > 64 {
             return None;
         }
@@ -1009,23 +1085,40 @@ impl Program {
     }
 
     /// Find a method declared directly on `class`, ignoring inheritance.
-    pub fn find_own_method(&self, class: ClassId, name: &str, signature: &str) -> Option<&MethodDecl> {
+    pub fn find_own_method(
+        &self,
+        class: ClassId,
+        name: &str,
+        signature: &str,
+    ) -> Option<&MethodDecl> {
         self.classes.get(class.0 as usize)?;
-        self.decls.iter().flatten().find(|d| {
-            d.class == class && d.name == name && d.signature == signature
-        })
+        self.decls
+            .iter()
+            .flatten()
+            .find(|d| d.class == class && d.name == name && d.signature == signature)
     }
 
     /// Every method declared directly on `class`, in declaration order.
     pub fn own_methods(&self, class: ClassId) -> Vec<&MethodDecl> {
-        self.decls.iter().flatten().filter(|d| d.class == class).collect()
+        self.decls
+            .iter()
+            .flatten()
+            .filter(|d| d.class == class)
+            .collect()
     }
 
     /// The vtable entry for `(name, signature)` on `class`, inherited
     /// included.
-    pub fn vtable_lookup(&self, class: ClassId, name: &str, signature: &str) -> Option<&VTableEntry> {
+    pub fn vtable_lookup(
+        &self,
+        class: ClassId,
+        name: &str,
+        signature: &str,
+    ) -> Option<&VTableEntry> {
         let meta = self.classes.get(class.0 as usize)?;
-        let slot = meta.vtable_index.get(&(name.to_string(), signature.to_string()))?;
+        let slot = meta
+            .vtable_index
+            .get(&(name.to_string(), signature.to_string()))?;
         meta.vtable.get(*slot as usize).map(|(_, _, e)| e)
     }
 
@@ -1045,49 +1138,71 @@ impl Program {
     fn decode_code(&self, dex: &DexReader<'_>, code_off: u32) -> ExecResult<DecodedCode> {
         let item = dex.code_item(code_off).map_err(dex_err)?;
         if item.insns_size == 0 {
-            return Err(malformed(Malformed::BadCode, format!("code_item at {code_off} has no instructions")));
+            return Err(malformed(
+                Malformed::BadCode,
+                format!("code_item at {code_off} has no instructions"),
+            ));
         }
         let raw = dex.code_units(code_off).map_err(dex_err)?;
-        let units: Vec<u16> =
-            raw.chunks_exact(2).map(|c| u16::from_le_bytes([c[0], c[1]])).collect();
+        let units: Vec<u16> = raw
+            .chunks_exact(2)
+            .map(|c| u16::from_le_bytes([c[0], c[1]]))
+            .collect();
         if units.len() < item.insns_size as usize {
-            return Err(malformed(Malformed::BadCode, "code item is shorter than its insns_size".to_string()));
+            return Err(malformed(
+                Malformed::BadCode,
+                "code item is shorter than its insns_size".to_string(),
+            ));
         }
         let mut insns = Vec::new();
         let mut unit_index = vec![u32::MAX; item.insns_size as usize];
         let mut at = 0usize;
         while at < item.insns_size as usize {
             let (instruction, mut n) = dexcore::decode_one(&units, at).map_err(dex_err)?;
-            // A payload's width is recomputed from its own decoded contents.
-            // `dexcore` reports `4 + targets` code units for a packed-switch
-            // payload and `2 + 2*keys` for a sparse one, but the specification
-            // gives `ident size first_key targets[size]` and
-            // `ident size keys[size] targets[size]`, so each 32-bit field is
-            // *two* code units: the real widths are `4 + 2*targets` and
-            // `2 + 4*keys`. Both are a factor of two short on the array half, and
-            // the error is invisible to a linear walk because the remainder of
-            // the payload decodes as more instructions and the sum of widths
-            // still comes to `insns_size`. `fr.smarquis.sleeptimer_16200` has a
-            // real eight-target packed-switch payload in
-            // `SleepActionReceiver.onReceive`, which is where this was found.
-            if let Instruction::Payload(p) = &instruction {
-                let true_units = match p {
-                    Payload::PackedSwitch(s) => 4 + 2 * s.targets.len() as u32,
-                    Payload::SparseSwitch(s) => 2 + 4 * s.keys.len() as u32,
-                    Payload::FillArrayData(f) => {
-                        4 + (f.data.len() as u32).div_ceil(2)
+            // Two widths are recomputed rather than taken from the decoder, and
+            // both are documented on `Insn::units`.
+            match &instruction {
+                // A `32x` instruction is two code units, not the three its
+                // format identifier suggests.
+                Instruction::F32X { .. } => n = 2,
+                // A payload's width is recomputed from its own decoded contents.
+                // `dexcore` reports `4 + targets` code units for a packed-switch
+                // payload and `2 + 2*keys` for a sparse one, but the specification
+                // gives `ident size first_key targets[size]` and
+                // `ident size keys[size] targets[size]`, so each 32-bit field is
+                // *two* code units: the real widths are `4 + 2*targets` and
+                // `2 + 4*keys`. Both are a factor of two short on the array half,
+                // and the error is invisible to a linear walk because the remainder
+                // of the payload decodes as more instructions and the sum of widths
+                // still comes to `insns_size`.
+                // `fr.smarquis.sleeptimer_16200` has a real eight-target
+                // packed-switch payload in `SleepActionReceiver.onReceive`, which
+                // is where this was found.
+                Instruction::Payload(p) => {
+                    n = match p {
+                        Payload::PackedSwitch(s) => 4 + 2 * s.targets.len(),
+                        Payload::SparseSwitch(s) => 2 + 4 * s.keys.len(),
+                        Payload::FillArrayData(f) => 4 + f.data.len().div_ceil(2),
                     }
-                };
-                n = true_units as usize;
+                }
+                _ => {}
             }
-            for slot in unit_index.iter_mut().skip(at).take(n) {
+            // A width of zero would stop the walk advancing, so the progress
+            // guarantee `decode_all` documents is enforced here as well: the
+            // engine's own walk cannot be the thing that loops.
+            let units = u16::try_from(n).unwrap_or(u16::MAX).max(1);
+            for slot in unit_index.iter_mut().skip(at).take(units as usize) {
                 *slot = u32::MAX;
             }
             if let Some(slot) = unit_index.get_mut(at) {
                 *slot = insns.len() as u32;
             }
-            insns.push(Insn { unit: at as u32, instruction });
-            at += n;
+            insns.push(Insn {
+                unit: at as u32,
+                instruction,
+                units,
+            });
+            at += units as usize;
         }
         let tries = self.decode_tries(dex, &item)?;
         Ok(DecodedCode {
@@ -1124,7 +1239,10 @@ impl Program {
         // exception back to the top of its own protected range.
         let list_start = item.tries_off as usize + 8 * item.tries_size as usize;
         let (list_size, prefix) = mutf8::read_uleb128(&self.bytes, list_start).map_err(|_| {
-            malformed(Malformed::BadCode, format!("code item at {}: malformed handler list size", item.offset))
+            malformed(
+                Malformed::BadCode,
+                format!("code item at {}: malformed handler list size", item.offset),
+            )
         })?;
         if list_size as usize > item.tries_size as usize {
             return Err(malformed(
@@ -1136,22 +1254,33 @@ impl Program {
             ));
         }
         let try_items = dex.try_items(item.offset).map_err(dex_err)?;
-        let body_start = list_start
-            .checked_add(prefix)
-            .ok_or_else(|| malformed(Malformed::BadCode, "handler list offset overflows".to_string()))?;
-        let body = self
-            .bytes
-            .get(body_start..)
-            .ok_or_else(|| malformed(Malformed::BadCode, "handler list runs past the file".to_string()))?;
+        let body_start = list_start.checked_add(prefix).ok_or_else(|| {
+            malformed(
+                Malformed::BadCode,
+                "handler list offset overflows".to_string(),
+            )
+        })?;
+        let body = self.bytes.get(body_start..).ok_or_else(|| {
+            malformed(
+                Malformed::BadCode,
+                "handler list runs past the file".to_string(),
+            )
+        })?;
         let mut out = Vec::with_capacity(try_items.len());
         for t in &try_items {
             if t.insn_count == 0 {
-                return Err(malformed(Malformed::BadCode, "try_item with zero length".to_string()));
+                return Err(malformed(
+                    Malformed::BadCode,
+                    "try_item with zero length".to_string(),
+                ));
             }
-            let end = t.start_addr
+            let end = t
+                .start_addr
                 .checked_add(t.insn_count)
                 .map(|e| e - 1)
-                .ok_or_else(|| malformed(Malformed::BadCode, "try_item range overflows".to_string()))?;
+                .ok_or_else(|| {
+                    malformed(Malformed::BadCode, "try_item range overflows".to_string())
+                })?;
             if end >= item.insns_size {
                 return Err(malformed(
                     Malformed::BadCode,
@@ -1161,17 +1290,23 @@ impl Program {
                     ),
                 ));
             }
-            let rel = (t.handler_off as usize).checked_sub(prefix).ok_or_else(|| {
-                malformed(
-                    Malformed::BadCode,
-                    format!(
-                        "handler_off {} points inside the handler list's own size prefix",
-                        t.handler_off
-                    ),
-                )
-            })?;
+            let rel = (t.handler_off as usize)
+                .checked_sub(prefix)
+                .ok_or_else(|| {
+                    malformed(
+                        Malformed::BadCode,
+                        format!(
+                            "handler_off {} points inside the handler list's own size prefix",
+                            t.handler_off
+                        ),
+                    )
+                })?;
             let handlers = decode_catch_handler(body, rel, t.handler_off, dex)?;
-            out.push(TryRange { start: t.start_addr, end, handlers });
+            out.push(TryRange {
+                start: t.start_addr,
+                end,
+                handlers,
+            });
         }
         Ok(out)
     }
@@ -1188,7 +1323,9 @@ impl Program {
             None => {
                 return Err(unsupported(
                     crate::error::Unsupported::MethodHandleUnresolved,
-                    format!("this dex has no method_handles section, so method_handle@{index} cannot exist"),
+                    format!(
+                    "this dex has no method_handles section, so method_handle@{index} cannot exist"
+                ),
                 ))
             }
         };
@@ -1202,8 +1339,16 @@ impl Program {
         let kind = self.u16_at(at)?;
         let value = self.u32_at(at + 4)?;
         let meta = match kind {
-            0..=3 => MethodHandleMeta { kind, method_idx: Some(value), field_idx: None },
-            4 | 5 => MethodHandleMeta { kind, method_idx: None, field_idx: Some(value) },
+            0..=3 => MethodHandleMeta {
+                kind,
+                method_idx: Some(value),
+                field_idx: None,
+            },
+            4 | 5 => MethodHandleMeta {
+                kind,
+                method_idx: None,
+                field_idx: Some(value),
+            },
             other => {
                 return Err(unsupported(
                     crate::error::Unsupported::MethodHandleUnresolved,
@@ -1250,11 +1395,19 @@ impl Program {
                 format!("call_site@{index} has a zero method_handle_off"),
             ));
         }
-        let kind = self.u16_at(handle_off as usize)? as u16;
+        let kind = self.u16_at(handle_off as usize)?;
         let value = self.u32_at(handle_off as usize + 4)?;
         let handle = match kind {
-            0..=3 => MethodHandleMeta { kind, method_idx: Some(value), field_idx: None },
-            4 | 5 => MethodHandleMeta { kind, method_idx: None, field_idx: Some(value) },
+            0..=3 => MethodHandleMeta {
+                kind,
+                method_idx: Some(value),
+                field_idx: None,
+            },
+            4 | 5 => MethodHandleMeta {
+                kind,
+                method_idx: None,
+                field_idx: Some(value),
+            },
             other => {
                 return Err(unsupported(
                     crate::error::Unsupported::BootstrapMethodMissing,
@@ -1274,14 +1427,20 @@ impl Program {
 
     fn u16_at(&self, at: usize) -> ExecResult<u16> {
         let s = self.bytes.get(at..at + 2).ok_or_else(|| {
-            malformed(Malformed::BadPoolIndex, format!("two-byte read at {at} runs past the end of the file"))
+            malformed(
+                Malformed::BadPoolIndex,
+                format!("two-byte read at {at} runs past the end of the file"),
+            )
         })?;
         Ok(u16::from_le_bytes([s[0], s[1]]))
     }
 
     fn u32_at(&self, at: usize) -> ExecResult<u32> {
         let s = self.bytes.get(at..at + 4).ok_or_else(|| {
-            malformed(Malformed::BadPoolIndex, format!("four-byte read at {at} runs past the end of the file"))
+            malformed(
+                Malformed::BadPoolIndex,
+                format!("four-byte read at {at} runs past the end of the file"),
+            )
         })?;
         Ok(u32::from_le_bytes([s[0], s[1], s[2], s[3]]))
     }
@@ -1296,30 +1455,43 @@ pub fn decode_catch_handler(
     dex: &DexReader<'_>,
 ) -> ExecResult<Vec<CatchClause>> {
     let bad = |d: String| {
-        malformed(Malformed::BadCode, format!("catch handler at handler_off {label}: {d}"))
+        malformed(
+            Malformed::BadCode,
+            format!("catch handler at handler_off {label}: {d}"),
+        )
     };
     if rel >= list.len() {
         return Err(bad("offset is past the end of the handler list".to_string()));
     }
-    let (size_signed, n) = mutf8::read_sleb128(list, rel).map_err(|_| bad("malformed clause count".to_string()))?;
+    let (size_signed, n) =
+        mutf8::read_sleb128(list, rel).map_err(|_| bad("malformed clause count".to_string()))?;
     let mut p = rel + n;
     let mut clauses = Vec::new();
     // A negative `size` means "n typed clauses *and* a catch-all".
     let typed = size_signed.unsigned_abs() as usize;
     for _ in 0..typed {
-        let (type_idx, n) = mutf8::read_uleb128(list, p).map_err(|_| bad("malformed caught type index".to_string()))?;
+        let (type_idx, n) = mutf8::read_uleb128(list, p)
+            .map_err(|_| bad("malformed caught type index".to_string()))?;
         p += n;
-        let (addr, n) = mutf8::read_uleb128(list, p).map_err(|_| bad("malformed handler address".to_string()))?;
+        let (addr, n) = mutf8::read_uleb128(list, p)
+            .map_err(|_| bad("malformed handler address".to_string()))?;
         p += n;
         let descriptor = dex
             .type_name(type_idx)
             .map_err(|_| bad(format!("caught type index {type_idx} does not exist")))?;
-        clauses.push(CatchClause { type_descriptor: Some(descriptor), address: addr });
+        clauses.push(CatchClause {
+            type_descriptor: Some(descriptor),
+            address: addr,
+        });
     }
     if size_signed <= 0 {
-        let (addr, n) = mutf8::read_uleb128(list, p).map_err(|_| bad("malformed catch-all address".to_string()))?;
+        let (addr, n) = mutf8::read_uleb128(list, p)
+            .map_err(|_| bad("malformed catch-all address".to_string()))?;
         let _ = n;
-        clauses.push(CatchClause { type_descriptor: None, address: addr });
+        clauses.push(CatchClause {
+            type_descriptor: None,
+            address: addr,
+        });
     }
     if clauses.is_empty() {
         return Err(bad("a handler must have at least one clause".to_string()));
@@ -1377,9 +1549,10 @@ impl EncodedValue {
     /// The type this constant has, for materialising it.
     pub fn jtype(&self, program: &Program) -> Option<JType> {
         Some(match self {
-            EncodedValue::Byte(_) | EncodedValue::Short(_) | EncodedValue::Char(_) | EncodedValue::Int(_) => {
-                JType::Int
-            }
+            EncodedValue::Byte(_)
+            | EncodedValue::Short(_)
+            | EncodedValue::Char(_)
+            | EncodedValue::Int(_) => JType::Int,
             EncodedValue::Long(_) => JType::Long,
             EncodedValue::Float(_) => JType::Float,
             EncodedValue::Double(_) => JType::Double,
@@ -1392,7 +1565,10 @@ impl EncodedValue {
                 JType::Ref("<member>".into())
             }
             EncodedValue::Array(items) => {
-                let component = items.first().and_then(|v| v.jtype(program)).unwrap_or(JType::Ref("Ljava/lang/Object;".into()));
+                let component = items
+                    .first()
+                    .and_then(|v| v.jtype(program))
+                    .unwrap_or(JType::Ref("Ljava/lang/Object;".into()));
                 JType::Array(Box::new(component))
             }
             EncodedValue::Annotation | EncodedValue::Null | EncodedValue::Unsupported(_) => {
@@ -1420,12 +1596,15 @@ pub fn parse_encoded_array(
     _program: &Program,
 ) -> Result<(Vec<EncodedValue>, usize), ExecError> {
     let bad = |d: &str| malformed(Malformed::BadStaticValues, d.to_string());
-    let (count, n) = mutf8::read_uleb128(bytes, at).map_err(|_| bad("malformed encoded_array size"))?;
+    let (count, n) =
+        mutf8::read_uleb128(bytes, at).map_err(|_| bad("malformed encoded_array size"))?;
     // Every value costs at least one byte, so a declared count larger than the
     // remaining bytes is impossible. This is the bound that stops a hostile
     // count from driving an allocation.
     if count as usize > bytes.len().saturating_sub(at + n) {
-        return Err(bad("encoded_array declares more values than there are bytes for"));
+        return Err(bad(
+            "encoded_array declares more values than there are bytes for",
+        ));
     }
     let mut p = at + n;
     let mut out = Vec::with_capacity(count as usize);
@@ -1439,11 +1618,18 @@ pub fn parse_encoded_array(
 
 /// Decode a `VALUE_ARRAY` payload without the enclosing program, which the
 /// nested form does not need: an element's type comes from the element.
-fn parse_nested_array(bytes: &[u8], at: usize, depth: u32) -> Result<(Vec<EncodedValue>, usize), ExecError> {
+fn parse_nested_array(
+    bytes: &[u8],
+    at: usize,
+    depth: u32,
+) -> Result<(Vec<EncodedValue>, usize), ExecError> {
     let bad = |d: &str| malformed(Malformed::BadStaticValues, d.to_string());
-    let (count, n) = mutf8::read_uleb128(bytes, at).map_err(|_| bad("malformed encoded_array size"))?;
+    let (count, n) =
+        mutf8::read_uleb128(bytes, at).map_err(|_| bad("malformed encoded_array size"))?;
     if count as usize > bytes.len().saturating_sub(at + n) {
-        return Err(bad("encoded_array declares more values than there are bytes for"));
+        return Err(bad(
+            "encoded_array declares more values than there are bytes for",
+        ));
     }
     let mut p = at + n;
     let mut out = Vec::with_capacity(count as usize);
@@ -1564,15 +1750,29 @@ fn dex_err(e: DexError) -> ExecError {
 }
 
 pub(crate) fn malformed(kind: Malformed, detail: String) -> ExecError {
-    ExecError::Malformed { kind, detail, site: Site::default() }
+    ExecError::Malformed {
+        kind,
+        detail,
+        site: Site::default(),
+    }
 }
 
 pub(crate) fn unsupported(kind: crate::error::Unsupported, detail: String) -> ExecError {
-    ExecError::Unsupported { kind, detail, site: Site::default() }
+    ExecError::Unsupported {
+        kind,
+        detail,
+        site: Site::default(),
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    // The crate forbids `unwrap` on anything that came out of a file, and that
+    // ban is what keeps a malformed DEX from killing the process. It has no
+    // business in a test: every value unwrapped below was built by the test
+    // itself, and a test that cannot reach its own fixture should fail loudly
+    // rather than contort itself around a type it has already proven.
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
     use super::*;
 
     fn empty_program() -> Program {
@@ -1640,7 +1840,16 @@ mod tests {
         // 200 million values in a two-byte file.
         let b = vec![0xff, 0xff, 0xff, 0xff, 0x07];
         let e = parse_encoded_array(&b, 0, &empty_program()).unwrap_err();
-        assert!(matches!(e, ExecError::Malformed { kind: Malformed::BadStaticValues, .. }), "got {e:?}");
+        assert!(
+            matches!(
+                e,
+                ExecError::Malformed {
+                    kind: Malformed::BadStaticValues,
+                    ..
+                }
+            ),
+            "got {e:?}"
+        );
     }
 
     #[test]
@@ -1676,6 +1885,9 @@ mod tests {
         let b = vec![1u8, 0x07];
         let (v, _) = parse_encoded_array(&b, 0, &empty_program()).unwrap();
         assert_eq!(v, vec![EncodedValue::Unsupported(0x07)]);
-        assert!(v[0].jtype(&empty_program()).is_some(), "even an unknown tag has a type");
+        assert!(
+            v[0].jtype(&empty_program()).is_some(),
+            "even an unknown tag has a type"
+        );
     }
 }

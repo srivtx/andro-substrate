@@ -52,7 +52,10 @@ const SOURCES: &[(&str, &str)] = &[
     ("src/system.rs", include_str!("../src/system.rs")),
     ("src/taxonomy.rs", include_str!("../src/taxonomy.rs")),
     ("src/vfs.rs", include_str!("../src/vfs.rs")),
-    ("src/bin/shim-record.rs", include_str!("../src/bin/shim-record.rs")),
+    (
+        "src/bin/shim-record.rs",
+        include_str!("../src/bin/shim-record.rs"),
+    ),
 ];
 
 /// A call that can panic.
@@ -67,7 +70,10 @@ const PANICS: &[(&str, &str)] = &[
     (".unwrap_err()", "panics on `Ok`"),
     (".expect(", "panics with a message"),
     ("panic!(", "an explicit abort"),
-    ("unreachable!(", "an invariant the type system should have made"),
+    (
+        "unreachable!(",
+        "an invariant the type system should have made",
+    ),
     ("todo!(", "unfinished work"),
     ("unimplemented!(", "unfinished work"),
 ];
@@ -80,8 +86,14 @@ const PANICS: &[(&str, &str)] = &[
 /// error into an exit code. Neither is on the path of untrusted input, which is
 /// the property the rest of the rule exists to protect.
 const PANIC_ALLOWED: &[(&str, &str)] = &[
-    ("src/scenario.rs", "a scripted fixture, not on the untrusted-input path"),
-    ("src/bin/shim-record.rs", "a CLI whose main maps every error to an exit code"),
+    (
+        "src/scenario.rs",
+        "a scripted fixture, not on the untrusted-input path",
+    ),
+    (
+        "src/bin/shim-record.rs",
+        "a CLI whose main maps every error to an exit code",
+    ),
 ];
 
 #[test]
@@ -110,8 +122,13 @@ fn the_library_contains_no_panicking_call_in_shipped_code() {
                 let lo = at.saturating_sub(60);
                 let hi = (at + needle.len() + 40).min(src.len());
                 let lo = (lo..=hi).find(|i| src.is_char_boundary(*i)).unwrap_or(0);
-                let hi = (lo..=hi).find(|i| src.is_char_boundary(*i)).unwrap_or(src.len());
-                hits.push(format!("{name} at {at}: {what}\n    ...{}...", &src[lo..hi]));
+                let hi = (lo..=hi)
+                    .find(|i| src.is_char_boundary(*i))
+                    .unwrap_or(src.len());
+                hits.push(format!(
+                    "{name} at {at}: {what}\n    ...{}...",
+                    &src[lo..hi]
+                ));
             }
         }
     }
@@ -131,7 +148,10 @@ fn the_library_declares_unwind_safe_and_unsafe_free() {
     // No `catch_unwind` either: there is nothing to catch, because nothing can
     // panic. A `catch_unwind` would be a way of *not* fixing the problem.
     for (name, src) in SOURCES {
-        assert!(!src.contains("catch_unwind"), "{name} catches panics instead of avoiding them");
+        assert!(
+            !src.contains("catch_unwind"),
+            "{name} catches panics instead of avoiding them"
+        );
         assert!(!src.contains("set_hook"), "{name} installs a panic hook");
     }
 }
@@ -165,9 +185,9 @@ impl Rng {
 /// Byte values chosen for their ability to break a parser: NUL, both quotes, a
 /// backslash, angle brackets, a colon, a `?`, a `#`, high bytes, and DEL.
 const INTERESTING: &[u8] = &[
-    0x00, 0x01, 0x1f, 0x20, 0x22, 0x23, 0x25, 0x26, 0x27, 0x28, 0x2f, 0x3a, 0x3b, 0x3c, 0x3d,
-    0x3f, 0x40, 0x5b, 0x5c, 0x5d, 0x5e, 0x7b, 0x7d, 0x7e, 0x7f, 0x80, 0x81, 0xc0, 0xfe, 0xff,
-    b'a', b'/', b'\\', b'.', b'-',
+    0x00, 0x01, 0x1f, 0x20, 0x22, 0x23, 0x25, 0x26, 0x27, 0x28, 0x2f, 0x3a, 0x3b, 0x3c, 0x3d, 0x3f,
+    0x40, 0x5b, 0x5c, 0x5d, 0x5e, 0x7b, 0x7d, 0x7e, 0x7f, 0x80, 0x81, 0xc0, 0xfe, 0xff, b'a', b'/',
+    b'\\', b'.', b'-',
 ];
 
 #[test]
@@ -204,13 +224,21 @@ fn the_url_parser_survives_mutated_input() {
             }
             // Skip what is not a `str` at all: a lossy conversion is a different
             // question, and `from_utf8` failure is an error rather than a panic.
-            let Ok(s) = String::from_utf8(bytes) else { continue };
+            let Ok(s) = String::from_utf8(bytes) else {
+                continue;
+            };
             if let Ok(m) = RequestMeta::parse(&s) {
                 assert!(!m.path.contains('?'), "{s:?} produced a path with a query");
                 assert!(!m.host.contains('@'), "{s:?} produced a host with userinfo");
                 let rendered = m.to_string();
-                assert!(!rendered.contains('?'), "{s:?} rendered a query string: {rendered}");
-                assert!(!rendered.contains('#'), "{s:?} rendered a fragment: {rendered}");
+                assert!(
+                    !rendered.contains('?'),
+                    "{s:?} rendered a query string: {rendered}"
+                );
+                assert!(
+                    !rendered.contains('#'),
+                    "{s:?} rendered a fragment: {rendered}"
+                );
             }
         }
     }
@@ -218,7 +246,14 @@ fn the_url_parser_survives_mutated_input() {
 
 #[test]
 fn the_path_parser_survives_mutated_input() {
-    let seeds: &[&str] = &["/", "/a/b", "/data/data/pkg/files/x", "/a/../b", "//", "/proc/self/status"];
+    let seeds: &[&str] = &[
+        "/",
+        "/a/b",
+        "/data/data/pkg/files/x",
+        "/a/../b",
+        "//",
+        "/proc/self/status",
+    ];
     let mut rng = Rng(0xfeed_0bad_5eed_0001);
     for seed in seeds {
         for _ in 0..400 {
@@ -234,7 +269,9 @@ fn the_path_parser_survives_mutated_input() {
                     _ => bytes.insert(i, b'/'),
                 }
             }
-            let Ok(s) = String::from_utf8(bytes) else { continue };
+            let Ok(s) = String::from_utf8(bytes) else {
+                continue;
+            };
             if let Ok(p) = VPath::parse(&s) {
                 // A canonicalised path never escapes and never contains a
                 // control byte, whatever it was given.
@@ -264,8 +301,17 @@ fn the_vfs_survives_a_mutated_call_sequence() {
     // strings.
     let mut rng = Rng(0x0bad_c0de_1234_5678);
     let paths: Vec<&str> = vec![
-        "/", "/a", "/a/b", "/a/b/c", "/data/data/p/files/x", "/data/../etc/passwd", "/proc/self/status",
-        "/sys/class/power_supply/battery/capacity", "/x/../../y", "/dev/urandom", "/system/build.prop",
+        "/",
+        "/a",
+        "/a/b",
+        "/a/b/c",
+        "/data/data/p/files/x",
+        "/data/../etc/passwd",
+        "/proc/self/status",
+        "/sys/class/power_supply/battery/capacity",
+        "/x/../../y",
+        "/dev/urandom",
+        "/system/build.prop",
     ];
     for _ in 0..200 {
         let mut s = Shim::new("p", vec![]).expect("shim");
@@ -298,11 +344,16 @@ fn the_vfs_survives_a_mutated_call_sequence() {
                     );
                 }
                 5 => {
-                    let _ = s.invoke("Landroid/util/Log;", "d", "(ILjava/lang/String;Ljava/lang/String;)I", &[
-                        Value::Int(3),
-                        Value::Str(p.to_string()),
-                        Value::Str(p.to_string()),
-                    ]);
+                    let _ = s.invoke(
+                        "Landroid/util/Log;",
+                        "d",
+                        "(ILjava/lang/String;Ljava/lang/String;)I",
+                        &[
+                            Value::Int(3),
+                            Value::Str(p.to_string()),
+                            Value::Str(p.to_string()),
+                        ],
+                    );
                 }
                 _ => {
                     let _ = s.invoke(
@@ -329,7 +380,14 @@ fn a_malformed_argument_list_is_an_error_rather_than_a_panic() {
     // An interpreter can hand over the wrong number of arguments — a bug in the
     // evaluator, or a hostile call site. Every shim method must degrade.
     let mut s = Shim::new("p", vec![]).expect("shim");
-    let descriptors = ["()V", "(I)V", "(Ljava/lang/String;)V", "([BII)V", "(J)V", "()I"];
+    let descriptors = [
+        "()V",
+        "(I)V",
+        "(Ljava/lang/String;)V",
+        "([BII)V",
+        "(J)V",
+        "()I",
+    ];
     for (i, c) in shim::registry::CLASSES.iter().enumerate() {
         for m in c.methods() {
             for d in descriptors {

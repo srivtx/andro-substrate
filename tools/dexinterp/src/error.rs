@@ -137,6 +137,14 @@ pub enum Malformed {
     UninitialisedRegister,
     /// `aput` of a value that is not assignable to the array's component type.
     ArrayStore,
+    /// `monitor-exit` of a monitor this frame does not hold, or a frame that
+    /// returns while still holding one.
+    ///
+    /// A distinct kind rather than a `TypeMismatch`, because it is the one
+    /// [`Malformed`] that says nothing about types: it is monitor *state*, which
+    /// the Dalvik verifier does track, so a file that reaches it is a file ART
+    /// would have rejected. See [`heap::Monitor`](crate::heap::Monitor).
+    UnbalancedMonitor,
     /// Execution ran off the end of a `code_item` without a `return`. The
     /// verifier rejects this; the engine reports it rather than inventing a
     /// `return-void`.
@@ -160,6 +168,7 @@ impl Malformed {
             Malformed::TypeMismatch => "type_mismatch",
             Malformed::UninitialisedRegister => "uninitialised_register",
             Malformed::ArrayStore => "array_store",
+            Malformed::UnbalancedMonitor => "unbalanced_monitor",
             Malformed::MissingReturn => "missing_return",
             Malformed::BadPayload => "bad_payload",
             Malformed::BadStaticValues => "bad_static_values",
@@ -314,7 +323,12 @@ impl ExecError {
 impl fmt::Display for ExecError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ExecError::ExceptionRaised { class, message, site, .. } => match message {
+            ExecError::ExceptionRaised {
+                class,
+                message,
+                site,
+                ..
+            } => match message {
                 Some(m) => write!(f, "uncaught {class}: {m} ({site})"),
                 None => write!(f, "uncaught {class} ({site})"),
             },
@@ -330,7 +344,12 @@ impl fmt::Display for ExecError {
             ExecError::BudgetExhausted { kind, limit, site } => {
                 write!(f, "{} budget of {limit} exhausted [{site}]", kind.as_str())
             }
-            ExecError::OutOfMemory { kind, limit, requested, site } => write!(
+            ExecError::OutOfMemory {
+                kind,
+                limit,
+                requested,
+                site,
+            } => write!(
                 f,
                 "{} allocation of {requested} bytes refused, limit {limit} [{site}]",
                 kind.as_str()
@@ -391,10 +410,20 @@ impl Termination {
 
 #[cfg(test)]
 mod tests {
+    // The crate forbids `unwrap` on anything that came out of a file, and that
+    // ban is what keeps a malformed DEX from killing the process. It has no
+    // business in a test: every value unwrapped below was built by the test
+    // itself, and a test that cannot reach its own fixture should fail loudly
+    // rather than contort itself around a type it has already proven.
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
     use super::*;
 
     fn site() -> Site {
-        Site { method: Some("La;.m()V".into()), unit: 3, opcode: Some(0x0f) }
+        Site {
+            method: Some("La;.m()V".into()),
+            unit: 3,
+            opcode: Some(0x0f),
+        }
     }
 
     #[test]
@@ -411,7 +440,11 @@ mod tests {
                 detail: "x".into(),
                 site: site(),
             },
-            ExecError::BudgetExhausted { kind: Budget::Instructions, limit: 1, site: site() },
+            ExecError::BudgetExhausted {
+                kind: Budget::Instructions,
+                limit: 1,
+                site: site(),
+            },
             ExecError::Malformed {
                 kind: Malformed::TypeMismatch,
                 detail: "y".into(),
@@ -424,13 +457,28 @@ mod tests {
         sorted.dedup();
         assert_eq!(sorted.len(), 4, "kinds collided: {kinds:?}");
         let terms: Vec<&str> = errs.iter().map(|e| e.termination().as_str()).collect();
-        assert_eq!(terms, vec!["exception_raised", "unsupported", "budget_exhausted", "engine_fault"]);
+        assert_eq!(
+            terms,
+            vec![
+                "exception_raised",
+                "unsupported",
+                "budget_exhausted",
+                "engine_fault"
+            ]
+        );
     }
 
     #[test]
     fn stack_overflow_and_instruction_budget_share_a_category_but_not_a_kind() {
-        let so = ExecError::StackOverflow { limit: 3, site: site() };
-        let be = ExecError::BudgetExhausted { kind: Budget::Instructions, limit: 3, site: site() };
+        let so = ExecError::StackOverflow {
+            limit: 3,
+            site: site(),
+        };
+        let be = ExecError::BudgetExhausted {
+            kind: Budget::Instructions,
+            limit: 3,
+            site: site(),
+        };
         assert_ne!(so.kind(), be.kind());
         assert_eq!(so.termination(), be.termination());
         // ...but a stack overflow is not reported as a heap failure.

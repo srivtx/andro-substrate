@@ -206,16 +206,34 @@ pub fn compare_fp(op: u8, x: Value, y: Value) -> Result<i32, crate::value::Wrong
             // `cmpg` deliberately does not: it treats the two zeroes as equal.
             let neg_a = a == 0.0 && a.is_sign_negative();
             let neg_b = b == 0.0 && b.is_sign_negative();
-            let less = if op == 0x2d { a < b || (neg_a && !neg_b) } else { a < b };
-            Ok(cmp_result(less, a > b, a.is_nan() || b.is_nan(), op == 0x2d))
+            let less = if op == 0x2d {
+                a < b || (neg_a && !neg_b)
+            } else {
+                a < b
+            };
+            Ok(cmp_result(
+                less,
+                a > b,
+                a.is_nan() || b.is_nan(),
+                op == 0x2d,
+            ))
         }
         0x2f | 0x30 => {
             let a = x.as_double("cmpl-double")?;
             let b = y.as_double("cmpl-double")?;
             let neg_a = a == 0.0 && a.is_sign_negative();
             let neg_b = b == 0.0 && b.is_sign_negative();
-            let less = if op == 0x2f { a < b || (neg_a && !neg_b) } else { a < b };
-            Ok(cmp_result(less, a > b, a.is_nan() || b.is_nan(), op == 0x2f))
+            let less = if op == 0x2f {
+                a < b || (neg_a && !neg_b)
+            } else {
+                a < b
+            };
+            Ok(cmp_result(
+                less,
+                a > b,
+                a.is_nan() || b.is_nan(),
+                op == 0x2f,
+            ))
         }
         0x31 => {
             let a = x.as_long("cmp-long")?;
@@ -352,7 +370,10 @@ pub fn coerce_to(v: Value, ty: &JType) -> Value {
         JType::Double => match v {
             Value::Double(d) => Value::Double(d),
             Value::Int(i) => Value::Double(f64::from(i)),
-            Value::Long(l) => Value::Double(l as f64),
+            // A `long` in a `double` slot is a `double`'s *bits*, not a number:
+            // Dalvik has no `const-double`, so every double constant in a real
+            // APK arrives as `const-wide <bits>`. See [`Value::as_double`].
+            Value::Long(bits) => Value::Double(f64::from_bits(bits as u64)),
             Value::Float(f) => Value::Double(f64::from(f)),
             other => Value::default_for(ty).unwrap_or(other),
         },
@@ -360,6 +381,27 @@ pub fn coerce_to(v: Value, ty: &JType) -> Value {
             Value::Ref(_) | Value::Null => v,
             _ => Value::Null,
         },
+    }
+}
+
+/// The value a `return` hands back, in the shape the declared return type names.
+///
+/// Exactly one representation is normalised, and it is normalised because the
+/// engine genuinely cannot tell the two apart: a `double` lives in a wide
+/// register pair, which the engine holds as a [`Value::Long`] when it came from
+/// `const-wide` and as a [`Value::Double`] when it came from `long-to-double`.
+/// Both are the same Java value, so a caller of
+/// [`Interpreter::invoke_method`](crate::Interpreter::invoke_method) must not be
+/// able to tell which instruction produced it — otherwise every recording in the
+/// study would have to record *two* shapes for `double`.
+///
+/// Nothing else is changed and nothing is type-checked. A return of the wrong
+/// type is the verifier's business, and quietly substituting a plausible value
+/// here would hide exactly the class of bug this crate exists to locate.
+pub fn coerce_return(v: Value, ty: &JType) -> Value {
+    match (ty, v) {
+        (JType::Double, Value::Long(bits)) => Value::Double(f64::from_bits(bits as u64)),
+        _ => v,
     }
 }
 
@@ -417,6 +459,12 @@ pub fn read_u64(b: &[u8]) -> u64 {
 
 #[cfg(test)]
 mod tests {
+    // The crate forbids `unwrap` on anything that came out of a file, and that
+    // ban is what keeps a malformed DEX from killing the process. It has no
+    // business in a test: every value unwrapped below was built by the test
+    // itself, and a test that cannot reach its own fixture should fail loudly
+    // rather than contort itself around a type it has already proven.
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
     use super::*;
 
     fn f32_bits(x: f32) -> u32 {
@@ -495,8 +543,14 @@ mod tests {
         assert_eq!(int32_binop(4, 1, 0), Err(NumErr::DivideByZero));
         assert_eq!(int64_binop(3, 1, 0), Err(NumErr::DivideByZero));
         // ...and float division by zero is *not* an error: it is infinity.
-        assert_eq!(f32_bits(float32_binop(3, 1.0, 0.0)), f32_bits(f32::INFINITY));
-        assert_eq!(f32_bits(float32_binop(3, -1.0, 0.0)), f32_bits(f32::NEG_INFINITY));
+        assert_eq!(
+            f32_bits(float32_binop(3, 1.0, 0.0)),
+            f32_bits(f32::INFINITY)
+        );
+        assert_eq!(
+            f32_bits(float32_binop(3, -1.0, 0.0)),
+            f32_bits(f32::NEG_INFINITY)
+        );
         assert!(float32_binop(3, 0.0, 0.0).is_nan());
         assert!(float64_binop(3, 0.0, 0.0).is_nan());
     }
@@ -520,18 +574,38 @@ mod tests {
     fn cmpl_and_cmpg_differ_only_on_nan_and_signed_zero() {
         let nan = Value::Float(f32::NAN);
         let one = Value::Float(1.0);
-        assert_eq!(compare_fp(0x2d, nan, one), Ok(-1), "cmpl-float with NaN is -1");
-        assert_eq!(compare_fp(0x2e, nan, one), Ok(1), "cmpg-float with NaN is 1");
+        assert_eq!(
+            compare_fp(0x2d, nan, one),
+            Ok(-1),
+            "cmpl-float with NaN is -1"
+        );
+        assert_eq!(
+            compare_fp(0x2e, nan, one),
+            Ok(1),
+            "cmpg-float with NaN is 1"
+        );
         // -0.0 < 0.0 for cmpl, and they are equal for cmpg.
         let nz = Value::Float(-0.0);
         let pz = Value::Float(0.0);
         assert_eq!(compare_fp(0x2d, nz, pz), Ok(-1));
         assert_eq!(compare_fp(0x2e, nz, pz), Ok(0));
         // Doubles behave identically.
-        assert_eq!(compare_fp(0x2f, Value::Double(f64::NAN), Value::Double(1.0)), Ok(-1));
-        assert_eq!(compare_fp(0x30, Value::Double(f64::NAN), Value::Double(1.0)), Ok(1));
-        assert_eq!(compare_fp(0x2f, Value::Double(-0.0), Value::Double(0.0)), Ok(-1));
-        assert_eq!(compare_fp(0x30, Value::Double(-0.0), Value::Double(0.0)), Ok(0));
+        assert_eq!(
+            compare_fp(0x2f, Value::Double(f64::NAN), Value::Double(1.0)),
+            Ok(-1)
+        );
+        assert_eq!(
+            compare_fp(0x30, Value::Double(f64::NAN), Value::Double(1.0)),
+            Ok(1)
+        );
+        assert_eq!(
+            compare_fp(0x2f, Value::Double(-0.0), Value::Double(0.0)),
+            Ok(-1)
+        );
+        assert_eq!(
+            compare_fp(0x30, Value::Double(-0.0), Value::Double(0.0)),
+            Ok(0)
+        );
     }
 
     #[test]
@@ -550,20 +624,38 @@ mod tests {
         // aput-byte of 0xFF stores -1; aget-byte of that returns -1.
         let stored = narrow_on_store(0x4f, Value::Int(0xFF), &JType::Byte);
         assert_eq!(stored, Some(Value::Int(-1)));
-        assert_eq!(narrow_on_load(0x48, Value::Int(-1), &JType::Byte), Value::Int(-1));
+        assert_eq!(
+            narrow_on_load(0x48, Value::Int(-1), &JType::Byte),
+            Value::Int(-1)
+        );
         // aput-char of 0xFFFF stores 65535; aget-char returns 65535, not -1.
         let stored = narrow_on_store(0x50, Value::Int(-1), &JType::Char);
         assert_eq!(stored, Some(Value::Int(65535)));
-        assert_eq!(narrow_on_load(0x49, Value::Int(65535), &JType::Char), Value::Int(65535));
+        assert_eq!(
+            narrow_on_load(0x49, Value::Int(65535), &JType::Char),
+            Value::Int(65535)
+        );
         // aput-short sign-extends.
-        assert_eq!(narrow_on_store(0x51, Value::Int(0x1_0000), &JType::Short), Some(Value::Int(0)));
+        assert_eq!(
+            narrow_on_store(0x51, Value::Int(0x1_0000), &JType::Short),
+            Some(Value::Int(0))
+        );
     }
 
     #[test]
     fn boolean_arrays_hold_only_zero_and_one() {
-        assert_eq!(narrow_on_store(0x4e, Value::Int(42), &JType::Boolean), Some(Value::Int(0)));
-        assert_eq!(narrow_on_store(0x4e, Value::Int(43), &JType::Boolean), Some(Value::Int(1)));
-        assert_eq!(narrow_on_load(0x47, Value::Int(7), &JType::Boolean), Value::Int(1));
+        assert_eq!(
+            narrow_on_store(0x4e, Value::Int(42), &JType::Boolean),
+            Some(Value::Int(0))
+        );
+        assert_eq!(
+            narrow_on_store(0x4e, Value::Int(43), &JType::Boolean),
+            Some(Value::Int(1))
+        );
+        assert_eq!(
+            narrow_on_load(0x47, Value::Int(7), &JType::Boolean),
+            Value::Int(1)
+        );
     }
 
     #[test]
@@ -571,8 +663,18 @@ mod tests {
         // A `long` cannot go into an `int[]`, and refusing is what produces an
         // `ArrayStoreException` rather than a silently wrong array.
         assert_eq!(narrow_on_store(0x4b, Value::Long(1), &JType::Int), None);
-        assert_eq!(narrow_on_store(0x4d, Value::Int(1), &JType::Ref("Ljava/lang/Object;".into())), None);
-        assert_eq!(narrow_on_store(0x4d, Value::Null, &JType::Ref("Ljava/lang/Object;".into())), Some(Value::Null));
+        assert_eq!(
+            narrow_on_store(
+                0x4d,
+                Value::Int(1),
+                &JType::Ref("Ljava/lang/Object;".into())
+            ),
+            None
+        );
+        assert_eq!(
+            narrow_on_store(0x4d, Value::Null, &JType::Ref("Ljava/lang/Object;".into())),
+            Some(Value::Null)
+        );
     }
 
     // ---------------------------------------------------- field coercion
@@ -587,9 +689,18 @@ mod tests {
 
     #[test]
     fn coercion_of_a_reference_to_a_primitive_yields_the_primitive_zero() {
-        assert_eq!(coerce_to(Value::Ref(crate::value::Ref(3)), &JType::Int), Value::Int(0));
-        assert_eq!(coerce_to(Value::Ref(crate::value::Ref(3)), &JType::Boolean), Value::Int(0));
-        assert_eq!(coerce_to(Value::Int(1), &JType::Ref("Ljava/lang/Object;".into())), Value::Null);
+        assert_eq!(
+            coerce_to(Value::Ref(crate::value::Ref(3)), &JType::Int),
+            Value::Int(0)
+        );
+        assert_eq!(
+            coerce_to(Value::Ref(crate::value::Ref(3)), &JType::Boolean),
+            Value::Int(0)
+        );
+        assert_eq!(
+            coerce_to(Value::Int(1), &JType::Ref("Ljava/lang/Object;".into())),
+            Value::Null
+        );
     }
 
     // -------------------------------------------------------- payload reads
@@ -603,6 +714,9 @@ mod tests {
         assert_eq!(read_i32(&[0x78, 0x56, 0x34, 0x12]), 0x1234_5678);
         assert_eq!(read_i64(&[0xff; 8]), -1);
         assert_eq!(read_u64(&[0xff; 8]), u64::MAX);
-        assert_eq!(f64_bits(f64::from_bits(read_u64(&2.5f64.to_le_bytes()))), f64_bits(2.5));
+        assert_eq!(
+            f64_bits(f64::from_bits(read_u64(&2.5f64.to_le_bytes()))),
+            f64_bits(2.5)
+        );
     }
 }

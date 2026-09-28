@@ -178,18 +178,61 @@ recording.
 | **any resource** | No `resources.arsc` is parsed, no name→id map exists, and the app's own layout XML is never inflated. Every `getString`, `getIdentifier` and `setContentView(int)` returns null or 0. | `SUB.RES.ARSC` |
 | **pixels** | Layout produces geometry, not pixels. `BoxNode.painted` is always `false` and there is no rasteriser. A wrong-pixel bug is invisible; so is `SUB.GFX.EXTENSIONS`, `SUB.GFX.VULKAN`, `SUB.GFX.EGL_CONTEXT`. | `SUB.GFX.TEXT_RENDER` only |
 | **a font** | The advance table is documented and deterministic, not Roboto. Measurements will not match a phone's. | `SUB.GFX.TEXT_RENDER` |
-| **any network** | Every request is recorded and refused. No response, status, redirect or TLS session is observable, ever. | `SUB.NET.EGRESS` |
+| **any network** | Every request is recorded and refused, on every policy value, at the sink. No response, status, redirect or TLS session is observable, ever. The `network` axis can change what the app is *shown* (`synthetic_loopback` returns a declared 200) and cannot change what the sink *permits*. | `SUB.NET.EGRESS` |
 | **any native code** | No ELF loader. Every `native` method and every `loadLibrary` is `UNSATISFIED`. | `SUB.NATIVE.*` |
-| **real `/proc`, `/sys`** | Both are fabricated. `/proc/self/maps` is empty, `/proc/uptime` is 0, and `TracerPid` is 0 — a *lie*, and a recorded one. | `SUB.KERNEL.*` |
-| **another app existing** | The substrate holds exactly one app, so every cross-app `PackageManager` query answers "not installed", with no exception. | `SUB.IPC.PACKAGE_MANAGER_OTHER` |
+| **real `/proc`, `/sys`** | Both are fabricated, and *which* fabrication is a declared parameter (`substrate_policy.system_fs`): plausible content, an empty-but-existing file, or `ENOENT`. Under the default `/proc/self/maps` is empty, `/proc/uptime` is 0, and `TracerPid` is 0 — a *lie*, and a recorded one. | `SUB.KERNEL.*` |
+| **another app existing** | The substrate holds exactly one app, so every cross-app `PackageManager` query answers "not installed", with no exception. The other two values of the axis report every package installed (with a list whose contents are *not* materialised) or throw `NameNotFoundException`. | `SUB.IPC.PACKAGE_MANAGER_OTHER` |
 | **Binder, services, alarms, jobs** | Declared, recorded, and never delivered. An app that defers work to an `AlarmManager` or a `JobScheduler` produces no symptom at all. | `SUB.IPC.*` |
 | **a boot** | No `BOOT_COMPLETED`, no system broadcast, ever. | `SUB.IPC.BROADCAST` |
 | **input** | No `MotionEvent`, no `KeyEvent`, no soft keyboard, no click ever delivered. An app that gates its login on a tap produces nothing and reports nothing. | `SUB.INPUT.*` |
 | **vsync** | No display, so `Choreographer` never posts. The `Handler`/`MessageQueue` are recorded and never drained; `queue.size()` is the measurement. | `SUB.TIME.VSYNC` |
-| **wall-clock time** | `System.currentTimeMillis()` returns 0, not the host's clock, so a recording is reproducible. | `SUB.TIME.WALL_CLOCK` |
+| **wall-clock time** | `System.currentTimeMillis()` returns 0, not the host's clock, so a recording is reproducible. The `time` axis can scale, freeze or replace it, and a `host_real` recording is declared `reproducible: false`. | `SUB.TIME.WALL_CLOCK` |
+| **its own behaviour not being decided by the shim** | A shim that terminates every side effect observes a *different program*, so every fact downstream of a refusal is a **joint** property of app and shim. `docs/decisions/0006-substrate-policy.md` makes the substrate a declared parameter so the dependency is measurable, and it does not claim to remove it. A single substrate run is not a measurement of the app. | all of them |
 | **its own class, if it defines a framework one** | A hostile APK's `Landroid/app/Activity;` is shadowed by the shim's. The shim wins by construction, and the collision is recorded as `shim_supersedes_app` — because the alternative would make the shim's own boundary an attack surface. | `SUB.FW.CLASS_LOADER` |
 | **reflection over an incomplete surface** | `Class.forName` and `Method.invoke` are dispatched through the *same* table as a direct call, so a reflective call and a direct one are indistinguishable. Good for coverage, fatal for attribution. | `SUB.FW.REFLECTION` |
 | **ART's execution tier** | There is no AOT `odex` and no JIT warm-up. A slow app in a substrate is the interpreter's cost, and a recording cannot separate the two. | `SUB.CPU.TIERING` |
+
+## 5a. The substrate is a parameter, and the recording says which way it was set
+
+`SubstratePolicy` is the shim's own behaviour as a declared value. Every value the
+shim fabricates is produced by one of its five axes, and every fabricated
+observation carries the axis that produced it, so a `Build.FINGERPRINT` read can
+say *which* substrate answered it rather than leaving a reader to infer it from
+the shape of the value.
+
+| axis | values | the default is |
+|---|---|---|
+| `identity` | `fabricated` · `withheld` · `refusing` | `fabricated` |
+| `system_fs` | `fabricated` · `empty` · `absent` | `fabricated` |
+| `cross_app_packages` | `subject_only` · `all_present` · `error` | `subject_only` |
+| `network` | `record_and_deny` · `synthetic_loopback` | `record_and_deny` |
+| `time` | `virtual` · `scaled{n,d}` · `frozen` · `host_real` | `virtual` |
+
+**The default is the pre-existing behaviour on every axis**, so the numbers above
+and the rest of this document describe the same shim as before, and the committed
+`recordings/synthetic.recording.json` is the same capture with a declaration
+attached. A family whose default were the obvious null-substrate would make the
+plausible one look like a curiosity — and the plausible one is the confound.
+
+Three things the axes provably cannot do, with the test for each:
+
+- **No value can enable egress.** `EgressSink` holds no policy field, its
+  `request` returns `Result<Never, EgressDenial>`, and
+  `network.attempts[].result` is `blocked_by_policy` under *both* network values.
+  `tests/policy.rs` drives all 162 reproducible combinations against a live
+  `TcpListener`.
+- **No value can capture a body, a header value or a query value.** The policy type
+  is five enums and a synthesised response is a status, a length and a content
+  type. `tests/policy.rs` runs 108 combinations with three canaries and requires
+  them absent from the events, the state and the serialised document.
+- **No value can be set from the environment.** The only way to run a non-default
+  substrate is `Shim::with_policy(..)`, so "which substrate produced this" is a
+  value in a struct. `tests/egress_denial.rs` forbids `std::env` outright and its
+  source scan now covers `src/policy.rs` and `src/differential.rs`.
+
+`docs/decisions/0006-substrate-policy.md` has the full decision, the worked
+differential, and — the part that matters most — what the family still cannot
+separate from the app.
 
 ## 6. The classloader boundary
 

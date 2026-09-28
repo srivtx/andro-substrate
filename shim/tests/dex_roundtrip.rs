@@ -35,7 +35,10 @@ fn reader() -> &'static (dexcore::DexReader<'static>, Vec<u8>) {
     static ONCE: OnceLock<(dexcore::DexReader<'static>, Vec<u8>)> = OnceLock::new();
     ONCE.get_or_init(|| {
         let leaked: &'static [u8] = Box::leak(emitted().bytes.clone().into_boxed_slice());
-        (dexcore::DexReader::open(leaked).expect("emitted dex must parse"), leaked.to_vec())
+        (
+            dexcore::DexReader::open(leaked).expect("emitted dex must parse"),
+            leaked.to_vec(),
+        )
     })
 }
 
@@ -62,7 +65,10 @@ fn the_emitted_file_is_a_valid_dex() {
     assert_eq!(d.string_count() as usize, e.string_count);
     // A digest a recording can pin, so a capture is tied to the exact instrument.
     assert_eq!(e.digest.len(), 64);
-    assert!(e.digest.chars().all(|c| c.is_ascii_hexdigit() && !c.is_uppercase()));
+    assert!(e
+        .digest
+        .chars()
+        .all(|c| c.is_ascii_hexdigit() && !c.is_uppercase()));
 }
 
 #[test]
@@ -98,8 +104,13 @@ fn every_method_is_native_and_has_no_code() {
     let (d, _) = reader();
     let mut checked = 0usize;
     for def in registry::CLASSES {
-        let idx = d.find_class(def.descriptor).expect("lookup").expect("class");
-        let cd = d.class_data(d.class_def(idx).expect("def").class_data_off).expect("data");
+        let idx = d
+            .find_class(def.descriptor)
+            .expect("lookup")
+            .expect("class");
+        let cd = d
+            .class_data(d.class_def(idx).expect("def").class_data_off)
+            .expect("data");
         let mut seen: Vec<String> = Vec::new();
         for m in cd.direct_methods.iter().chain(cd.virtual_methods.iter()) {
             let md = d.method_at(m.method_idx).expect("method");
@@ -110,7 +121,8 @@ fn every_method_is_native_and_has_no_code() {
                 md.signature()
             );
             assert_eq!(
-                m.code_off, 0,
+                m.code_off,
+                0,
                 "{} must have no code item; behaviour lives in the dispatcher",
                 md.signature()
             );
@@ -141,13 +153,21 @@ fn prototypes_survive_the_pool_sort() {
             "getSystemService",
             "Landroid/content/Context;.getSystemService(Ljava/lang/String;)Ljava/lang/Object;",
         ),
-        ("Ljava/io/OutputStream;", "write", "Ljava/io/OutputStream;.write([BII)V"),
+        (
+            "Ljava/io/OutputStream;",
+            "write",
+            "Ljava/io/OutputStream;.write([BII)V",
+        ),
         (
             "Ljava/lang/Class;",
             "forName",
             "Ljava/lang/Class;.forName(Ljava/lang/String;)Ljava/lang/Class;",
         ),
-        ("Ljava/net/URLConnection;", "connect", "Ljava/net/URLConnection;.connect()V"),
+        (
+            "Ljava/net/URLConnection;",
+            "connect",
+            "Ljava/net/URLConnection;.connect()V",
+        ),
         (
             "Ljava/net/HttpURLConnection;",
             "getResponseCode",
@@ -192,7 +212,9 @@ fn prototypes_survive_the_pool_sort() {
 fn the_bridge_carries_real_code_with_a_typed_handler_then_a_catch_all() {
     let (d, _) = reader();
     let idx = d.find_class(emit::BRIDGE).expect("lookup").expect("class");
-    let cd = d.class_data(d.class_def(idx).expect("def").class_data_off).expect("data");
+    let cd = d
+        .class_data(d.class_def(idx).expect("def").class_data_off)
+        .expect("data");
     let with_code: Vec<_> = cd
         .virtual_methods
         .iter()
@@ -204,10 +226,7 @@ fn the_bridge_carries_real_code_with_a_typed_handler_then_a_catch_all() {
         "the bridge exists precisely so the writer's code_item path is exercised"
     );
 
-    let ns = d
-        .class_def(idx)
-        .expect("def")
-        .class_data_off;
+    let ns = d.class_def(idx).expect("def").class_data_off;
     let _ = ns;
     let code_offs: Vec<u32> = with_code.iter().map(|m| m.code_off).collect();
     for off in code_offs {
@@ -274,7 +293,10 @@ fn the_bridge_carries_real_code_with_a_typed_handler_then_a_catch_all() {
         "Ljava/lang/Throwable;",
         "the typed clause must name the exception class"
     );
-    assert_eq!(catch_all_addr, 1, "the catch-all address follows the clause");
+    assert_eq!(
+        catch_all_addr, 1,
+        "the catch-all address follows the clause"
+    );
 }
 
 #[test]
@@ -283,11 +305,19 @@ fn a_disassembled_bridge_method_matches_the_bytes_we_assembled() {
     // ID the emitter interned, addressed by a `const-string` in the stream.
     let (d, _) = reader();
     let idx = d.find_class(emit::BRIDGE).expect("lookup").expect("class");
-    let cd = d.class_data(d.class_def(idx).expect("def").class_data_off).expect("data");
+    let cd = d
+        .class_data(d.class_def(idx).expect("def").class_data_off)
+        .expect("data");
     let m = cd
         .virtual_methods
         .iter()
-        .find(|m| d.method_at(m.method_idx).map(|x| x.name.clone()).ok().as_deref() == Some("nativeUnsatisfied"))
+        .find(|m| {
+            d.method_at(m.method_idx)
+                .map(|x| x.name.clone())
+                .ok()
+                .as_deref()
+                == Some("nativeUnsatisfied")
+        })
         .expect("nativeUnsatisfied");
     let units = d.code_units(m.code_off).expect("units");
     let as_u16: Vec<u16> = units
@@ -382,7 +412,10 @@ fn the_table_and_the_dex_agree_on_what_is_observation_bearing() {
                     };
                     shim.invoke(def.descriptor, m.name, "", &with_recv)
                         .unwrap_or_else(|e| {
-                            panic!("{} .{} is Inert and must not error: {e}", def.descriptor, m.name)
+                            panic!(
+                                "{} .{} is Inert and must not error: {e}",
+                                def.descriptor, m.name
+                            )
                         });
                 }
                 _ => {}

@@ -40,7 +40,6 @@ use std::fmt;
 
 use serde::{Deserialize, Serialize};
 
-
 /// The font model. Documented, fixed, and named in the output.
 pub mod metrics {
     /// Which model produced a measurement. Recorded so a number in a box tree is
@@ -487,7 +486,10 @@ impl View {
                 width: metrics::IMAGE_SIZE,
                 height: metrics::IMAGE_SIZE,
             }),
-            NodeKind::Drawable => self.intrinsic.unwrap_or(Size { width: 0, height: 0 }),
+            NodeKind::Drawable => self.intrinsic.unwrap_or(Size {
+                width: 0,
+                height: 0,
+            }),
             _ => Size::default(),
         }
     }
@@ -512,12 +514,11 @@ impl View {
                 Dimension::Exact(w) => w.saturating_sub(horizontal_margin).max(0),
                 Dimension::MatchParent => available_w.saturating_sub(horizontal_margin).max(0),
                 Dimension::WrapContent => match kind {
-                    NodeKind::TextView | NodeKind::Button => metrics::text_width(
-                        &self.text,
-                        metrics::TEXT_SIZE,
-                    )
-                    .saturating_add(2 * self.padding + horizontal_margin)
-                    .max(intrinsic.width),
+                    NodeKind::TextView | NodeKind::Button => {
+                        metrics::text_width(&self.text, metrics::TEXT_SIZE)
+                            .saturating_add(2 * self.padding + horizontal_margin)
+                            .max(intrinsic.width)
+                    }
                     _ => intrinsic.width,
                 },
             };
@@ -534,7 +535,10 @@ impl View {
                     _ => intrinsic.height,
                 },
             };
-            self.measured = Size { width: m, height: h };
+            self.measured = Size {
+                width: m,
+                height: h,
+            };
             return self.measured;
         }
 
@@ -545,29 +549,26 @@ impl View {
             self.children.iter().map(|c| c.layout_params).collect();
         let mut child_sizes: Vec<Size> = Vec::with_capacity(self.children.len());
         for (i, c) in self.children.iter_mut().enumerate() {
-            let child_offered = if kind == NodeKind::LinearLayout && self.orientation == Orientation::Horizontal
-            {
-                // A horizontal LinearLayout hands each child what is left, so a
-                // child's own measurement is not independent of its position.
-                let used: i32 = child_sizes
-                    .iter()
-                    .zip(&child_params)
-                    .map(|(s, p)| s.width + p.horizontal_margin())
-                    .sum::<i32>()
-                    + child_params
-                        .get(i)
-                        .map(|p| p.margin_left)
-                        .unwrap_or(0);
-                Size {
-                    width: (available_w - used).max(0),
-                    height: available_h,
-                }
-            } else {
-                Size {
-                    width: available_w,
-                    height: available_h,
-                }
-            };
+            let child_offered =
+                if kind == NodeKind::LinearLayout && self.orientation == Orientation::Horizontal {
+                    // A horizontal LinearLayout hands each child what is left, so a
+                    // child's own measurement is not independent of its position.
+                    let used: i32 = child_sizes
+                        .iter()
+                        .zip(&child_params)
+                        .map(|(s, p)| s.width + p.horizontal_margin())
+                        .sum::<i32>()
+                        + child_params.get(i).map(|p| p.margin_left).unwrap_or(0);
+                    Size {
+                        width: (available_w - used).max(0),
+                        height: available_h,
+                    }
+                } else {
+                    Size {
+                        width: available_w,
+                        height: available_h,
+                    }
+                };
             child_sizes.push(c.measure(child_offered));
         }
 
@@ -654,7 +655,10 @@ impl View {
             Dimension::WrapContent => h.max(0),
         };
 
-        self.measured = Size { width: m, height: h };
+        self.measured = Size {
+            width: m,
+            height: h,
+        };
         self.measured
     }
 
@@ -735,8 +739,12 @@ impl View {
                         ),
                     };
                     let (l, t) = match orientation {
-                        Orientation::Vertical => (inner.left + p.margin_left, cursor + p.margin_top),
-                        Orientation::Horizontal => (cursor + p.margin_left, inner.top + p.margin_top),
+                        Orientation::Vertical => {
+                            (inner.left + p.margin_left, cursor + p.margin_top)
+                        }
+                        Orientation::Horizontal => {
+                            (cursor + p.margin_left, inner.top + p.margin_top)
+                        }
                     };
                     Rect {
                         left: l,
@@ -758,9 +766,8 @@ impl View {
                         Dimension::Exact(h) => h,
                         Dimension::WrapContent => child.measured.height,
                     };
-                    let l = inner.left
-                        + p.margin_left
-                        + gravity_offset(p.gravity & 0x07, inner_w - w);
+                    let l =
+                        inner.left + p.margin_left + gravity_offset(p.gravity & 0x07, inner_w - w);
                     let t =
                         inner.top + p.margin_top + gravity_offset(p.gravity & 0x70, inner_h - h);
                     Rect {
@@ -921,10 +928,25 @@ mod tests {
     use super::*;
 
     fn vertical() -> View {
-        let mut root = View::group("root", "LinearLayout", NodeKind::LinearLayout, Orientation::Vertical);
+        let mut root = View::group(
+            "root",
+            "LinearLayout",
+            NodeKind::LinearLayout,
+            Orientation::Vertical,
+        );
         root.layout_params.width = Dimension::MatchParent;
-        root.add(View::text("title", "TextView", NodeKind::TextView, "Sign in"));
-        let mut field = View::text("email", "EditText", NodeKind::EditText, "someone@example.invalid");
+        root.add(View::text(
+            "title",
+            "TextView",
+            NodeKind::TextView,
+            "Sign in",
+        ));
+        let mut field = View::text(
+            "email",
+            "EditText",
+            NodeKind::EditText,
+            "someone@example.invalid",
+        );
         field.layout_params.width = Dimension::MatchParent;
         root.add(field);
         let mut b = View::text("go", "Button", NodeKind::Button, "Continue");
@@ -936,7 +958,13 @@ mod tests {
     #[test]
     fn a_vertical_linear_layout_stacks_and_grows() {
         let mut v = vertical();
-        let t = v.run(Size { width: 360, height: 640 }, TextPolicy::ShapeOnly);
+        let t = v.run(
+            Size {
+                width: 360,
+                height: 640,
+            },
+            TextPolicy::ShapeOnly,
+        );
         let flat = t.flatten();
         let by_id = |id: &str| flat.iter().find(|(k, _)| k == id).map(|(_, r)| *r).unwrap();
         let title = by_id("title");
@@ -950,7 +978,12 @@ mod tests {
 
     #[test]
     fn weights_distribute_the_leftover_space() {
-        let mut root = View::group("root", "LinearLayout", NodeKind::LinearLayout, Orientation::Horizontal);
+        let mut root = View::group(
+            "root",
+            "LinearLayout",
+            NodeKind::LinearLayout,
+            Orientation::Horizontal,
+        );
         root.layout_params.width = Dimension::MatchParent;
         let mut a = View::leaf("a", "View", NodeKind::View);
         a.layout_params.weight = 1.0;
@@ -958,7 +991,13 @@ mod tests {
         b.layout_params.weight = 1.0;
         root.add(a);
         root.add(b);
-        let t = root.run(Size { width: 100, height: 10 }, TextPolicy::Omit);
+        let t = root.run(
+            Size {
+                width: 100,
+                height: 10,
+            },
+            TextPolicy::Omit,
+        );
         let flat = t.flatten();
         let a = flat.iter().find(|(k, _)| k == "a").unwrap().1;
         let b = flat.iter().find(|(k, _)| k == "b").unwrap().1;
@@ -970,7 +1009,12 @@ mod tests {
 
     #[test]
     fn gone_children_are_dropped_and_invisible_ones_kept() {
-        let mut root = View::group("root", "LinearLayout", NodeKind::LinearLayout, Orientation::Vertical);
+        let mut root = View::group(
+            "root",
+            "LinearLayout",
+            NodeKind::LinearLayout,
+            Orientation::Vertical,
+        );
         root.add(View::leaf("keep", "View", NodeKind::View));
         let mut gone = View::leaf("gone", "View", NodeKind::View);
         gone.visibility = Visibility::Gone;
@@ -978,7 +1022,13 @@ mod tests {
         let mut invisible = View::leaf("inv", "View", NodeKind::View);
         invisible.visibility = Visibility::Invisible;
         root.add(invisible);
-        let t = root.run(Size { width: 100, height: 100 }, TextPolicy::Omit);
+        let t = root.run(
+            Size {
+                width: 100,
+                height: 100,
+            },
+            TextPolicy::Omit,
+        );
         let flat = t.flatten();
         let ids: Vec<&str> = flat.iter().map(|(k, _)| k.as_str()).collect();
         assert!(ids.contains(&"inv"));
@@ -988,14 +1038,22 @@ mod tests {
     #[test]
     fn text_never_appears_in_the_default_policy() {
         let mut v = vertical();
-        let t = v.run(Size { width: 360, height: 640 }, TextPolicy::ShapeOnly);
+        let t = v.run(
+            Size {
+                width: 360,
+                height: 640,
+            },
+            TextPolicy::ShapeOnly,
+        );
         let json = tree_to_json(&t).unwrap();
-        assert!(!json.contains("someone@example.invalid"), "text leaked: {json}");
+        assert!(
+            !json.contains("someone@example.invalid"),
+            "text leaked: {json}"
+        );
         assert!(!json.contains("Sign in"));
         // But the shape is there, and it is enough to say "this field holds an
         // email address" without holding the address.
-        t
-            .flatten()
+        t.flatten()
             .into_iter()
             .find(|(k, _)| k == "email")
             .map(|_| ())
@@ -1011,21 +1069,38 @@ mod tests {
     #[test]
     fn the_include_policy_is_opt_in() {
         let mut v = vertical();
-        let t = v.run(Size { width: 360, height: 640 }, TextPolicy::Include);
+        let t = v.run(
+            Size {
+                width: 360,
+                height: 640,
+            },
+            TextPolicy::Include,
+        );
         let json = tree_to_json(&t).unwrap();
         assert!(json.contains("Sign in"));
     }
 
     #[test]
     fn frame_layout_honours_gravity() {
-        let mut root = View::group("root", "FrameLayout", NodeKind::FrameLayout, Orientation::Vertical);
+        let mut root = View::group(
+            "root",
+            "FrameLayout",
+            NodeKind::FrameLayout,
+            Orientation::Vertical,
+        );
         root.layout_params.width = Dimension::MatchParent;
         let mut c = View::leaf("c", "View", NodeKind::View);
         c.layout_params.width = Dimension::Exact(10);
         c.layout_params.height = Dimension::Exact(10);
         c.layout_params.gravity = 0x11 | 0x01; // TOP|LEFT|CENTER_HORIZONTAL
         root.add(c);
-        let t = root.run(Size { width: 100, height: 100 }, TextPolicy::Omit);
+        let t = root.run(
+            Size {
+                width: 100,
+                height: 100,
+            },
+            TextPolicy::Omit,
+        );
         let rect = t.flatten().into_iter().find(|(k, _)| k == "c").unwrap().1;
         // 100 dp wide, 4 dp padding each side, a 10 dp child, centred: the 82 dp
         // of slack splits evenly, so the child starts at 4 + 41.
@@ -1036,13 +1111,24 @@ mod tests {
     #[test]
     fn zero_sized_viewport_does_not_panic() {
         let mut v = vertical();
-        let t = v.run(Size { width: 0, height: 0 }, TextPolicy::Omit);
+        let t = v.run(
+            Size {
+                width: 0,
+                height: 0,
+            },
+            TextPolicy::Omit,
+        );
         assert_eq!(t.frame.width(), 0);
     }
 
     #[test]
     fn leaf_area_counts_overlap_twice() {
-        let mut root = View::group("root", "FrameLayout", NodeKind::FrameLayout, Orientation::Vertical);
+        let mut root = View::group(
+            "root",
+            "FrameLayout",
+            NodeKind::FrameLayout,
+            Orientation::Vertical,
+        );
         root.layout_params.width = Dimension::MatchParent;
         for id in ["a", "b"] {
             let mut v = View::leaf(id, "View", NodeKind::View);
@@ -1050,7 +1136,13 @@ mod tests {
             v.layout_params.height = Dimension::Exact(10);
             root.add(v);
         }
-        let t = root.run(Size { width: 50, height: 50 }, TextPolicy::Omit);
+        let t = root.run(
+            Size {
+                width: 50,
+                height: 50,
+            },
+            TextPolicy::Omit,
+        );
         assert_eq!(t.leaf_area(), 200);
     }
 

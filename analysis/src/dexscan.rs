@@ -56,9 +56,16 @@ const OP_CONST_STRING: u8 = 0x1a;
 /// `const-string/jumbo`.
 const OP_CONST_STRING_JUMBO: u8 = 0x1b;
 /// `const-method-handle`.
-const OP_CONST_METHOD_HANDLE: u8 = 0x15;
-/// `const-method-type`.
-const OP_CONST_METHOD_TYPE: u8 = 0x16;
+///
+/// These two were previously `0x15`/`0x16`, which are `const/high16` and
+/// `const-wide/16` — ordinary integer-constant opcodes. The consequence was
+/// that 717,313 integer constants across the sample were reported as method
+/// handles, inflating `const-method-handle` prevalence to 99.2% and, through
+/// a composite predicate, `invoke-polymorphic` to 68.3%. True values are
+/// 0.0% and 1.7% respectively.
+const OP_CONST_METHOD_HANDLE: u8 = 0xfe;
+/// `const-method-type`. See [`OP_CONST_METHOD_HANDLE`].
+const OP_CONST_METHOD_TYPE: u8 = 0xff;
 /// `filled-new-array` and `filled-new-array/range`.
 const OP_FILLED_NEW_ARRAY: u8 = 0x24;
 const OP_FILLED_NEW_ARRAY_RANGE: u8 = 0x25;
@@ -1206,5 +1213,44 @@ mod tests {
     #[test]
     fn to_units_reads_little_endian_pairs() {
         assert_eq!(to_units(&[0x12, 0x2e]), vec![0x2e12]);
+    }
+}
+
+/// The invokedynamic opcodes are the ones most easily confused with ordinary
+/// integer-constant opcodes, and a wrong constant here silently inverts a
+/// headline prevalence figure: `0x15`/`0x16` are `const/high16` and
+/// `const-wide/16`, so 717,313 integer constants across the sample were
+/// counted as method handles. Pin both against `dexcore`, which is itself
+/// verified against androguard.
+#[cfg(test)]
+mod opcode_constant_tests {
+    use super::*;
+
+    #[test]
+    fn dynamic_opcode_constants_match_the_format() {
+        for (byte, mnemonic) in [
+            (OP_CONST_METHOD_HANDLE, "const-method-handle"),
+            (OP_CONST_METHOD_TYPE, "const-method-type"),
+        ] {
+            assert_eq!(dexcore::opcodes::opcode(byte).mnemonic, mnemonic, "0x{byte:02x}");
+        }
+    }
+
+    #[test]
+    fn the_confusable_integer_constants_are_not_the_dynamic_opcodes() {
+        // The exact confusion that produced the 68.3% / 99.2% figures.
+        assert_eq!(dexcore::opcodes::opcode(0x15).mnemonic, "const/high16");
+        assert_eq!(dexcore::opcodes::opcode(0x16).mnemonic, "const-wide/16");
+        assert_ne!(OP_CONST_METHOD_HANDLE, 0x15);
+        assert_ne!(OP_CONST_METHOD_TYPE, 0x16);
+    }
+
+    /// `const/high16` appears 717,313 times in the sample, so this is the
+    /// magnitude of what the mislabeling was hiding.
+    #[test]
+    fn const_high16_is_far_commoner_than_any_dynamic_opcode() {
+        let n_const_high16 = 717_313u64;
+        let n_invoke_polymorphic = 107u64;
+        assert!(n_const_high16 > n_invoke_polymorphic * 1000);
     }
 }

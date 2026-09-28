@@ -335,10 +335,14 @@ impl AssumptionId {
     /// Parse a full ID, or explain why it is not in the registry.
     pub fn parse(s: &str) -> Result<AssumptionId, ShimError> {
         if !Self::well_shaped(s) {
-            return Err(ShimError::Encode(format!("{s:?} is not a SUB.<FAMILY>[.<LEAF>] id")));
+            return Err(ShimError::Encode(format!(
+                "{s:?} is not a SUB.<FAMILY>[.<LEAF>] id"
+            )));
         }
         AssumptionId::lookup(s).ok_or_else(|| {
-            ShimError::Encode(format!("{s:?} is well shaped but not in the shim's registry"))
+            ShimError::Encode(format!(
+                "{s:?} is well shaped but not in the shim's registry"
+            ))
         })
     }
 
@@ -410,8 +414,18 @@ mod tests {
 
     #[test]
     fn malformed_ids_are_rejected() {
-        for bad in ["SUB", "NET.EGRESS", "sub.net.egress", "SUB.net", "", "SUB..EGRESS"] {
-            assert!(AssumptionId::parse(bad).is_err(), "{bad:?} should be rejected");
+        for bad in [
+            "SUB",
+            "NET.EGRESS",
+            "sub.net.egress",
+            "SUB.net",
+            "",
+            "SUB..EGRESS",
+        ] {
+            assert!(
+                AssumptionId::parse(bad).is_err(),
+                "{bad:?} should be rejected"
+            );
         }
     }
 }

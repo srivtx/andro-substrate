@@ -73,10 +73,20 @@ fn no_network_entry_point_reaches_a_real_socket() {
     // --- every surface an app could use, each driven to its terminal.
     // 1. java.net.URL / URLConnection / HttpURLConnection
     let url = format!("http://127.0.0.1:{port}/collect?k=v");
-    s.invoke("Ljava/net/URL;", "<init>", "(Ljava/lang/String;)V", &[Value::Str(url.clone())])
-        .expect("a URL constructs");
+    s.invoke(
+        "Ljava/net/URL;",
+        "<init>",
+        "(Ljava/lang/String;)V",
+        &[Value::Str(url.clone())],
+    )
+    .expect("a URL constructs");
     let conn = s
-        .invoke("Ljava/net/URL;", "openConnection", "()Ljava/net/URLConnection;", &[Value::Ref("Ljava/net/URL;".into(), 1)])
+        .invoke(
+            "Ljava/net/URL;",
+            "openConnection",
+            "()Ljava/net/URLConnection;",
+            &[Value::Ref("Ljava/net/URL;".into(), 1)],
+        )
         .expect("openConnection");
     s.invoke(
         "Ljava/net/HttpURLConnection;",
@@ -85,18 +95,38 @@ fn no_network_entry_point_reaches_a_real_socket() {
         &[conn.clone(), Value::Str("GET".into())],
     )
     .expect("setRequestMethod");
-    let r = s.invoke("Ljava/net/URLConnection;", "connect", "()V", std::slice::from_ref(&conn));
+    let r = s.invoke(
+        "Ljava/net/URLConnection;",
+        "connect",
+        "()V",
+        std::slice::from_ref(&conn),
+    );
     assert!(r.is_err(), "connect must fail");
 
     // 2. getResponseCode / getInputStream / getOutputStream
     assert!(s
-        .invoke("Ljava/net/HttpURLConnection;", "getResponseCode", "()I", std::slice::from_ref(&conn))
+        .invoke(
+            "Ljava/net/HttpURLConnection;",
+            "getResponseCode",
+            "()I",
+            std::slice::from_ref(&conn)
+        )
         .is_err());
     assert!(s
-        .invoke("Ljava/net/HttpURLConnection;", "getInputStream", "()Ljava/io/InputStream;", std::slice::from_ref(&conn))
+        .invoke(
+            "Ljava/net/HttpURLConnection;",
+            "getInputStream",
+            "()Ljava/io/InputStream;",
+            std::slice::from_ref(&conn)
+        )
         .is_err());
-    s.invoke("Ljava/net/HttpURLConnection;", "getOutputStream", "()Ljava/io/OutputStream;", std::slice::from_ref(&conn))
-        .expect("the output sink is reachable so a body can be counted");
+    s.invoke(
+        "Ljava/net/HttpURLConnection;",
+        "getOutputStream",
+        "()Ljava/io/OutputStream;",
+        std::slice::from_ref(&conn),
+    )
+    .expect("the output sink is reachable so a body can be counted");
 
     // 3. A raw Socket, the other way in.
     let r = s.invoke(
@@ -151,12 +181,22 @@ fn no_network_entry_point_reaches_a_real_socket() {
     // silence. Three net events: the HttpURLConnection connect, the WebView
     // load, and... the socket connect has no URL so it records a refusal with no
     // request. That asymmetry is deliberate and is asserted in `observation.rs`.
-    let net: Vec<&shim::SubstrateEvent> =
-        s.events().iter().filter(|e| e.group == Group::Net).collect();
-    assert!(net.len() >= 2, "attempts must be recorded, not silently dropped");
+    let net: Vec<&shim::SubstrateEvent> = s
+        .events()
+        .iter()
+        .filter(|e| e.group == Group::Net)
+        .collect();
+    assert!(
+        net.len() >= 2,
+        "attempts must be recorded, not silently dropped"
+    );
     for e in &net {
         match &e.detail {
-            Detail::Net { outcome, recorded_path, .. } => {
+            Detail::Net {
+                outcome,
+                recorded_path,
+                ..
+            } => {
                 assert!(outcome.is_err(), "a recorded net event must be a failure");
                 assert!(!recorded_path.contains('?'), "{}", recorded_path);
             }
@@ -184,13 +224,23 @@ fn a_constructing_a_url_does_not_itself_contact_anything() {
         "construction alone must record nothing in the net group"
     );
     // The parsed parts are available to the app without a network call.
-    let host = s.invoke("Ljava/net/URL;", "getHost", "()Ljava/lang/String;", &[Value::Ref("Ljava/net/URL;".into(), 1)]);
+    let host = s.invoke(
+        "Ljava/net/URL;",
+        "getHost",
+        "()Ljava/lang/String;",
+        &[Value::Ref("Ljava/net/URL;".into(), 1)],
+    );
     assert_eq!(host.unwrap(), Value::Str("example.invalid".into()));
     // And the query is returned to the app empty, because the shim never stored
     // it. A caller comparing `getQuery()` with what it passed would see a
     // difference — which is a real `SUB.FW.SERIALIZATION` finding rather than a
     // silent one.
-    let q = s.invoke("Ljava/net/URL;", "getQuery", "()Ljava/lang/String;", &[Value::Ref("Ljava/net/URL;".into(), 1)]);
+    let q = s.invoke(
+        "Ljava/net/URL;",
+        "getQuery",
+        "()Ljava/lang/String;",
+        &[Value::Ref("Ljava/net/URL;".into(), 1)],
+    );
     assert_eq!(q.unwrap(), Value::Str(String::new()));
 }
 
@@ -223,12 +273,21 @@ const SOURCES: &[(&str, &str)] = &[
     ("src/lib.rs", include_str!("../src/lib.rs")),
     ("src/behaviour.rs", include_str!("../src/behaviour.rs")),
     ("src/classes.rs", include_str!("../src/classes.rs")),
+    // The policy module is the one that most wants a side channel and is
+    // therefore the one that must be scanned hardest: every axis value of every
+    // axis is a string this crate can parse, and the scan is what proves none of
+    // them can name a socket.
+    (
+        "src/differential.rs",
+        include_str!("../src/differential.rs"),
+    ),
     ("src/dispatch.rs", include_str!("../src/dispatch.rs")),
     ("src/emit.rs", include_str!("../src/emit.rs")),
     ("src/error.rs", include_str!("../src/error.rs")),
     ("src/event.rs", include_str!("../src/event.rs")),
     ("src/layout.rs", include_str!("../src/layout.rs")),
     ("src/net.rs", include_str!("../src/net.rs")),
+    ("src/policy.rs", include_str!("../src/policy.rs")),
     ("src/recording.rs", include_str!("../src/recording.rs")),
     ("src/redact.rs", include_str!("../src/redact.rs")),
     ("src/registry.rs", include_str!("../src/registry.rs")),
@@ -236,7 +295,14 @@ const SOURCES: &[(&str, &str)] = &[
     ("src/system.rs", include_str!("../src/system.rs")),
     ("src/taxonomy.rs", include_str!("../src/taxonomy.rs")),
     ("src/vfs.rs", include_str!("../src/vfs.rs")),
-    ("src/bin/shim-record.rs", include_str!("../src/bin/shim-record.rs")),
+    (
+        "src/bin/shim-record.rs",
+        include_str!("../src/bin/shim-record.rs"),
+    ),
+    (
+        "src/bin/shim-differential.rs",
+        include_str!("../src/bin/shim-differential.rs"),
+    ),
 ];
 
 /// Symbols that would constitute a side channel out of the shim.
@@ -251,7 +317,10 @@ const FORBIDDEN: &[(&str, &str)] = &[
     ("File::open", "real disk"),
     ("process::Command", "subprocess execution"),
     ("Command::new", "subprocess execution"),
-    ("process::abort", "process termination outside the shim's control"),
+    (
+        "process::abort",
+        "process termination outside the shim's control",
+    ),
     ("libc::", "a raw syscall"),
     ("reqwest", "an HTTP client"),
     ("hyper::", "an HTTP client"),
@@ -284,8 +353,13 @@ fn the_crate_contains_no_side_channel() {
                 let lo = at.saturating_sub(40);
                 let hi = (at + needle.len() + 40).min(src.len());
                 let lo = (lo..=hi).find(|i| src.is_char_boundary(*i)).unwrap_or(0);
-                let hi = (lo..=hi).find(|i| src.is_char_boundary(*i)).unwrap_or(src.len());
-                hits.push(format!("{name} at byte {at}: {what}\n    ...{}...", &src[lo..hi]));
+                let hi = (lo..=hi)
+                    .find(|i| src.is_char_boundary(*i))
+                    .unwrap_or(src.len());
+                hits.push(format!(
+                    "{name} at byte {at}: {what}\n    ...{}...",
+                    &src[lo..hi]
+                ));
             }
         }
     }
@@ -302,7 +376,17 @@ tests/common/source_scan.rs for what the classifier does and does not handle.\n{
 #[test]
 fn the_manifest_declares_no_io_capable_dependency() {
     let manifest = include_str!("../Cargo.toml");
-    for dep in ["reqwest", "hyper", "ureq", "curl", "tokio", "async-std", "libc", "nix", "rand"] {
+    for dep in [
+        "reqwest",
+        "hyper",
+        "ureq",
+        "curl",
+        "tokio",
+        "async-std",
+        "libc",
+        "nix",
+        "rand",
+    ] {
         assert!(
             !manifest.contains(dep),
             "{dep} must not be a dependency of the shim"
@@ -319,10 +403,18 @@ fn the_emitted_dex_names_no_transport_class() {
     for i in 0..d.type_count() {
         let name = d.type_name(i).unwrap_or_default();
         for bad in [
-            "Lokhttp3/", "Lcom/squareup/okhttp/", "Lorg/apache/http/", "Lio/okhttp/",
-            "Ljavax/net/ssl/", "Ljava/net/DatagramSocket;", "Ljava/net/ServerSocket;",
-            "Ljava/net/MulticastSocket;", "Ljava/nio/channels/", "Ljava/net/URI;",
-            "Lsun/nio/ch/", "Ljava/net/ProxySelector;",
+            "Lokhttp3/",
+            "Lcom/squareup/okhttp/",
+            "Lorg/apache/http/",
+            "Lio/okhttp/",
+            "Ljavax/net/ssl/",
+            "Ljava/net/DatagramSocket;",
+            "Ljava/net/ServerSocket;",
+            "Ljava/net/MulticastSocket;",
+            "Ljava/nio/channels/",
+            "Ljava/net/URI;",
+            "Lsun/nio/ch/",
+            "Ljava/net/ProxySelector;",
         ] {
             assert!(
                 !name.starts_with(bad),

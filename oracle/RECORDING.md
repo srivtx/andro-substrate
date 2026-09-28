@@ -106,6 +106,7 @@ separates *"we looked and saw nothing"* from *"we could not look"*.
 | `provenance` | Did an execution actually happen, on what recorder source, on what host. |
 | `recorder` | Name, version, implementation, effective non-secret options. |
 | `capture` | Timing, install, launch, device serial, clock, **observer effects**, interventions. |
+| `substrate_policy` | **Optional, substrate-only.** What the observation layer returned when the app asked it something, and what it was permitted to do. Absent from a device capture: a device is not a substrate. §3.1. |
 | `app` | Package, versionCode, **APK SHA-256**, min/target SDK, permissions, split APKs, declared native libs, data dir. |
 | `environment` | Android version, API level, ABI, build fingerprint, SELinux, Play Services, image digest, **attestation ceiling**. |
 | `clock` | Which clock the relative timeline came from, and at what resolution. |
@@ -122,6 +123,100 @@ separates *"we looked and saw nothing"* from *"we could not look"*.
 | `substrate_probe_hits` | **The join key** (§7). |
 | `capture_quality` | Completeness, signals expected vs obtained, unobserved gaps, warnings, `empty_failure`. |
 | `summary` | Optional convenience roll-up. The analysis script recomputes rather than trusting it, and the validator checks it. |
+
+---
+
+## 3.1 `substrate_policy` — the substrate arm's own behaviour, declared
+
+**This section is about a problem the format did not originally have, and the
+field is a partial answer to it.**
+
+### The problem
+
+A shim that terminates every side effect observes a *different program*. Once the
+substrate has refused a request, the app's control flow is determined by the
+substrate, not by the app. So every downstream fact — an exception, a lifecycle
+terminal, a `MISBEHAVE` outcome — is a **joint** property of app and substrate, and
+a recording of one substrate does not separate them. An analyst reading
+`exceptions[3]` sees "the app threw" when the correct reading is "the app reached
+a place the shim lacks, and then did whatever it does there".
+
+This gets *worse* the more plausible the shim is. A shim returning obvious nulls
+fails loudly and is easy to discount; a shim returning plausible `Build.*` and
+`/proc` values produces recordings that read like measurements of the app and are
+partly measurements of the shim. Plausibility is what makes the confound
+invisible, so plausibility has to become a variable rather than a virtue.
+
+### The field
+
+`substrate_policy` is optional and substrate-only. When present it names five
+orthogonal axes, the value each took, the classes of recorded fact each governs,
+and a prose statement of what that value does:
+
+| axis | values |
+|---|---|
+| `identity` | `fabricated` · `withheld` · `refusing` |
+| `system_fs` | `fabricated` · `empty` · `absent` |
+| `cross_app_packages` | `subject_only` · `all_present` · `error` |
+| `network` | `record_and_deny` · `synthetic_loopback` |
+| `time` | `virtual` · `scaled` · `frozen` · `host_real` |
+
+Three version numbers, because three different questions are being asked of a
+declaration read years later:
+
+- **`policy_format`** — the shape of the object. A reader that does not recognise
+  it must refuse to interpret the axis values rather than guess.
+- **`policy_version`** — the *meaning* of the vocabulary. Bumped when a value is
+  added, removed or **redefined**, even if the shape is unchanged. Two documents
+  with different `policy_version`s may use the same token for different things.
+- **`shim_version`** — what a value *returns* is a property of the code, not only
+  of the vocabulary.
+
+Plus `policy_digest`, a content checksum for joining two recordings to "the same
+policy" without diffing prose. It is not a security property.
+
+### What it does and does not buy
+
+It **does** make attribution machine-readable. `axis_declarations[].governs` says
+which classes of fact each axis decides, so two recordings of the same program
+under two policies can be diffed and every moved fact blamed on the axis that
+moved — from the two JSON files alone, with no access to the tool that wrote them.
+A fact in the `app` class was not decided by the substrate.
+
+It **does not** separate the two inside a single document. No `ground-truth/1`
+document can, and a field that claimed otherwise would be the same conflation with
+a new vocabulary. The separation is a measurement *across two runs*, and the
+schema's job is to make both runs legible enough to do it.
+
+### The constraints are not advisory
+
+```json
+"invariants": {
+  "egress": "structurally_impossible",
+  "bodies_captured": false,
+  "header_values_captured": false,
+  "query_values_captured": false
+}
+```
+
+Each is a `const` in the schema, and an axis's `governs` list may not name `app`,
+`derived_roll_up` or `policy_declaration` — no axis may claim responsibility for a
+fact that was not the substrate's doing, for a recorder's own roll-up, or for the
+declaration itself. `oracle/recorder/negative-tests.sh` has a case per constraint,
+plus a positive control, so relaxing any of them fails `make test`.
+
+### One place the format constrains the measurement
+
+`environment.android_release` has `minLength: 1` and `environment.sdk_int` has
+`minimum: 1`. A substrate that withholds identity entirely still has to record
+*something*, and the format's answer is the floor: release `"1"`, SDK 1. That is a
+claim the policy did not make, and the recording says so in `notes`. A format that
+cannot express "unknown" makes the recorder lie by omission; a format that *can*
+still constrains a recorder that wants to say "unknown". Recording the floor
+explicitly is the minimum, and the residual is stated here rather than discovered.
+
+`docs/decisions/0006-substrate-policy.md` is the design record, including what the
+policy family still cannot separate from the app.
 
 ---
 
@@ -506,6 +601,13 @@ Stated plainly, because a format that oversells itself is worse than none.
 - **It is not a substitute for running the app on a real phone.** A container
   oracle is a contaminated oracle; see
   [`../docs/research-protocol.md`](../docs/research-protocol.md) §7 threat T-04.
+- **A substrate recording does not separate the substrate from the app.** §3.1
+  makes the substrate's behaviour a declared parameter, which makes the
+  dependency *measurable*; it does not make it disappear. A fact in a
+  policy-governed class is a joint property, and no single document can say which
+  half is the app's. The separation is a diff against a second run, and a study
+  that reports a single substrate run as a measurement of the app has made the
+  error this field exists to make visible.
 
 ---
 

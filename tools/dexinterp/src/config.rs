@@ -213,6 +213,12 @@ impl Stats {
 
 #[cfg(test)]
 mod tests {
+    // The crate forbids `unwrap` on anything that came out of a file, and that
+    // ban is what keeps a malformed DEX from killing the process. It has no
+    // business in a test: every value unwrapped below was built by the test
+    // itself, and a test that cannot reach its own fixture should fail loudly
+    // rather than contort itself around a type it has already proven.
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
     use super::*;
 
     #[test]
@@ -220,7 +226,10 @@ mod tests {
         let c = Config::default();
         assert_eq!(c.instruction_budget, Some(DEFAULT_INSTRUCTION_BUDGET));
         assert!(c.max_call_depth > 0);
-        assert!(c.phantom_classes, "phantom classes are on by default, and recorded");
+        assert!(
+            c.phantom_classes,
+            "phantom classes are on by default, and recorded"
+        );
     }
 
     #[test]

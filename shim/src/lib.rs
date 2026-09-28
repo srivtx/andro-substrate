@@ -37,6 +37,8 @@
 //! | [`net`] | the egress sink. The only network capability, and it is a wall. |
 //! | [`vfs`] | an in-memory virtual filesystem. Nothing touches a disk. |
 //! | [`classes`] | the classloader and the supersede decision. |
+//! | [`policy`] | **the substrate policy**: the shim's own behaviour, as a declared parameter. |
+//! | [`differential`] | run one program under two substrates and attribute every moved fact. |
 //! | [`system`] | the fabricated device identity, and the probes that read it. |
 //! | [`layout`] | a real measure/layout/draw cycle producing a serialisable box tree. |
 //! | [`emit`] | emit the shim as a DEX with `dexcore`'s writer. |
@@ -76,12 +78,14 @@
 
 pub mod behaviour;
 pub mod classes;
+pub mod differential;
 pub mod dispatch;
 pub mod emit;
 pub mod error;
 pub mod event;
 pub mod layout;
 pub mod net;
+pub mod policy;
 pub mod recording;
 pub mod redact;
 pub mod registry;
@@ -92,9 +96,13 @@ pub mod vfs;
 
 pub use dispatch::{Shim, ShimCaller, Value};
 pub use error::{EgressDenial, ShimError, VfsError};
-pub use event::{Detail, Group, Resolution, SubstrateEvent, Tier};
+pub use event::{Detail, Group, NetPresentation, Resolution, SubstrateEvent, Tier};
 pub use layout::{BoxNode, NodeKind, Orientation, Size, TextPolicy, View};
 pub use net::{EgressRequest, EgressSink};
+pub use policy::{
+    Axis, FactClass, IdentityMode, LoopbackResponse, NetworkMode, PackageMode, SubstratePolicy,
+    SystemFsMode, TimeMode, POLICY_FORMAT, POLICY_VERSION,
+};
 pub use redact::{HeaderNames, HttpMethod, PathPolicy, RequestMeta, Scheme};
 pub use taxonomy::{AssumptionId, Family, SymptomClass};
 

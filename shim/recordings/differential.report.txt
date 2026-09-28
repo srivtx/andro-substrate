@@ -1,0 +1,387 @@
+SUBSTRATE POLICY DIFFERENTIAL
+===========================
+
+left  : fnv1a64:3831a4e300ed0c91
+right : fnv1a64:b71360edcacb3d39
+script: identical (shim::scenario::run_with, one function, no per-policy branch)
+
+AXES THAT DIFFER
+----------------
+  identity: fabricated -> withheld
+      governs environment_identity
+      governs identity_probe
+  system_fs: fabricated -> absent
+      governs system_fs
+  cross_app_packages: subject_only -> error
+      governs cross_app_packages
+  network: record_and_deny -> synthetic_loopback
+      governs network
+  time: virtual -> frozen
+      governs time
+
+FACTS THAT MOVED, AND WHY
+--------------------------
+  [system_fs] /diagnostics[pattern=SIGNAL_PAT.BATTERY]/detail
+              axis system_fs : fabricated -> absent
+              /diagnostics[pattern=SIGNAL_PAT.BATTERY]/detail [system_fs] "/sys/class/power_supply/battery/capacity -> 4 bytes, fabricated by the substrate; there… -> "/sys/class/power_supply/battery/capacity -> ENOENT under the substrate's system_fs axis…
+  [identity ] /diagnostics[pattern=SIGNAL_PAT.BUILD_FIELD]/detail
+              axis identity : fabricated -> withheld
+              /diagnostics[pattern=SIGNAL_PAT.BUILD_FIELD]/detail [identity_probe] "Build.FINGERPRINT = andro-substrate/shim/0.1.0:substrate/0.1.0:user/release-keys [answe… -> "Build.FINGERPRINT = <withheld: substrate states no identity> [answered by substrate_pol…
+  [identity ] /diagnostics[pattern=SIGNAL_PAT.BUILD_FIELD]/detail
+              axis identity : fabricated -> withheld
+              /diagnostics[pattern=SIGNAL_PAT.BUILD_FIELD]/detail [identity_probe] "Build.MANUFACTURER = andro-substrate [answered by substrate_policy axis identity]" -> "Build.MANUFACTURER = <withheld: substrate states no identity> [answered by substrate_po…
+  [identity ] /diagnostics[pattern=SIGNAL_PAT.BUILD_FIELD]/detail
+              axis identity : fabricated -> withheld
+              /diagnostics[pattern=SIGNAL_PAT.BUILD_FIELD]/detail [identity_probe] "Build.MODEL = Substrate [answered by substrate_policy axis identity]" -> "Build.MODEL = <withheld: substrate states no identity> [answered by substrate_policy ax…
+  [identity ] /diagnostics[pattern=SIGNAL_PAT.BUILD_FIELD]/detail
+              axis identity : fabricated -> withheld
+              /diagnostics[pattern=SIGNAL_PAT.BUILD_FIELD]/detail [identity_probe] "Build.BRAND = substrate [answered by substrate_policy axis identity]" -> "Build.BRAND = <withheld: substrate states no identity> [answered by substrate_policy ax…
+  [identity ] /diagnostics[pattern=SIGNAL_PAT.BUILD_FIELD]/detail
+              axis identity : fabricated -> withheld
+              /diagnostics[pattern=SIGNAL_PAT.BUILD_FIELD]/detail [identity_probe] "Build.SDK_INT = 34 [answered by substrate_policy axis identity]" -> "Build.SDK_INT = <withheld: substrate states no identity> [answered by substrate_policy …
+  [identity ] /diagnostics[pattern=SIGNAL_PAT.BUILD_FIELD]/detail
+              axis identity : fabricated -> withheld
+              /diagnostics[pattern=SIGNAL_PAT.BUILD_FIELD]/detail [identity_probe] "Build.RELEASE = 14 [answered by substrate_policy axis identity]" -> "Build.RELEASE = <withheld: substrate states no identity> [answered by substrate_policy …
+  [time     ] /diagnostics[pattern=SIGNAL_PAT.CLOCK_ELAPSED]/detail
+              axis time : virtual -> frozen
+              /diagnostics[pattern=SIGNAL_PAT.CLOCK_ELAPSED]/detail [time] "SystemClock() -> 51: the substrate's virtual clock, advanced only by the recorded sched… -> "SystemClock() -> 0 for a virtual time of 51 ms: the substrate's time axis transformed t…
+  [time     ] /diagnostics[pattern=SIGNAL_PAT.CLOCK_ELAPSED]/detail
+              axis time : virtual -> frozen
+              /diagnostics[pattern=SIGNAL_PAT.CLOCK_ELAPSED]/detail [time] "SystemClock() -> 106: the substrate's virtual clock, advanced only by the recorded sche… -> "SystemClock() -> 0 for a virtual time of 106 ms: the substrate's time axis transformed …
+  [time     ] /diagnostics[pattern=SIGNAL_PAT.CLOCK_UPTIME]/detail
+              axis time : virtual -> frozen
+              /diagnostics[pattern=SIGNAL_PAT.CLOCK_UPTIME]/detail [time] "SystemClock() -> 51: the substrate's virtual clock, advanced only by the recorded sched… -> "SystemClock() -> 0 for a virtual time of 51 ms: the substrate's time axis transformed t…
+  [identity ] /diagnostics[pattern=SIGNAL_PAT.EMULATOR_PROBE]/detail
+              axis identity : fabricated -> withheld
+              /diagnostics[pattern=SIGNAL_PAT.EMULATOR_PROBE]/detail [identity_probe] "System.getProperty(\"ro.kernel.qemu\") = <absent: substrate does not model this> [answe… -> "System.getProperty(\"ro.kernel.qemu\") = <withheld: substrate states no identity> [answ…
+  [network  ] /diagnostics[pattern=SIGNAL_PAT.LOOPBACK_RESPONSE]
+              axis network : record_and_deny -> synthetic_loopback
+              /diagnostics[pattern=SIGNAL_PAT.LOOPBACK_RESPONSE] [network] <absent> -> {"pattern":"SIGNAL_PAT.LOOPBACK_RESPONSE","family":"SUB.NET","t_mono_ms":111,"detail":"c…
+  [network  ] /diagnostics[pattern=SIGNAL_PAT.LOOPBACK_RESPONSE]
+              axis network : record_and_deny -> synthetic_loopback
+              /diagnostics[pattern=SIGNAL_PAT.LOOPBACK_RESPONSE] [network] <absent> -> {"pattern":"SIGNAL_PAT.LOOPBACK_RESPONSE","family":"SUB.NET","t_mono_ms":111,"detail":"g…
+  [network  ] /diagnostics[pattern=SIGNAL_PAT.LOOPBACK_RESPONSE]
+              axis network : record_and_deny -> synthetic_loopback
+              /diagnostics[pattern=SIGNAL_PAT.LOOPBACK_RESPONSE] [network] <absent> -> {"pattern":"SIGNAL_PAT.LOOPBACK_RESPONSE","family":"SUB.NET","t_mono_ms":111,"detail":"g…
+  [network  ] /diagnostics[pattern=SIGNAL_PAT.LOOPBACK_RESPONSE]
+              axis network : record_and_deny -> synthetic_loopback
+              /diagnostics[pattern=SIGNAL_PAT.LOOPBACK_RESPONSE] [network] <absent> -> {"pattern":"SIGNAL_PAT.LOOPBACK_RESPONSE","family":"SUB.NET","t_mono_ms":112,"detail":"c…
+  [cross_app_packages] /diagnostics[pattern=SIGNAL_PAT.PM_QUERY]/detail
+              axis cross_app_packages : subject_only -> error
+              /diagnostics[pattern=SIGNAL_PAT.PM_QUERY]/detail [cross_app_packages] "PackageManager query for com.whatsapp -> not installed; the app sees an empty list, not… -> "PackageManager query for com.whatsapp -> NameNotFoundException; the substrate refuses t…
+  [cross_app_packages] /diagnostics[pattern=SIGNAL_PAT.PM_QUERY]/detail
+              axis cross_app_packages : subject_only -> error
+              /diagnostics[pattern=SIGNAL_PAT.PM_QUERY]/detail [cross_app_packages] "Landroid/content/pm/PackageManager;.queryIntentActivities() -> a list of exactly one en… -> "Landroid/content/pm/PackageManager;.queryIntentActivities() -> NameNotFoundException. T…
+  [system_fs] /diagnostics[pattern=SIGNAL_PAT.PROC_CPUINFO]/detail
+              axis system_fs : fabricated -> absent
+              /diagnostics[pattern=SIGNAL_PAT.PROC_CPUINFO]/detail [system_fs] "/proc/cpuinfo -> 85 bytes, fabricated by the substrate; there is no kernel [answered by… -> "/proc/cpuinfo -> ENOENT under the substrate's system_fs axis [substrate_policy axis sys…
+  [system_fs] /diagnostics[pattern=SIGNAL_PAT.PROC_MAPS]/detail
+              axis system_fs : fabricated -> absent
+              /diagnostics[pattern=SIGNAL_PAT.PROC_MAPS]/detail [system_fs] "/proc/self/maps -> 0 bytes, fabricated by the substrate; there is no kernel [answered b… -> "/proc/self/maps -> ENOENT under the substrate's system_fs axis [substrate_policy axis s…
+  [system_fs] /diagnostics[pattern=SIGNAL_PAT.PROC_MAPS]/family
+              axis system_fs : fabricated -> absent
+              /diagnostics[pattern=SIGNAL_PAT.PROC_MAPS]/family [system_fs] "SUB.NATIVE" -> "SUB.KERNEL"
+  [system_fs] /diagnostics[pattern=SIGNAL_PAT.PROC_OTHER]/detail
+              axis system_fs : fabricated -> absent
+              /diagnostics[pattern=SIGNAL_PAT.PROC_OTHER]/detail [system_fs] "/proc/self/exe -> ENOENT under the substrate's system_fs axis [substrate_policy axis sy… -> "/proc/self/exe -> ENOENT under the substrate's system_fs axis [substrate_policy axis sy…
+  [system_fs] /diagnostics[pattern=SIGNAL_PAT.PROC_STATUS]/detail
+              axis system_fs : fabricated -> absent
+              /diagnostics[pattern=SIGNAL_PAT.PROC_STATUS]/detail [system_fs] "/proc/self/status -> 86 bytes, fabricated by the substrate; there is no kernel [answere… -> "/proc/self/status -> ENOENT under the substrate's system_fs axis [substrate_policy axis…
+  [system_fs] /diagnostics[pattern=SIGNAL_PAT.PROC_STATUS]/family
+              axis system_fs : fabricated -> absent
+              /diagnostics[pattern=SIGNAL_PAT.PROC_STATUS]/family [system_fs] "SUB.TRUST" -> "SUB.KERNEL"
+  [system_fs] /diagnostics[pattern=SIGNAL_PAT.PROC_UPTIME]/detail
+              axis system_fs : fabricated -> absent
+              /diagnostics[pattern=SIGNAL_PAT.PROC_UPTIME]/detail [system_fs] "/proc/uptime -> 10 bytes, fabricated by the substrate; there is no kernel [answered by … -> "/proc/uptime -> ENOENT under the substrate's system_fs axis [substrate_policy axis syst…
+  [system_fs] /diagnostics[pattern=SIGNAL_PAT.PROC_UPTIME]/family
+              axis system_fs : fabricated -> absent
+              /diagnostics[pattern=SIGNAL_PAT.PROC_UPTIME]/family [system_fs] "SUB.TIME" -> "SUB.KERNEL"
+  [time     ] /diagnostics[pattern=SIGNAL_PAT.SLEEP]/detail
+              axis time : virtual -> frozen
+              /diagnostics[pattern=SIGNAL_PAT.SLEEP]/detail [time] "Thread.sleep(50 ms) advanced the substrate's virtual clock from 56 to 106 ms and return… -> "Thread.sleep(50 ms) advanced the substrate's virtual clock from 56 to 106 ms and return…
+  [network  ] /diagnostics[pattern=SIGNAL_PAT.WEBVIEW_LOAD]/detail
+              axis network : record_and_deny -> synthetic_loopback
+              /diagnostics[pattern=SIGNAL_PAT.WEBVIEW_LOAD]/detail [network] "WebView.loadUrl to cdn.substrate.invalid:/app.js -> the request is denied at the egress… -> "WebView.loadUrl to cdn.substrate.invalid:/app.js -> the request is refused at the egres…
+  [identity ] /environment/abis[wasm32]
+              axis identity : fabricated -> withheld
+              /environment/abis[wasm32] [environment_identity] "wasm32" -> <absent>
+  [identity ] /environment/android_release
+              axis identity : fabricated -> withheld
+              /environment/android_release [environment_identity] "14" -> "1"
+  [identity ] /environment/board
+              axis identity : fabricated -> withheld
+              /environment/board [environment_identity] "substrate" -> ""
+  [identity ] /environment/brand
+              axis identity : fabricated -> withheld
+              /environment/brand [environment_identity] "substrate" -> ""
+  [identity ] /environment/build_fingerprint
+              axis identity : fabricated -> withheld
+              /environment/build_fingerprint [environment_identity] "andro-substrate/shim/0.1.0:substrate/0.1.0:user/release-keys" -> ""
+  [identity ] /environment/build_tags
+              axis identity : fabricated -> withheld
+              /environment/build_tags [environment_identity] "release-keys" -> ""
+  [identity ] /environment/device
+              axis identity : fabricated -> withheld
+              /environment/device [environment_identity] "substrate" -> ""
+  [identity ] /environment/hardware
+              axis identity : fabricated -> withheld
+              /environment/hardware [environment_identity] "substrate" -> ""
+  [identity ] /environment/manufacturer
+              axis identity : fabricated -> withheld
+              /environment/manufacturer [environment_identity] "andro-substrate" -> ""
+  [identity ] /environment/model
+              axis identity : fabricated -> withheld
+              /environment/model [environment_identity] "Substrate" -> ""
+  [identity ] /environment/product
+              axis identity : fabricated -> withheld
+              /environment/product [environment_identity] "substrate" -> ""
+  [identity ] /environment/properties_observed/ro.build.fingerprint
+              axis identity : fabricated -> withheld
+              /environment/properties_observed/ro.build.fingerprint [environment_identity] "andro-substrate/shim/0.1.0:substrate/0.1.0:user/release-keys" -> ""
+  [identity ] /environment/properties_observed/ro.build.version.sdk
+              axis identity : fabricated -> withheld
+              /environment/properties_observed/ro.build.version.sdk [environment_identity] "34" -> "1"
+  [identity ] /environment/sdk_int
+              axis identity : fabricated -> withheld
+              /environment/sdk_int [environment_identity] 34 -> 1
+  [cross_app_packages] /exceptions[class=android.content.pm.NameNotFoundException::stack_frames=Landroid/content/pm/PackageManager;.getPackageInfo]
+              axis cross_app_packages : subject_only -> error
+              /exceptions[class=android.content.pm.NameNotFoundException::stack_frames=Landroid/content/pm/PackageManager;.getPackageInfo] [cross_app_packages] <absent> -> {"t_mono_ms":20,"fatal":false,"kind":"java_exception","thread":"main","class":"android.c…
+  [cross_app_packages] /exceptions[class=android.content.pm.NameNotFoundException::stack_frames=Landroid/content/pm/PackageManager;.queryIntentActivities]
+              axis cross_app_packages : subject_only -> error
+              /exceptions[class=android.content.pm.NameNotFoundException::stack_frames=Landroid/content/pm/PackageManager;.queryIntentActivities] [cross_app_packages] <absent> -> {"t_mono_ms":20,"fatal":false,"kind":"java_exception","thread":"main","class":"android.c…
+  [network  ] /exceptions[class=java.io.IOException::stack_frames=Ljava/net/HttpURLConnection;.getInputStream]
+              axis network : record_and_deny -> synthetic_loopback
+              /exceptions[class=java.io.IOException::stack_frames=Ljava/net/HttpURLConnection;.getInputStream] [network] {"t_mono_ms":111,"fatal":false,"kind":"java_exception","thread":"main","class":"java.io.… -> <absent>
+  [network  ] /exceptions[class=java.io.IOException::stack_frames=Ljava/net/HttpURLConnection;.getResponseCode]
+              axis network : record_and_deny -> synthetic_loopback
+              /exceptions[class=java.io.IOException::stack_frames=Ljava/net/HttpURLConnection;.getResponseCode] [network] {"t_mono_ms":111,"fatal":false,"kind":"java_exception","thread":"main","class":"java.io.… -> <absent>
+  [network  ] /exceptions[class=java.net.ConnectException::stack_frames=Ljava/net/URLConnection;.connect]
+              axis network : record_and_deny -> synthetic_loopback
+              /exceptions[class=java.net.ConnectException::stack_frames=Ljava/net/URLConnection;.connect] [network] {"t_mono_ms":111,"fatal":false,"kind":"java_exception","thread":"main","class":"java.net… -> <absent>
+  [network  ] /exceptions[class=java.net.ConnectException::stack_frames=Ljava/net/URLConnection;.connect]
+              axis network : record_and_deny -> synthetic_loopback
+              /exceptions[class=java.net.ConnectException::stack_frames=Ljava/net/URLConnection;.connect] [network] {"t_mono_ms":112,"fatal":false,"kind":"java_exception","thread":"main","class":"java.net… -> <absent>
+  [system_fs] /filesystem/accesses[op=read::path=/proc/cpuinfo]/errno
+              axis system_fs : fabricated -> absent
+              /filesystem/accesses[op=read::path=/proc/cpuinfo]/errno [system_fs] null -> "enoent"
+  [system_fs] /filesystem/accesses[op=read::path=/proc/cpuinfo]/result
+              axis system_fs : fabricated -> absent
+              /filesystem/accesses[op=read::path=/proc/cpuinfo]/result [system_fs] "ok" -> "enoent"
+  [system_fs] /filesystem/accesses[op=read::path=/proc/cpuinfo]/size_bytes
+              axis system_fs : fabricated -> absent
+              /filesystem/accesses[op=read::path=/proc/cpuinfo]/size_bytes [system_fs] 85 -> 0
+  [system_fs] /filesystem/accesses[op=read::path=/proc/self/maps]/errno
+              axis system_fs : fabricated -> absent
+              /filesystem/accesses[op=read::path=/proc/self/maps]/errno [system_fs] null -> "enoent"
+  [system_fs] /filesystem/accesses[op=read::path=/proc/self/maps]/result
+              axis system_fs : fabricated -> absent
+              /filesystem/accesses[op=read::path=/proc/self/maps]/result [system_fs] "ok" -> "enoent"
+  [system_fs] /filesystem/accesses[op=read::path=/proc/self/status]/errno
+              axis system_fs : fabricated -> absent
+              /filesystem/accesses[op=read::path=/proc/self/status]/errno [system_fs] null -> "enoent"
+  [system_fs] /filesystem/accesses[op=read::path=/proc/self/status]/result
+              axis system_fs : fabricated -> absent
+              /filesystem/accesses[op=read::path=/proc/self/status]/result [system_fs] "ok" -> "enoent"
+  [system_fs] /filesystem/accesses[op=read::path=/proc/self/status]/size_bytes
+              axis system_fs : fabricated -> absent
+              /filesystem/accesses[op=read::path=/proc/self/status]/size_bytes [system_fs] 86 -> 0
+  [system_fs] /filesystem/accesses[op=read::path=/proc/uptime]/errno
+              axis system_fs : fabricated -> absent
+              /filesystem/accesses[op=read::path=/proc/uptime]/errno [system_fs] null -> "enoent"
+  [system_fs] /filesystem/accesses[op=read::path=/proc/uptime]/result
+              axis system_fs : fabricated -> absent
+              /filesystem/accesses[op=read::path=/proc/uptime]/result [system_fs] "ok" -> "enoent"
+  [system_fs] /filesystem/accesses[op=read::path=/proc/uptime]/size_bytes
+              axis system_fs : fabricated -> absent
+              /filesystem/accesses[op=read::path=/proc/uptime]/size_bytes [system_fs] 10 -> 0
+  [system_fs] /filesystem/accesses[op=read::path=/sys/class/power_supply/battery/capacity]/errno
+              axis system_fs : fabricated -> absent
+              /filesystem/accesses[op=read::path=/sys/class/power_supply/battery/capacity]/errno [system_fs] null -> "enoent"
+  [system_fs] /filesystem/accesses[op=read::path=/sys/class/power_supply/battery/capacity]/result
+              axis system_fs : fabricated -> absent
+              /filesystem/accesses[op=read::path=/sys/class/power_supply/battery/capacity]/result [system_fs] "ok" -> "enoent"
+  [system_fs] /filesystem/accesses[op=read::path=/sys/class/power_supply/battery/capacity]/size_bytes
+              axis system_fs : fabricated -> absent
+              /filesystem/accesses[op=read::path=/sys/class/power_supply/battery/capacity]/size_bytes [system_fs] 4 -> 0
+  [network  ] /network/attempts[method=GET::host=api.substrate.invalid::path=/v1/sync]/error_class
+              axis network : record_and_deny -> synthetic_loopback
+              /network/attempts[method=GET::host=api.substrate.invalid::path=/v1/sync]/error_class [network] "java.net.ConnectException" -> null
+  [network  ] /network/attempts[method=GET::host=api.substrate.invalid::path=/v1/sync]/notes
+              axis network : record_and_deny -> synthetic_loopback
+              /network/attempts[method=GET::host=api.substrate.invalid::path=/v1/sync]/notes [network] "denied at the substrate's egress sink; no socket, no DNS query, no packet. Hostname pol… -> "denied at the substrate's egress sink; no socket, no DNS query, no packet. Hostname pol…
+  [network  ] /network/attempts[method=GET::host=api.substrate.invalid::path=/v1/sync]/status_code
+              axis network : record_and_deny -> synthetic_loopback
+              /network/attempts[method=GET::host=api.substrate.invalid::path=/v1/sync]/status_code [network] null -> 200
+  [network  ] /network/attempts[method=GET::host=api.substrate.invalid::path=/v1/sync]/error_class
+              axis network : record_and_deny -> synthetic_loopback
+              /network/attempts[method=GET::host=api.substrate.invalid::path=/v1/sync]/error_class [network] "java.net.ConnectException" -> null
+  [network  ] /network/attempts[method=GET::host=api.substrate.invalid::path=/v1/sync]/notes
+              axis network : record_and_deny -> synthetic_loopback
+              /network/attempts[method=GET::host=api.substrate.invalid::path=/v1/sync]/notes [network] "denied at the substrate's egress sink; no socket, no DNS query, no packet. Hostname pol… -> "denied at the substrate's egress sink; no socket, no DNS query, no packet. Hostname pol…
+  [network  ] /network/attempts[method=GET::host=api.substrate.invalid::path=/v1/sync]/status_code
+              axis network : record_and_deny -> synthetic_loopback
+              /network/attempts[method=GET::host=api.substrate.invalid::path=/v1/sync]/status_code [network] null -> 200
+  [network  ] /network/attempts[method=GET::host=cdn.substrate.invalid::path=/app.js]/error_class
+              axis network : record_and_deny -> synthetic_loopback
+              /network/attempts[method=GET::host=cdn.substrate.invalid::path=/app.js]/error_class [network] "java.net.ConnectException" -> null
+  [network  ] /network/attempts[method=GET::host=cdn.substrate.invalid::path=/app.js]/notes
+              axis network : record_and_deny -> synthetic_loopback
+              /network/attempts[method=GET::host=cdn.substrate.invalid::path=/app.js]/notes [network] "denied at the substrate's egress sink; no socket, no DNS query, no packet. Hostname pol… -> "denied at the substrate's egress sink; no socket, no DNS query, no packet. Hostname pol…
+  [network  ] /network/attempts[method=GET::host=cdn.substrate.invalid::path=/app.js]/status_code
+              axis network : record_and_deny -> synthetic_loopback
+              /network/attempts[method=GET::host=cdn.substrate.invalid::path=/app.js]/status_code [network] null -> 200
+  [system_fs] /probes[command=substrate.probe SIGNAL_PAT.BATTERY]/output
+              axis system_fs : fabricated -> absent
+              /probes[command=substrate.probe SIGNAL_PAT.BATTERY]/output [system_fs] "/sys/class/power_supply/battery/capacity -> 4 bytes, fabricated by the substrate; there… -> "/sys/class/power_supply/battery/capacity -> ENOENT under the substrate's system_fs axis…
+  [identity ] /probes[command=substrate.probe SIGNAL_PAT.BUILD_FIELD]
+              axis identity : fabricated -> withheld
+              /probes[command=substrate.probe SIGNAL_PAT.BUILD_FIELD] [identity_probe] {"id":"p010","t_mono_ms":13,"command":"substrate.probe SIGNAL_PAT.BUILD_FIELD","status":… -> <absent>
+  [time     ] /probes[command=substrate.probe SIGNAL_PAT.CLOCK_ELAPSED]/output
+              axis time : virtual -> frozen
+              /probes[command=substrate.probe SIGNAL_PAT.CLOCK_ELAPSED]/output [time] "SystemClock() -> 51: the substrate's virtual clock, advanced only by the recorded sched… -> "SystemClock() -> 0 for a virtual time of 51 ms: the substrate's time axis transformed t…
+  [time     ] /probes[command=substrate.probe SIGNAL_PAT.CLOCK_ELAPSED]/output
+              axis time : virtual -> frozen
+              /probes[command=substrate.probe SIGNAL_PAT.CLOCK_ELAPSED]/output [time] "SystemClock() -> 106: the substrate's virtual clock, advanced only by the recorded sche… -> "SystemClock() -> 0 for a virtual time of 106 ms: the substrate's time axis transformed …
+  [time     ] /probes[command=substrate.probe SIGNAL_PAT.CLOCK_UPTIME]/output
+              axis time : virtual -> frozen
+              /probes[command=substrate.probe SIGNAL_PAT.CLOCK_UPTIME]/output [time] "SystemClock() -> 51: the substrate's virtual clock, advanced only by the recorded sched… -> "SystemClock() -> 0 for a virtual time of 51 ms: the substrate's time axis transformed t…
+  [identity ] /probes[command=substrate.probe SIGNAL_PAT.EMULATOR_PROBE]/output
+              axis identity : fabricated -> withheld
+              /probes[command=substrate.probe SIGNAL_PAT.EMULATOR_PROBE]/output [identity_probe] "System.getProperty(\"ro.kernel.qemu\") = <absent: substrate does not model this> [answe… -> "System.getProperty(\"ro.kernel.qemu\") = <withheld: substrate states no identity> [answ…
+  [network  ] /probes[command=substrate.probe SIGNAL_PAT.LOOPBACK_RESPONSE]
+              axis network : record_and_deny -> synthetic_loopback
+              /probes[command=substrate.probe SIGNAL_PAT.LOOPBACK_RESPONSE] [network] <absent> -> {"id":"p036","t_mono_ms":111,"command":"substrate.probe SIGNAL_PAT.LOOPBACK_RESPONSE","s…
+  [network  ] /probes[command=substrate.probe SIGNAL_PAT.LOOPBACK_RESPONSE]
+              axis network : record_and_deny -> synthetic_loopback
+              /probes[command=substrate.probe SIGNAL_PAT.LOOPBACK_RESPONSE] [network] <absent> -> {"id":"p037","t_mono_ms":111,"command":"substrate.probe SIGNAL_PAT.LOOPBACK_RESPONSE","s…
+  [network  ] /probes[command=substrate.probe SIGNAL_PAT.LOOPBACK_RESPONSE]
+              axis network : record_and_deny -> synthetic_loopback
+              /probes[command=substrate.probe SIGNAL_PAT.LOOPBACK_RESPONSE] [network] <absent> -> {"id":"p038","t_mono_ms":111,"command":"substrate.probe SIGNAL_PAT.LOOPBACK_RESPONSE","s…
+  [network  ] /probes[command=substrate.probe SIGNAL_PAT.LOOPBACK_RESPONSE]
+              axis network : record_and_deny -> synthetic_loopback
+              /probes[command=substrate.probe SIGNAL_PAT.LOOPBACK_RESPONSE] [network] <absent> -> {"id":"p039","t_mono_ms":112,"command":"substrate.probe SIGNAL_PAT.LOOPBACK_RESPONSE","s…
+  [cross_app_packages] /probes[command=substrate.probe SIGNAL_PAT.PM_QUERY]/output
+              axis cross_app_packages : subject_only -> error
+              /probes[command=substrate.probe SIGNAL_PAT.PM_QUERY]/output [cross_app_packages] "PackageManager query for com.whatsapp -> not installed; the app sees an empty list, not… -> "PackageManager query for com.whatsapp -> NameNotFoundException; the substrate refuses t…
+  [cross_app_packages] /probes[command=substrate.probe SIGNAL_PAT.PM_QUERY]/output
+              axis cross_app_packages : subject_only -> error
+              /probes[command=substrate.probe SIGNAL_PAT.PM_QUERY]/output [cross_app_packages] "Landroid/content/pm/PackageManager;.queryIntentActivities() -> a list of exactly one en… -> "Landroid/content/pm/PackageManager;.queryIntentActivities() -> NameNotFoundException. T…
+  [system_fs] /probes[command=substrate.probe SIGNAL_PAT.PROC_CPUINFO]
+              axis system_fs : fabricated -> absent
+              /probes[command=substrate.probe SIGNAL_PAT.PROC_CPUINFO] [system_fs] <absent> -> {"id":"p015","t_mono_ms":16,"command":"substrate.probe SIGNAL_PAT.PROC_CPUINFO","status"…
+  [system_fs] /probes[command=substrate.probe SIGNAL_PAT.PROC_MAPS]/output
+              axis system_fs : fabricated -> absent
+              /probes[command=substrate.probe SIGNAL_PAT.PROC_MAPS]/output [system_fs] "/proc/self/maps -> 0 bytes, fabricated by the substrate; there is no kernel [answered b… -> "/proc/self/maps -> ENOENT under the substrate's system_fs axis [substrate_policy axis s…
+  [system_fs] /probes[command=substrate.probe SIGNAL_PAT.PROC_OTHER]/output
+              axis system_fs : fabricated -> absent
+              /probes[command=substrate.probe SIGNAL_PAT.PROC_OTHER]/output [system_fs] "/proc/self/exe -> ENOENT under the substrate's system_fs axis [substrate_policy axis sy… -> "/proc/self/exe -> ENOENT under the substrate's system_fs axis [substrate_policy axis sy…
+  [system_fs] /probes[command=substrate.probe SIGNAL_PAT.PROC_STATUS]/output
+              axis system_fs : fabricated -> absent
+              /probes[command=substrate.probe SIGNAL_PAT.PROC_STATUS]/output [system_fs] "/proc/self/status -> 86 bytes, fabricated by the substrate; there is no kernel [answere… -> "/proc/self/status -> ENOENT under the substrate's system_fs axis [substrate_policy axis…
+  [system_fs] /probes[command=substrate.probe SIGNAL_PAT.PROC_UPTIME]
+              axis system_fs : fabricated -> absent
+              /probes[command=substrate.probe SIGNAL_PAT.PROC_UPTIME] [system_fs] <absent> -> {"id":"p016","t_mono_ms":17,"command":"substrate.probe SIGNAL_PAT.PROC_UPTIME","status":…
+  [time     ] /probes[command=substrate.probe SIGNAL_PAT.SLEEP]/output
+              axis time : virtual -> frozen
+              /probes[command=substrate.probe SIGNAL_PAT.SLEEP]/output [time] "Thread.sleep(50 ms) advanced the substrate's virtual clock from 56 to 106 ms and return… -> "Thread.sleep(50 ms) advanced the substrate's virtual clock from 56 to 106 ms and return…
+  [network  ] /probes[command=substrate.probe SIGNAL_PAT.WEBVIEW_LOAD]/output
+              axis network : record_and_deny -> synthetic_loopback
+              /probes[command=substrate.probe SIGNAL_PAT.WEBVIEW_LOAD]/output [network] "WebView.loadUrl to cdn.substrate.invalid:/app.js -> the request is denied at the egress… -> "WebView.loadUrl to cdn.substrate.invalid:/app.js -> the request is refused at the egres…
+  [system_fs] /substrate_probe_hits[assumption_id=SUB.TRUST.DEBUG_DETECT]
+              axis system_fs : fabricated -> absent
+              /substrate_probe_hits[assumption_id=SUB.TRUST.DEBUG_DETECT] [system_fs] {"assumption_id":"SUB.TRUST.DEBUG_DETECT","family":"SUB.TRUST","symptom_class":"refuse",… -> <absent>
+
+FACTS THAT DID NOT MOVE
+----------------------
+  1432 of 1617 compared leaves are byte-identical. Those are the app's observable behaviour
+  under this script, and the claim they support is exactly this: the substrate's declared
+  behaviour is a parameter, and the part of the recording that did not change when the
+  parameter changed is not a measurement of the substrate.
+  app                      moved 0
+  environment_identity     moved 14
+  identity_probe           moved 9
+  system_fs                moved 30
+  cross_app_packages       moved 6
+  network                  moved 23
+  time                     moved 8
+
+UNATTRIBUTED DIFFERENCES
+-----------------------
+  (none) Every difference is explained by the policy declarations in the two documents,
+  which is the result the design was built to produce.
+
+THE DECLARATION ITSELF, WHICH MOVED
+---------------------------------
+  40 fields. These are the policy block, the recorder options that copy it, the
+  observer effects generated from it, the gap list it generates and the `limits`
+  sentences it generates. They are expected to differ and are attributable to
+  "the policy", not to any one axis. The first 25 are listed; the rest are of
+  the same kinds.
+  /capture/observer_effects[kind=none::applied=true] [policy_declaration] <absent> -> {"kind":"none","applied":true,"detail":"substrate_policy axis identity = withheld (the r…
+  /capture/observer_effects[kind=none::applied=true] [policy_declaration] <absent> -> {"kind":"none","applied":true,"detail":"substrate_policy axis system_fs = absent (the re…
+  /capture/observer_effects[kind=none::applied=true] [policy_declaration] <absent> -> {"kind":"none","applied":true,"detail":"substrate_policy axis cross_app_packages = error…
+  /capture/observer_effects[kind=none::applied=true] [policy_declaration] <absent> -> {"kind":"none","applied":true,"detail":"substrate_policy axis network = synthetic_loopba…
+  /capture/observer_effects[kind=none::applied=true] [policy_declaration] <absent> -> {"kind":"none","applied":true,"detail":"substrate_policy axis time = frozen (the recorde…
+  /capture_quality/unobserved[signal=host_wall_clock::reason_code=scope_out_of_protocol]/reason [policy_declaration] "This run used the substrate's own time axis (virtual), so the host's clock was not expo… -> "This run used the substrate's own time axis (frozen), so the host's clock was not expos…
+  /capture_quality/unobserved[signal=substrate_policy_axis_cross_app_packages::reason_code=scope_out_of_protocol] [policy_declaration] <absent> -> {"signal":"substrate_policy_axis_cross_app_packages","reason_code":"scope_out_of_protoco…
+  /capture_quality/unobserved[signal=substrate_policy_axis_identity::reason_code=scope_out_of_protocol] [policy_declaration] <absent> -> {"signal":"substrate_policy_axis_identity","reason_code":"scope_out_of_protocol","reason…
+  /capture_quality/unobserved[signal=substrate_policy_axis_network::reason_code=scope_out_of_protocol] [policy_declaration] <absent> -> {"signal":"substrate_policy_axis_network","reason_code":"scope_out_of_protocol","reason"…
+  /capture_quality/unobserved[signal=substrate_policy_axis_system_fs::reason_code=scope_out_of_protocol] [policy_declaration] <absent> -> {"signal":"substrate_policy_axis_system_fs","reason_code":"scope_out_of_protocol","reaso…
+  /capture_quality/unobserved[signal=substrate_policy_axis_time::reason_code=scope_out_of_protocol] [policy_declaration] <absent> -> {"signal":"substrate_policy_axis_time","reason_code":"scope_out_of_protocol","reason":"T…
+  /filesystem/limits[[substrate_policy] An app that treats ENOENT as 'not an emul] [policy_declaration] <absent> -> "[substrate_policy] An app that treats ENOENT as 'not an emulator' takes a different bra…
+  /filesystem/limits[[substrate_policy] THIS RUN HAD NO SYSTEM FILESYSTEM. The su] [policy_declaration] <absent> -> "[substrate_policy] THIS RUN HAD NO SYSTEM FILESYSTEM. The substrate_policy system_fs ax…
+  /network/limits[[substrate_policy] Consequence: any app behaviour that depen] [policy_declaration] <absent> -> "[substrate_policy] Consequence: any app behaviour that depends on a response existing —…
+  /network/limits[[substrate_policy] NO BYTES MOVED. The egress sink refused e] [policy_declaration] <absent> -> "[substrate_policy] NO BYTES MOVED. The egress sink refused every attempt exactly as it …
+  /network/limits[[substrate_policy] THIS RUN ALSO PUTS A STATUS CODE IN THE D] [policy_declaration] <absent> -> "[substrate_policy] THIS RUN ALSO PUTS A STATUS CODE IN THE DOCUMENT. It is a value the …
+  /network/limits[[substrate_policy] THIS RUN PRESENTED SYNTHESISED RESPONSES.] [policy_declaration] <absent> -> "[substrate_policy] THIS RUN PRESENTED SYNTHESISED RESPONSES. The substrate_policy netwo…
+  /notes [policy_declaration] "SYNTHETIC. Produced by shim::scenario::run() and emitted by shim/src/bin/shim-record.rs… -> "SYNTHETIC. Produced by shim::scenario::run() and emitted by shim/src/bin/shim-record.rs…
+  /recorder/options/substrate_policy [policy_declaration] "fnv1a64:3831a4e300ed0c91" -> "fnv1a64:b71360edcacb3d39"
+  /recorder/options/substrate_policy_cross_app_packages [policy_declaration] "subject_only" -> "error"
+  /recorder/options/substrate_policy_identity [policy_declaration] "fabricated" -> "withheld"
+  /recorder/options/substrate_policy_network [policy_declaration] "record_and_deny" -> "synthetic_loopback"
+  /recorder/options/substrate_policy_system_fs [policy_declaration] "fabricated" -> "absent"
+  /recorder/options/substrate_policy_time [policy_declaration] "virtual" -> "frozen"
+  /substrate_policy/axis_declarations[axis=cross_app_packages]/statement [policy_declaration] "The substrate holds exactly one app, so every cross-app query answers 'not installed' w… -> "Every cross-app query throws NameNotFoundException. The loud arm: an app that handles t…
+  ... and 15 more
+
+DERIVED ROLL-UPS THAT MOVED
+---------------------------
+  55 of them. Recorder-assigned ordinals, index-based evidence pointers, and
+  sums over facts of mixed composition. None is attributable to an axis: they are made of
+  the facts above, and the facts above are what to read. The first 25 are listed.
+  /probes[command=shim.layout.dump root]/id [derived_roll_up] "layout.37" -> "layout.42"
+  /probes[command=substrate.probe SIGNAL_PAT.BATTERY]/id [derived_roll_up] "p016" -> "p017"
+  /probes[command=substrate.probe SIGNAL_PAT.BUILD_TAGS]/id [derived_roll_up] "p012" -> "p011"
+  /probes[command=substrate.probe SIGNAL_PAT.CLOCK_ELAPSED]/id [derived_roll_up] "p028" -> "p029"
+  /probes[command=substrate.probe SIGNAL_PAT.CLOCK_ELAPSED]/id [derived_roll_up] "p031" -> "p032"
+  /probes[command=substrate.probe SIGNAL_PAT.CLOCK_UPTIME]/id [derived_roll_up] "p027" -> "p028"
+  /probes[command=substrate.probe SIGNAL_PAT.CLOCK_WALL]/id [derived_roll_up] "p029" -> "p030"
+  /probes[command=substrate.probe SIGNAL_PAT.EMULATOR_PROBE]/id [derived_roll_up] "p011" -> "p010"
+  /probes[command=substrate.probe SIGNAL_PAT.EXCEPTION_CAUGHT]/id [derived_roll_up] "p036" -> "p041"
+  /probes[command=substrate.probe SIGNAL_PAT.HEADER_NAME]/id [derived_roll_up] "p033" -> "p034"
+  /probes[command=substrate.probe SIGNAL_PAT.HEADER_NAME]/id [derived_roll_up] "p034" -> "p035"
+  /probes[command=substrate.probe SIGNAL_PAT.LAYOUT_PASS]/id [derived_roll_up] "p021" -> "p022"
+  /probes[command=substrate.probe SIGNAL_PAT.MESSAGE_QUEUE]/id [derived_roll_up] "p022" -> "p023"
+  /probes[command=substrate.probe SIGNAL_PAT.MESSAGE_QUEUE]/id [derived_roll_up] "p023" -> "p024"
+  /probes[command=substrate.probe SIGNAL_PAT.MESSAGE_QUEUE]/id [derived_roll_up] "p024" -> "p025"
+  /probes[command=substrate.probe SIGNAL_PAT.MESSAGE_QUEUE]/id [derived_roll_up] "p025" -> "p026"
+  /probes[command=substrate.probe SIGNAL_PAT.MESSAGE_QUEUE]/id [derived_roll_up] "p026" -> "p027"
+  /probes[command=substrate.probe SIGNAL_PAT.MESSAGE_QUEUE]/id [derived_roll_up] "p032" -> "p033"
+  /probes[command=substrate.probe SIGNAL_PAT.PM_QUERY]/id [derived_roll_up] "p018" -> "p019"
+  /probes[command=substrate.probe SIGNAL_PAT.PM_QUERY]/id [derived_roll_up] "p019" -> "p020"
+  /probes[command=substrate.probe SIGNAL_PAT.PROC_MAPS]/id [derived_roll_up] "p015" -> "p014"
+  /probes[command=substrate.probe SIGNAL_PAT.PROC_OTHER]/id [derived_roll_up] "p017" -> "p018"
+  /probes[command=substrate.probe SIGNAL_PAT.PROC_STATUS]/id [derived_roll_up] "p014" -> "p013"
+  /probes[command=substrate.probe SIGNAL_PAT.SET_CONTENT_VIEW]/id [derived_roll_up] "p020" -> "p021"
+  /probes[command=substrate.probe SIGNAL_PAT.SLEEP]/id [derived_roll_up] "p030" -> "p031"
+  ... and 30 more
+
+WHAT THIS DOES NOT SHOW
+---------------------
+The input was a fixed script, not an APK. The script is deterministic, so nothing here separates
+the substrate from the app's own nondeterminism; on a real run the same diff would be
+confounded by it. And a fact that did not move is not thereby a fact about a real device:
+it is a fact about this program under two substrates, and the third thing a study needs —
+what the program does on hardware — is outside anything in these two files. See docs/decisions/0006-substrate-policy.md.
+

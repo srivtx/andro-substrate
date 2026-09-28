@@ -6,56 +6,56 @@
     "policy_format": "andro-substrate.substrate-policy/1",
     "policy_version": 1,
     "shim_version": "0.1.0",
-    "policy_digest": "fnv1a64:3831a4e300ed0c91",
+    "policy_digest": "fnv1a64:b71360edcacb3d39",
     "reproducible": true,
-    "identity": "fabricated",
-    "system_fs": "fabricated",
-    "cross_app_packages": "subject_only",
-    "network": "record_and_deny",
+    "identity": "withheld",
+    "system_fs": "absent",
+    "cross_app_packages": "error",
+    "network": "synthetic_loopback",
     "time": {
-      "mode": "virtual"
+      "mode": "frozen"
     },
     "axis_declarations": [
       {
         "axis": "identity",
-        "value": "fabricated",
+        "value": "withheld",
         "governs": [
           "environment_identity",
           "identity_probe"
         ],
-        "statement": "Build.* and getprop answer a plausible, self-consistent synthetic device (fingerprint 'andro-substrate/shim/0.1.0:substrate/0.1.0:user/release-keys', model 'Substrate', SDK 34). ro.kernel.qemu is ABSENT and ro.debuggable is 0, both fixed by this value and by no other axis."
+        "statement": "Build.* and getprop answer null/absent. android.os.Build still resolves, so the app's control flow is not interrupted; it is handed a value to branch on. The recording's environment block is forced by the schema to a floor of release \"1\" and SDK 1, which is a claim the policy did not make."
       },
       {
         "axis": "system_fs",
-        "value": "fabricated",
+        "value": "absent",
         "governs": [
           "system_fs"
         ],
-        "statement": "The fabricated tree holds 12 paths with plausible contents. TracerPid is 0 and /proc/self/maps is empty, which is a recorded lie."
+        "statement": "No path exists. Every /proc, /sys and /dev read is ENOENT and every attempt is recorded. An app that stats before it reads gets a different answer from one that does not."
       },
       {
         "axis": "cross_app_packages",
-        "value": "subject_only",
+        "value": "error",
         "governs": [
           "cross_app_packages"
         ],
-        "statement": "The substrate holds exactly one app, so every cross-app query answers 'not installed' with no exception and an app's inter-app feature is silently gone."
+        "statement": "Every cross-app query throws NameNotFoundException. The loud arm: an app that handles the exception is observably different from one that silently finds nothing, and the difference is the measurement."
       },
       {
         "axis": "network",
-        "value": "record_and_deny",
+        "value": "synthetic_loopback",
         "governs": [
           "network"
         ],
-        "statement": "Every attempt is recorded at the egress sink and refused with ConnectException. No socket, no DNS, no packet; structurally, for every policy."
+        "statement": "Every attempt is recorded at the egress sink and refused exactly as under record_and_deny, with the same denial tally; what changes is the PRESENTATION. getResponseCode() returns 200 and getInputStream() returns a handle onto a zero-length declared buffer. egress_available stays false and tx_bytes and rx_bytes stay 0, because no packet exists."
       },
       {
         "axis": "time",
-        "value": "virtual",
+        "value": "frozen",
         "governs": [
           "time"
         ],
-        "statement": "The virtual clock: elapsedRealtime is the recorded schedule's time and currentTimeMillis is 0. Exactly reproducible."
+        "statement": "The clock never advances as far as the app is concerned: elapsedRealtime and currentTimeMillis are 0 forever, so every timeout-based branch takes the 'no time has passed' path. A behaviour no real app can exhibit, which is what makes it diagnostic of the substrate."
       }
     ],
     "invariants": {
@@ -87,14 +87,14 @@
       "vfs": "in-memory",
       "shim_dex_sha256": "c6b616f83349b6c89c2346fd56d0c89c003ee01f88b11a583136228941f8bfd4",
       "toolchain": "andro-substrate-shim",
-      "substrate_policy": "fnv1a64:3831a4e300ed0c91",
+      "substrate_policy": "fnv1a64:b71360edcacb3d39",
       "substrate_policy_format": "andro-substrate.substrate-policy/1",
       "substrate_policy_version": 1,
-      "substrate_policy_identity": "fabricated",
-      "substrate_policy_system_fs": "fabricated",
-      "substrate_policy_cross_app_packages": "subject_only",
-      "substrate_policy_network": "record_and_deny",
-      "substrate_policy_time": "virtual"
+      "substrate_policy_identity": "withheld",
+      "substrate_policy_system_fs": "absent",
+      "substrate_policy_cross_app_packages": "error",
+      "substrate_policy_network": "synthetic_loopback",
+      "substrate_policy_time": "frozen"
     },
     "adb_version": null,
     "notes": "Emits a ground-truth/1 document so a substrate capture and a device capture are the same shape and can be diffed directly. The substrate's own behaviour is declared in the top-level `substrate_policy` object, which is optional in the schema and absent from a device capture: a device has no substrate policy because a device is not one."
@@ -144,6 +144,36 @@
         "applied": false,
         "detail": "No MITM proxy and no user CA: the substrate has no network to intercept, which is strictly stronger than proxying and needs no trust-store change.",
         "expected_to_change_behaviour": false
+      },
+      {
+        "kind": "none",
+        "applied": true,
+        "detail": "substrate_policy axis identity = withheld (the recorder's default is fabricated). Build.* and getprop answer null/absent. android.os.Build still resolves, so the app's control flow is not interrupted; it is handed a value to branch on. The recording's environment block is forced by the schema to a floor of release \"1\" and SDK 1, which is a claim the policy did not make.",
+        "expected_to_change_behaviour": true
+      },
+      {
+        "kind": "none",
+        "applied": true,
+        "detail": "substrate_policy axis system_fs = absent (the recorder's default is fabricated). No path exists. Every /proc, /sys and /dev read is ENOENT and every attempt is recorded. An app that stats before it reads gets a different answer from one that does not.",
+        "expected_to_change_behaviour": true
+      },
+      {
+        "kind": "none",
+        "applied": true,
+        "detail": "substrate_policy axis cross_app_packages = error (the recorder's default is subject_only). Every cross-app query throws NameNotFoundException. The loud arm: an app that handles the exception is observably different from one that silently finds nothing, and the difference is the measurement.",
+        "expected_to_change_behaviour": true
+      },
+      {
+        "kind": "none",
+        "applied": true,
+        "detail": "substrate_policy axis network = synthetic_loopback (the recorder's default is record_and_deny). Every attempt is recorded at the egress sink and refused exactly as under record_and_deny, with the same denial tally; what changes is the PRESENTATION. getResponseCode() returns 200 and getInputStream() returns a handle onto a zero-length declared buffer. egress_available stays false and tx_bytes and rx_bytes stay 0, because no packet exists.",
+        "expected_to_change_behaviour": true
+      },
+      {
+        "kind": "none",
+        "applied": true,
+        "detail": "substrate_policy axis time = frozen (the recorder's default is virtual). The clock never advances as far as the app is concerned: elapsedRealtime and currentTimeMillis are 0 forever, so every timeout-based branch takes the 'no time has passed' path. A behaviour no real app can exhibit, which is what makes it diagnostic of the substrate.",
+        "expected_to_change_behaviour": true
       }
     ],
     "interventions_during_run": []
@@ -187,25 +217,23 @@
   },
   "environment": {
     "kind": "synthetic",
-    "android_release": "14",
+    "android_release": "1",
     "security_patch": null,
-    "sdk_int": 34,
-    "build_fingerprint": "andro-substrate/shim/0.1.0:substrate/0.1.0:user/release-keys",
+    "sdk_int": 1,
+    "build_fingerprint": "",
     "build_id": null,
     "build_type": null,
-    "build_tags": "release-keys",
-    "model": "Substrate",
-    "manufacturer": "andro-substrate",
-    "brand": "substrate",
-    "product": "substrate",
-    "device": "substrate",
-    "hardware": "substrate",
-    "board": "substrate",
+    "build_tags": "",
+    "model": "",
+    "manufacturer": "",
+    "brand": "",
+    "product": "",
+    "device": "",
+    "hardware": "",
+    "board": "",
     "serial": null,
     "bootloader": null,
-    "abis": [
-      "wasm32"
-    ],
+    "abis": [],
     "cpu_count": 4,
     "total_ram_bytes": 1073741824,
     "low_ram_device": true,
@@ -282,10 +310,10 @@
       "android.hardware.vulkan.level"
     ],
     "properties_observed": {
-      "ro.build.fingerprint": "andro-substrate/shim/0.1.0:substrate/0.1.0:user/release-keys",
+      "ro.build.fingerprint": "",
       "ro.kernel.qemu": "<absent: not modelled by any policy axis>",
       "ro.debuggable": "0",
-      "ro.build.version.sdk": "34"
+      "ro.build.version.sdk": "1"
     }
   },
   "clock": {
@@ -423,11 +451,11 @@
         "body_captured": false,
         "transport": "tcp",
         "result": "blocked_by_policy",
-        "status_code": null,
-        "error_class": "java.net.ConnectException",
+        "status_code": 200,
+        "error_class": null,
         "source": "synthetic_fixture",
         "tier": "T0_DIRECT",
-        "notes": "denied at the substrate's egress sink; no socket, no DNS query, no packet. Hostname policy: plain, and the host is an RFC 2606 reserved name because there is no real network to attribute. The query string was dropped in the URL parser; only parameter names survive."
+        "notes": "denied at the substrate's egress sink; no socket, no DNS query, no packet. Hostname policy: plain, and the host is an RFC 2606 reserved name because there is no real network to attribute. The query string was dropped in the URL parser; only parameter names survive. PRESENTATION: the app was shown a synthesised 200 response (application/octet-stream, 0 declared body bytes) because the substrate_policy network axis is 'synthetic_loopback'. The request was still refused at the sink and the denial is the value of `result` above; the status is a value this policy declared, not one that was received."
       },
       {
         "seq": 1,
@@ -452,11 +480,11 @@
         "body_captured": false,
         "transport": "tcp",
         "result": "blocked_by_policy",
-        "status_code": null,
-        "error_class": "java.net.ConnectException",
+        "status_code": 200,
+        "error_class": null,
         "source": "synthetic_fixture",
         "tier": "T0_DIRECT",
-        "notes": "denied at the substrate's egress sink; no socket, no DNS query, no packet. Hostname policy: plain, and the host is an RFC 2606 reserved name because there is no real network to attribute. The query string was dropped in the URL parser; only parameter names survive."
+        "notes": "denied at the substrate's egress sink; no socket, no DNS query, no packet. Hostname policy: plain, and the host is an RFC 2606 reserved name because there is no real network to attribute. The query string was dropped in the URL parser; only parameter names survive. PRESENTATION: the app was shown a synthesised 200 response (application/octet-stream, 0 declared body bytes) because the substrate_policy network axis is 'synthetic_loopback'. The request was still refused at the sink and the denial is the value of `result` above; the status is a value this policy declared, not one that was received."
       },
       {
         "seq": 2,
@@ -480,11 +508,11 @@
         "body_captured": false,
         "transport": "tcp",
         "result": "blocked_by_policy",
-        "status_code": null,
-        "error_class": "java.net.ConnectException",
+        "status_code": 200,
+        "error_class": null,
         "source": "synthetic_fixture",
         "tier": "T0_DIRECT",
-        "notes": "denied at the substrate's egress sink; no socket, no DNS query, no packet. Hostname policy: plain, and the host is an RFC 2606 reserved name because there is no real network to attribute. The query string was dropped in the URL parser; only parameter names survive."
+        "notes": "denied at the substrate's egress sink; no socket, no DNS query, no packet. Hostname policy: plain, and the host is an RFC 2606 reserved name because there is no real network to attribute. The query string was dropped in the URL parser; only parameter names survive. PRESENTATION: the app was shown a synthesised 200 response (application/octet-stream, 0 declared body bytes) because the substrate_policy network axis is 'synthetic_loopback'. The request was still refused at the sink and the denial is the value of `result` above; the status is a value this policy declared, not one that was received."
       }
     ],
     "byte_totals_observed": {
@@ -500,7 +528,11 @@
       "The substrate has no network. There is no capture method to choose: attempts are recorded at the sink and refused, so a substrate capture can never show a response, a status code, a TLS session or a redirect.",
       "SUB.NET.EGRESS is therefore structurally unsatisfiable here, and every network-dependent app is expected to fail identically in every substrate run. That is a property of the architecture, not a finding about any app.",
       "No DNS query is ever issued, so a request to a host that does not resolve and a request to a host that does are indistinguishable in this document.",
-      "Byte totals are zero by construction, so a recording cannot distinguish an app that sends nothing from an app that sends and is refused before transmission."
+      "Byte totals are zero by construction, so a recording cannot distinguish an app that sends nothing from an app that sends and is refused before transmission.",
+      "[substrate_policy] THIS RUN PRESENTED SYNTHESISED RESPONSES. The substrate_policy network axis is 'synthetic_loopback': connect() returned normally and getResponseCode() returned 200.",
+      "[substrate_policy] NO BYTES MOVED. The egress sink refused every attempt exactly as it does under the default policy, which is why every attempts[].result is still blocked_by_policy and byte_totals_observed is still zero. Only the presentation changed.",
+      "[substrate_policy] Consequence: any app behaviour that depends on a response existing — a success branch, a parse of a body, the absence of a retry — is a property of this policy, not of the app and not of any device.",
+      "[substrate_policy] THIS RUN ALSO PUTS A STATUS CODE IN THE DOCUMENT. It is a value the policy declared, never one that was received. Diff two substrate recordings' substrate_policy blocks before diffing their attempts, or the difference will read as a difference in the app."
     ]
   },
   "filesystem": {
@@ -510,9 +542,9 @@
         "t_mono_ms": 14,
         "op": "read",
         "path": "/proc/self/status",
-        "size_bytes": 86,
-        "result": "ok",
-        "errno": null,
+        "size_bytes": 0,
+        "result": "enoent",
+        "errno": "enoent",
         "source": "synthetic_fixture",
         "tier": "T0_DIRECT",
         "notes": "a fabricated filesystem read: the answer came from the substrate's system_fs axis, not from a kernel [answered by substrate_policy axis system_fs]"
@@ -523,8 +555,8 @@
         "op": "read",
         "path": "/proc/self/maps",
         "size_bytes": 0,
-        "result": "ok",
-        "errno": null,
+        "result": "enoent",
+        "errno": "enoent",
         "source": "synthetic_fixture",
         "tier": "T0_DIRECT",
         "notes": "a fabricated filesystem read: the answer came from the substrate's system_fs axis, not from a kernel [answered by substrate_policy axis system_fs]"
@@ -534,9 +566,9 @@
         "t_mono_ms": 16,
         "op": "read",
         "path": "/proc/cpuinfo",
-        "size_bytes": 85,
-        "result": "ok",
-        "errno": null,
+        "size_bytes": 0,
+        "result": "enoent",
+        "errno": "enoent",
         "source": "synthetic_fixture",
         "tier": "T0_DIRECT",
         "notes": "a fabricated filesystem read: the answer came from the substrate's system_fs axis, not from a kernel [answered by substrate_policy axis system_fs]"
@@ -546,9 +578,9 @@
         "t_mono_ms": 17,
         "op": "read",
         "path": "/proc/uptime",
-        "size_bytes": 10,
-        "result": "ok",
-        "errno": null,
+        "size_bytes": 0,
+        "result": "enoent",
+        "errno": "enoent",
         "source": "synthetic_fixture",
         "tier": "T0_DIRECT",
         "notes": "a fabricated filesystem read: the answer came from the substrate's system_fs axis, not from a kernel [answered by substrate_policy axis system_fs]"
@@ -558,9 +590,9 @@
         "t_mono_ms": 18,
         "op": "read",
         "path": "/sys/class/power_supply/battery/capacity",
-        "size_bytes": 4,
-        "result": "ok",
-        "errno": null,
+        "size_bytes": 0,
+        "result": "enoent",
+        "errno": "enoent",
         "source": "synthetic_fixture",
         "tier": "T0_DIRECT",
         "notes": "a fabricated filesystem read: the answer came from the substrate's system_fs axis, not from a kernel [answered by substrate_policy axis system_fs]"
@@ -770,7 +802,9 @@
       "There is no real disk. The VFS is an in-memory map, so a file an app would have persisted across a process death is lost at the end of the run and any state-restoration path takes its fallback branch.",
       "The /proc and /sys trees are FABRICATED. Which fabrication is decided by the substrate_policy system_fs axis: 'fabricated' is synthetic but plausible content, 'empty' is a path that exists and reads as zero bytes, 'absent' is ENOENT.",
       "No SELinux labels, no uid/gid ownership and no POSIX modes beyond a single synthetic mode per node, so SUB.FS.PERM_MODEL and SUB.FS.SELINUX_CONTEXT cannot be assessed from this document at all.",
-      "Path contents are never recorded. Only paths, operations and byte counts, so a recording supports no claim about what an app stored."
+      "Path contents are never recorded. Only paths, operations and byte counts, so a recording supports no claim about what an app stored.",
+      "[substrate_policy] THIS RUN HAD NO SYSTEM FILESYSTEM. The substrate_policy system_fs axis is 'absent': every /proc, /sys and /dev read returned ENOENT, and every attempt was recorded.",
+      "[substrate_policy] An app that treats ENOENT as 'not an emulator' takes a different branch from one that parses /proc/self/status, and both are substrate artefacts."
     ]
   },
   "classes": {
@@ -873,53 +907,27 @@
       "tier": "T0_DIRECT"
     },
     {
-      "t_mono_ms": 111,
+      "t_mono_ms": 20,
       "fatal": false,
       "kind": "java_exception",
       "thread": "main",
-      "class": "java.net.ConnectException",
-      "message": "the substrate denies egress by construction; no socket is opened and no DNS query is made",
+      "class": "android.content.pm.NameNotFoundException",
+      "message": "the substrate's cross-app package axis is refusing, so the query about com.whatsapp was not answered [substrate_policy axis cross_app_packages = error]",
       "stack_frames": [
-        "Ljava/net/URLConnection;.connect"
+        "Landroid/content/pm/PackageManager;.getPackageInfo"
       ],
       "source": "synthetic_fixture",
       "tier": "T0_DIRECT"
     },
     {
-      "t_mono_ms": 111,
+      "t_mono_ms": 20,
       "fatal": false,
       "kind": "java_exception",
       "thread": "main",
-      "class": "java.io.IOException",
-      "message": "no response exists: the substrate never opened a connection",
+      "class": "android.content.pm.NameNotFoundException",
+      "message": "the substrate's cross-app package axis is refusing, so queryIntentActivities was not answered [substrate_policy axis cross_app_packages = error]",
       "stack_frames": [
-        "Ljava/net/HttpURLConnection;.getResponseCode"
-      ],
-      "source": "synthetic_fixture",
-      "tier": "T0_DIRECT"
-    },
-    {
-      "t_mono_ms": 111,
-      "fatal": false,
-      "kind": "java_exception",
-      "thread": "main",
-      "class": "java.io.IOException",
-      "message": "no response exists: the substrate never opened a connection",
-      "stack_frames": [
-        "Ljava/net/HttpURLConnection;.getInputStream"
-      ],
-      "source": "synthetic_fixture",
-      "tier": "T0_DIRECT"
-    },
-    {
-      "t_mono_ms": 112,
-      "fatal": false,
-      "kind": "java_exception",
-      "thread": "main",
-      "class": "java.net.ConnectException",
-      "message": "the substrate denies egress by construction; no socket is opened and no DNS query is made",
-      "stack_frames": [
-        "Ljava/net/URLConnection;.connect"
+        "Landroid/content/pm/PackageManager;.queryIntentActivities"
       ],
       "source": "synthetic_fixture",
       "tier": "T0_DIRECT"
@@ -1065,27 +1073,16 @@
     {
       "id": "p010",
       "t_mono_ms": 13,
-      "command": "substrate.probe SIGNAL_PAT.BUILD_FIELD",
+      "command": "substrate.probe SIGNAL_PAT.EMULATOR_PROBE",
       "status": "ok",
       "source": "synthetic_fixture",
       "tier": "T0_DIRECT",
-      "output": "Build.FINGERPRINT = andro-substrate/shim/0.1.0:substrate/0.1.0:user/release-keys [answered by substrate_policy axis identity]",
+      "output": "System.getProperty(\"ro.kernel.qemu\") = <withheld: substrate states no identity> [answered by substrate_policy axis identity]",
       "output_truncated": false,
       "error": null
     },
     {
       "id": "p011",
-      "t_mono_ms": 13,
-      "command": "substrate.probe SIGNAL_PAT.EMULATOR_PROBE",
-      "status": "ok",
-      "source": "synthetic_fixture",
-      "tier": "T0_DIRECT",
-      "output": "System.getProperty(\"ro.kernel.qemu\") = <absent: substrate does not model this> [answered by substrate_policy axis identity]",
-      "output_truncated": false,
-      "error": null
-    },
-    {
-      "id": "p012",
       "t_mono_ms": 13,
       "command": "substrate.probe SIGNAL_PAT.BUILD_TAGS",
       "status": "ok",
@@ -1096,7 +1093,7 @@
       "error": null
     },
     {
-      "id": "p013",
+      "id": "p012",
       "t_mono_ms": 13,
       "command": "substrate.probe SIGNAL_PAT.STATIC_FIELD",
       "status": "ok",
@@ -1107,57 +1104,68 @@
       "error": null
     },
     {
-      "id": "p014",
+      "id": "p013",
       "t_mono_ms": 14,
       "command": "substrate.probe SIGNAL_PAT.PROC_STATUS",
       "status": "ok",
       "source": "synthetic_fixture",
       "tier": "T0_DIRECT",
-      "output": "/proc/self/status -> 86 bytes, fabricated by the substrate; there is no kernel [answered by substrate_policy axis system_fs]",
+      "output": "/proc/self/status -> ENOENT under the substrate's system_fs axis [substrate_policy axis system_fs = absent]; the read failed and no content was invented. The attempt is the measurement. [answered by substrate_policy axis system_fs]",
       "output_truncated": false,
       "error": null
     },
     {
-      "id": "p015",
+      "id": "p014",
       "t_mono_ms": 15,
       "command": "substrate.probe SIGNAL_PAT.PROC_MAPS",
       "status": "ok",
       "source": "synthetic_fixture",
       "tier": "T0_DIRECT",
-      "output": "/proc/self/maps -> 0 bytes, fabricated by the substrate; there is no kernel [answered by substrate_policy axis system_fs]",
+      "output": "/proc/self/maps -> ENOENT under the substrate's system_fs axis [substrate_policy axis system_fs = absent]; the read failed and no content was invented. The attempt is the measurement. [answered by substrate_policy axis system_fs]",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "p015",
+      "t_mono_ms": 16,
+      "command": "substrate.probe SIGNAL_PAT.PROC_CPUINFO",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "/proc/cpuinfo -> ENOENT under the substrate's system_fs axis [substrate_policy axis system_fs = absent]; the read failed and no content was invented. The attempt is the measurement. [answered by substrate_policy axis system_fs]",
       "output_truncated": false,
       "error": null
     },
     {
       "id": "p016",
-      "t_mono_ms": 18,
-      "command": "substrate.probe SIGNAL_PAT.BATTERY",
+      "t_mono_ms": 17,
+      "command": "substrate.probe SIGNAL_PAT.PROC_UPTIME",
       "status": "ok",
       "source": "synthetic_fixture",
       "tier": "T0_DIRECT",
-      "output": "/sys/class/power_supply/battery/capacity -> 4 bytes, fabricated by the substrate; there is no kernel [answered by substrate_policy axis system_fs]",
+      "output": "/proc/uptime -> ENOENT under the substrate's system_fs axis [substrate_policy axis system_fs = absent]; the read failed and no content was invented. The attempt is the measurement. [answered by substrate_policy axis system_fs]",
       "output_truncated": false,
       "error": null
     },
     {
       "id": "p017",
-      "t_mono_ms": 19,
-      "command": "substrate.probe SIGNAL_PAT.PROC_OTHER",
+      "t_mono_ms": 18,
+      "command": "substrate.probe SIGNAL_PAT.BATTERY",
       "status": "ok",
       "source": "synthetic_fixture",
       "tier": "T0_DIRECT",
-      "output": "/proc/self/exe -> ENOENT under the substrate's system_fs axis [substrate_policy axis system_fs = fabricated]; the read failed and no content was invented. The attempt is the measurement. [answered by substrate_policy axis system_fs]",
+      "output": "/sys/class/power_supply/battery/capacity -> ENOENT under the substrate's system_fs axis [substrate_policy axis system_fs = absent]; the read failed and no content was invented. The attempt is the measurement. [answered by substrate_policy axis system_fs]",
       "output_truncated": false,
       "error": null
     },
     {
       "id": "p018",
-      "t_mono_ms": 20,
-      "command": "substrate.probe SIGNAL_PAT.PM_QUERY",
+      "t_mono_ms": 19,
+      "command": "substrate.probe SIGNAL_PAT.PROC_OTHER",
       "status": "ok",
       "source": "synthetic_fixture",
       "tier": "T0_DIRECT",
-      "output": "PackageManager query for com.whatsapp -> not installed; the app sees an empty list, not an error [answered by substrate_policy axis cross_app_packages] [answered by substrate_policy axis cross_app_packages]",
+      "output": "/proc/self/exe -> ENOENT under the substrate's system_fs axis [substrate_policy axis system_fs = absent]; the read failed and no content was invented. The attempt is the measurement. [answered by substrate_policy axis system_fs]",
       "output_truncated": false,
       "error": null
     },
@@ -1168,12 +1176,23 @@
       "status": "ok",
       "source": "synthetic_fixture",
       "tier": "T0_DIRECT",
-      "output": "Landroid/content/pm/PackageManager;.queryIntentActivities() -> a list of exactly one entry (the subject itself). An app looking for a share target, a handler or a peer finds nothing, and finds nothing *without an error*. [answered by substrate_policy axis cross_app_packages] [answered by substrate_policy axis cross_app_packages]",
+      "output": "PackageManager query for com.whatsapp -> NameNotFoundException; the substrate refuses the query rather than answering it, which is a different control-flow outcome from an empty answer [answered by substrate_policy axis cross_app_packages] [answered by substrate_policy axis cross_app_packages]",
       "output_truncated": false,
       "error": null
     },
     {
       "id": "p020",
+      "t_mono_ms": 20,
+      "command": "substrate.probe SIGNAL_PAT.PM_QUERY",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "Landroid/content/pm/PackageManager;.queryIntentActivities() -> NameNotFoundException. The query is refused, so an app with a try/catch behaves differently from one that silently found nothing. [answered by substrate_policy axis cross_app_packages] [answered by substrate_policy axis cross_app_packages]",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "p021",
       "t_mono_ms": 22,
       "command": "substrate.probe SIGNAL_PAT.SET_CONTENT_VIEW",
       "status": "ok",
@@ -1184,7 +1203,7 @@
       "error": null
     },
     {
-      "id": "p021",
+      "id": "p022",
       "t_mono_ms": 50,
       "command": "substrate.probe SIGNAL_PAT.LAYOUT_PASS",
       "status": "ok",
@@ -1195,7 +1214,7 @@
       "error": null
     },
     {
-      "id": "p022",
+      "id": "p023",
       "t_mono_ms": 51,
       "command": "substrate.probe SIGNAL_PAT.MESSAGE_QUEUE",
       "status": "ok",
@@ -1206,7 +1225,7 @@
       "error": null
     },
     {
-      "id": "p023",
+      "id": "p024",
       "t_mono_ms": 51,
       "command": "substrate.probe SIGNAL_PAT.MESSAGE_QUEUE",
       "status": "ok",
@@ -1217,7 +1236,7 @@
       "error": null
     },
     {
-      "id": "p024",
+      "id": "p025",
       "t_mono_ms": 51,
       "command": "substrate.probe SIGNAL_PAT.MESSAGE_QUEUE",
       "status": "ok",
@@ -1228,7 +1247,7 @@
       "error": null
     },
     {
-      "id": "p025",
+      "id": "p026",
       "t_mono_ms": 51,
       "command": "substrate.probe SIGNAL_PAT.MESSAGE_QUEUE",
       "status": "ok",
@@ -1239,7 +1258,7 @@
       "error": null
     },
     {
-      "id": "p026",
+      "id": "p027",
       "t_mono_ms": 51,
       "command": "substrate.probe SIGNAL_PAT.MESSAGE_QUEUE",
       "status": "ok",
@@ -1250,29 +1269,29 @@
       "error": null
     },
     {
-      "id": "p027",
+      "id": "p028",
       "t_mono_ms": 51,
       "command": "substrate.probe SIGNAL_PAT.CLOCK_UPTIME",
       "status": "ok",
       "source": "synthetic_fixture",
       "tier": "T0_DIRECT",
-      "output": "SystemClock() -> 51: the substrate's virtual clock, advanced only by the recorded schedule. [answered by substrate_policy axis time] [answered by substrate_policy axis time]",
-      "output_truncated": false,
-      "error": null
-    },
-    {
-      "id": "p028",
-      "t_mono_ms": 51,
-      "command": "substrate.probe SIGNAL_PAT.CLOCK_ELAPSED",
-      "status": "ok",
-      "source": "synthetic_fixture",
-      "tier": "T0_DIRECT",
-      "output": "SystemClock() -> 51: the substrate's virtual clock, advanced only by the recorded schedule. [answered by substrate_policy axis time] [answered by substrate_policy axis time]",
+      "output": "SystemClock() -> 0 for a virtual time of 51 ms: the substrate's time axis transformed the answer, and the untransformed value is stated so the transformation is checkable. [answered by substrate_policy axis time] [answered by substrate_policy axis time]",
       "output_truncated": false,
       "error": null
     },
     {
       "id": "p029",
+      "t_mono_ms": 51,
+      "command": "substrate.probe SIGNAL_PAT.CLOCK_ELAPSED",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "SystemClock() -> 0 for a virtual time of 51 ms: the substrate's time axis transformed the answer, and the untransformed value is stated so the transformation is checkable. [answered by substrate_policy axis time] [answered by substrate_policy axis time]",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "p030",
       "t_mono_ms": 51,
       "command": "substrate.probe SIGNAL_PAT.CLOCK_WALL",
       "status": "ok",
@@ -1283,29 +1302,29 @@
       "error": null
     },
     {
-      "id": "p030",
+      "id": "p031",
       "t_mono_ms": 106,
       "command": "substrate.probe SIGNAL_PAT.SLEEP",
       "status": "ok",
       "source": "synthetic_fixture",
       "tier": "T0_DIRECT",
-      "output": "Thread.sleep(50 ms) advanced the substrate's virtual clock from 56 to 106 ms and returned without blocking. The app is shown 106 ms of elapsed time, which the time axis derived from that [substrate_policy axis time = virtual] [answered by substrate_policy axis time]",
-      "output_truncated": false,
-      "error": null
-    },
-    {
-      "id": "p031",
-      "t_mono_ms": 106,
-      "command": "substrate.probe SIGNAL_PAT.CLOCK_ELAPSED",
-      "status": "ok",
-      "source": "synthetic_fixture",
-      "tier": "T0_DIRECT",
-      "output": "SystemClock() -> 106: the substrate's virtual clock, advanced only by the recorded schedule. [answered by substrate_policy axis time] [answered by substrate_policy axis time]",
+      "output": "Thread.sleep(50 ms) advanced the substrate's virtual clock from 56 to 106 ms and returned without blocking. The app is shown 0 ms of elapsed time, which the time axis derived from that [substrate_policy axis time = frozen] [answered by substrate_policy axis time]",
       "output_truncated": false,
       "error": null
     },
     {
       "id": "p032",
+      "t_mono_ms": 106,
+      "command": "substrate.probe SIGNAL_PAT.CLOCK_ELAPSED",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "SystemClock() -> 0 for a virtual time of 106 ms: the substrate's time axis transformed the answer, and the untransformed value is stated so the transformation is checkable. [answered by substrate_policy axis time] [answered by substrate_policy axis time]",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "p033",
       "t_mono_ms": 106,
       "command": "substrate.probe SIGNAL_PAT.MESSAGE_QUEUE",
       "status": "ok",
@@ -1316,7 +1335,7 @@
       "error": null
     },
     {
-      "id": "p033",
+      "id": "p034",
       "t_mono_ms": 109,
       "command": "substrate.probe SIGNAL_PAT.HEADER_NAME",
       "status": "ok",
@@ -1327,7 +1346,7 @@
       "error": null
     },
     {
-      "id": "p034",
+      "id": "p035",
       "t_mono_ms": 109,
       "command": "substrate.probe SIGNAL_PAT.HEADER_NAME",
       "status": "ok",
@@ -1338,18 +1357,62 @@
       "error": null
     },
     {
-      "id": "p035",
+      "id": "p036",
+      "t_mono_ms": 111,
+      "command": "substrate.probe SIGNAL_PAT.LOOPBACK_RESPONSE",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "connect() returned normally and the app was shown a synthesised 200 response (application/octet-stream). Nothing was transmitted: the egress sink refused this attempt exactly as it refuses every other, and the response is a value this policy declared. [answered by substrate_policy axis network]",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "p037",
+      "t_mono_ms": 111,
+      "command": "substrate.probe SIGNAL_PAT.LOOPBACK_RESPONSE",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "getResponseCode() -> 200: synthesised by the substrate's network axis, not received. An app that branches on 2xx takes a success branch it would not have taken on any device this substrate can emulate [substrate_policy axis network = synthetic_loopback] [answered by substrate_policy axis network]",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "p038",
+      "t_mono_ms": 111,
+      "command": "substrate.probe SIGNAL_PAT.LOOPBACK_RESPONSE",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "getInputStream() -> a handle onto 0 declared zero bytes. The body is a zero-filled buffer of exactly that length; it contains no received data and none is recorded [substrate_policy axis network = synthetic_loopback] [answered by substrate_policy axis network]",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "p039",
+      "t_mono_ms": 112,
+      "command": "substrate.probe SIGNAL_PAT.LOOPBACK_RESPONSE",
+      "status": "ok",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "output": "connect() returned normally and the app was shown a synthesised 200 response (application/octet-stream). Nothing was transmitted: the egress sink refused this attempt exactly as it refuses every other, and the response is a value this policy declared. [answered by substrate_policy axis network]",
+      "output_truncated": false,
+      "error": null
+    },
+    {
+      "id": "p040",
       "t_mono_ms": 113,
       "command": "substrate.probe SIGNAL_PAT.WEBVIEW_LOAD",
       "status": "ok",
       "source": "synthetic_fixture",
       "tier": "T0_DIRECT",
-      "output": "WebView.loadUrl to cdn.substrate.invalid:/app.js -> the request is denied at the egress sink, so the page never loads. The hybrid app loses its entire UI, which is SUB.FW.WEBVIEW [substrate_policy axis network = record_and_deny] [answered by substrate_policy axis network]",
+      "output": "WebView.loadUrl to cdn.substrate.invalid:/app.js -> the request is refused at the egress sink and a response is then synthesised and shown to the app, so the page 'loads' without a byte having moved. The hybrid app loses its entire UI, which is SUB.FW.WEBVIEW [substrate_policy axis network = synthetic_loopback] [answered by substrate_policy axis network]",
       "output_truncated": false,
       "error": null
     },
     {
-      "id": "p036",
+      "id": "p041",
       "t_mono_ms": 116,
       "command": "substrate.probe SIGNAL_PAT.EXCEPTION_CAUGHT",
       "status": "ok",
@@ -1360,7 +1423,7 @@
       "error": null
     },
     {
-      "id": "layout.37",
+      "id": "layout.42",
       "t_mono_ms": 50,
       "command": "shim.layout.dump root",
       "status": "ok",
@@ -1408,7 +1471,7 @@
       "pattern": "SIGNAL_PAT.BUILD_FIELD",
       "family": "SUB.BUILD",
       "t_mono_ms": 13,
-      "detail": "Build.FINGERPRINT = andro-substrate/shim/0.1.0:substrate/0.1.0:user/release-keys [answered by substrate_policy axis identity]",
+      "detail": "Build.FINGERPRINT = <withheld: substrate states no identity> [answered by substrate_policy axis identity]",
       "source": "synthetic_fixture",
       "tier": "T0_DIRECT"
     },
@@ -1416,7 +1479,7 @@
       "pattern": "SIGNAL_PAT.BUILD_FIELD",
       "family": "SUB.BUILD",
       "t_mono_ms": 13,
-      "detail": "Build.MANUFACTURER = andro-substrate [answered by substrate_policy axis identity]",
+      "detail": "Build.MANUFACTURER = <withheld: substrate states no identity> [answered by substrate_policy axis identity]",
       "source": "synthetic_fixture",
       "tier": "T0_DIRECT"
     },
@@ -1424,7 +1487,7 @@
       "pattern": "SIGNAL_PAT.BUILD_FIELD",
       "family": "SUB.BUILD",
       "t_mono_ms": 13,
-      "detail": "Build.MODEL = Substrate [answered by substrate_policy axis identity]",
+      "detail": "Build.MODEL = <withheld: substrate states no identity> [answered by substrate_policy axis identity]",
       "source": "synthetic_fixture",
       "tier": "T0_DIRECT"
     },
@@ -1432,7 +1495,7 @@
       "pattern": "SIGNAL_PAT.BUILD_FIELD",
       "family": "SUB.BUILD",
       "t_mono_ms": 13,
-      "detail": "Build.BRAND = substrate [answered by substrate_policy axis identity]",
+      "detail": "Build.BRAND = <withheld: substrate states no identity> [answered by substrate_policy axis identity]",
       "source": "synthetic_fixture",
       "tier": "T0_DIRECT"
     },
@@ -1440,7 +1503,7 @@
       "pattern": "SIGNAL_PAT.BUILD_FIELD",
       "family": "SUB.BUILD",
       "t_mono_ms": 13,
-      "detail": "Build.SDK_INT = 34 [answered by substrate_policy axis identity]",
+      "detail": "Build.SDK_INT = <withheld: substrate states no identity> [answered by substrate_policy axis identity]",
       "source": "synthetic_fixture",
       "tier": "T0_DIRECT"
     },
@@ -1448,7 +1511,7 @@
       "pattern": "SIGNAL_PAT.BUILD_FIELD",
       "family": "SUB.BUILD",
       "t_mono_ms": 13,
-      "detail": "Build.RELEASE = 14 [answered by substrate_policy axis identity]",
+      "detail": "Build.RELEASE = <withheld: substrate states no identity> [answered by substrate_policy axis identity]",
       "source": "synthetic_fixture",
       "tier": "T0_DIRECT"
     },
@@ -1456,7 +1519,7 @@
       "pattern": "SIGNAL_PAT.EMULATOR_PROBE",
       "family": "SUB.BUILD",
       "t_mono_ms": 13,
-      "detail": "System.getProperty(\"ro.kernel.qemu\") = <absent: substrate does not model this> [answered by substrate_policy axis identity]",
+      "detail": "System.getProperty(\"ro.kernel.qemu\") = <withheld: substrate states no identity> [answered by substrate_policy axis identity]",
       "source": "synthetic_fixture",
       "tier": "T0_DIRECT"
     },
@@ -1478,17 +1541,17 @@
     },
     {
       "pattern": "SIGNAL_PAT.PROC_STATUS",
-      "family": "SUB.TRUST",
+      "family": "SUB.KERNEL",
       "t_mono_ms": 14,
-      "detail": "/proc/self/status -> 86 bytes, fabricated by the substrate; there is no kernel [answered by substrate_policy axis system_fs]",
+      "detail": "/proc/self/status -> ENOENT under the substrate's system_fs axis [substrate_policy axis system_fs = absent]; the read failed and no content was invented. The attempt is the measurement. [answered by substrate_policy axis system_fs]",
       "source": "synthetic_fixture",
       "tier": "T0_DIRECT"
     },
     {
       "pattern": "SIGNAL_PAT.PROC_MAPS",
-      "family": "SUB.NATIVE",
+      "family": "SUB.KERNEL",
       "t_mono_ms": 15,
-      "detail": "/proc/self/maps -> 0 bytes, fabricated by the substrate; there is no kernel [answered by substrate_policy axis system_fs]",
+      "detail": "/proc/self/maps -> ENOENT under the substrate's system_fs axis [substrate_policy axis system_fs = absent]; the read failed and no content was invented. The attempt is the measurement. [answered by substrate_policy axis system_fs]",
       "source": "synthetic_fixture",
       "tier": "T0_DIRECT"
     },
@@ -1496,15 +1559,15 @@
       "pattern": "SIGNAL_PAT.PROC_CPUINFO",
       "family": "SUB.KERNEL",
       "t_mono_ms": 16,
-      "detail": "/proc/cpuinfo -> 85 bytes, fabricated by the substrate; there is no kernel [answered by substrate_policy axis system_fs]",
+      "detail": "/proc/cpuinfo -> ENOENT under the substrate's system_fs axis [substrate_policy axis system_fs = absent]; the read failed and no content was invented. The attempt is the measurement. [answered by substrate_policy axis system_fs]",
       "source": "synthetic_fixture",
       "tier": "T0_DIRECT"
     },
     {
       "pattern": "SIGNAL_PAT.PROC_UPTIME",
-      "family": "SUB.TIME",
+      "family": "SUB.KERNEL",
       "t_mono_ms": 17,
-      "detail": "/proc/uptime -> 10 bytes, fabricated by the substrate; there is no kernel [answered by substrate_policy axis system_fs]",
+      "detail": "/proc/uptime -> ENOENT under the substrate's system_fs axis [substrate_policy axis system_fs = absent]; the read failed and no content was invented. The attempt is the measurement. [answered by substrate_policy axis system_fs]",
       "source": "synthetic_fixture",
       "tier": "T0_DIRECT"
     },
@@ -1512,7 +1575,7 @@
       "pattern": "SIGNAL_PAT.BATTERY",
       "family": "SUB.KERNEL",
       "t_mono_ms": 18,
-      "detail": "/sys/class/power_supply/battery/capacity -> 4 bytes, fabricated by the substrate; there is no kernel [answered by substrate_policy axis system_fs]",
+      "detail": "/sys/class/power_supply/battery/capacity -> ENOENT under the substrate's system_fs axis [substrate_policy axis system_fs = absent]; the read failed and no content was invented. The attempt is the measurement. [answered by substrate_policy axis system_fs]",
       "source": "synthetic_fixture",
       "tier": "T0_DIRECT"
     },
@@ -1520,7 +1583,7 @@
       "pattern": "SIGNAL_PAT.PROC_OTHER",
       "family": "SUB.KERNEL",
       "t_mono_ms": 19,
-      "detail": "/proc/self/exe -> ENOENT under the substrate's system_fs axis [substrate_policy axis system_fs = fabricated]; the read failed and no content was invented. The attempt is the measurement. [answered by substrate_policy axis system_fs]",
+      "detail": "/proc/self/exe -> ENOENT under the substrate's system_fs axis [substrate_policy axis system_fs = absent]; the read failed and no content was invented. The attempt is the measurement. [answered by substrate_policy axis system_fs]",
       "source": "synthetic_fixture",
       "tier": "T0_DIRECT"
     },
@@ -1536,7 +1599,7 @@
       "pattern": "SIGNAL_PAT.PM_QUERY",
       "family": "SUB.IPC",
       "t_mono_ms": 20,
-      "detail": "PackageManager query for com.whatsapp -> not installed; the app sees an empty list, not an error [answered by substrate_policy axis cross_app_packages] [answered by substrate_policy axis cross_app_packages]",
+      "detail": "PackageManager query for com.whatsapp -> NameNotFoundException; the substrate refuses the query rather than answering it, which is a different control-flow outcome from an empty answer [answered by substrate_policy axis cross_app_packages] [answered by substrate_policy axis cross_app_packages]",
       "source": "synthetic_fixture",
       "tier": "T0_DIRECT"
     },
@@ -1544,7 +1607,7 @@
       "pattern": "SIGNAL_PAT.PM_QUERY",
       "family": "SUB.IPC",
       "t_mono_ms": 20,
-      "detail": "Landroid/content/pm/PackageManager;.queryIntentActivities() -> a list of exactly one entry (the subject itself). An app looking for a share target, a handler or a peer finds nothing, and finds nothing *without an error*. [answered by substrate_policy axis cross_app_packages] [answered by substrate_policy axis cross_app_packages]",
+      "detail": "Landroid/content/pm/PackageManager;.queryIntentActivities() -> NameNotFoundException. The query is refused, so an app with a try/catch behaves differently from one that silently found nothing. [answered by substrate_policy axis cross_app_packages] [answered by substrate_policy axis cross_app_packages]",
       "source": "synthetic_fixture",
       "tier": "T0_DIRECT"
     },
@@ -1640,7 +1703,7 @@
       "pattern": "SIGNAL_PAT.CLOCK_UPTIME",
       "family": "SUB.TIME",
       "t_mono_ms": 51,
-      "detail": "SystemClock() -> 51: the substrate's virtual clock, advanced only by the recorded schedule. [answered by substrate_policy axis time] [answered by substrate_policy axis time]",
+      "detail": "SystemClock() -> 0 for a virtual time of 51 ms: the substrate's time axis transformed the answer, and the untransformed value is stated so the transformation is checkable. [answered by substrate_policy axis time] [answered by substrate_policy axis time]",
       "source": "synthetic_fixture",
       "tier": "T0_DIRECT"
     },
@@ -1648,7 +1711,7 @@
       "pattern": "SIGNAL_PAT.CLOCK_ELAPSED",
       "family": "SUB.TIME",
       "t_mono_ms": 51,
-      "detail": "SystemClock() -> 51: the substrate's virtual clock, advanced only by the recorded schedule. [answered by substrate_policy axis time] [answered by substrate_policy axis time]",
+      "detail": "SystemClock() -> 0 for a virtual time of 51 ms: the substrate's time axis transformed the answer, and the untransformed value is stated so the transformation is checkable. [answered by substrate_policy axis time] [answered by substrate_policy axis time]",
       "source": "synthetic_fixture",
       "tier": "T0_DIRECT"
     },
@@ -1664,7 +1727,7 @@
       "pattern": "SIGNAL_PAT.SLEEP",
       "family": "SUB.TIME",
       "t_mono_ms": 106,
-      "detail": "Thread.sleep(50 ms) advanced the substrate's virtual clock from 56 to 106 ms and returned without blocking. The app is shown 106 ms of elapsed time, which the time axis derived from that [substrate_policy axis time = virtual] [answered by substrate_policy axis time]",
+      "detail": "Thread.sleep(50 ms) advanced the substrate's virtual clock from 56 to 106 ms and returned without blocking. The app is shown 0 ms of elapsed time, which the time axis derived from that [substrate_policy axis time = frozen] [answered by substrate_policy axis time]",
       "source": "synthetic_fixture",
       "tier": "T0_DIRECT"
     },
@@ -1672,7 +1735,7 @@
       "pattern": "SIGNAL_PAT.CLOCK_ELAPSED",
       "family": "SUB.TIME",
       "t_mono_ms": 106,
-      "detail": "SystemClock() -> 106: the substrate's virtual clock, advanced only by the recorded schedule. [answered by substrate_policy axis time] [answered by substrate_policy axis time]",
+      "detail": "SystemClock() -> 0 for a virtual time of 106 ms: the substrate's time axis transformed the answer, and the untransformed value is stated so the transformation is checkable. [answered by substrate_policy axis time] [answered by substrate_policy axis time]",
       "source": "synthetic_fixture",
       "tier": "T0_DIRECT"
     },
@@ -1717,10 +1780,42 @@
       "tier": "T0_DIRECT"
     },
     {
+      "pattern": "SIGNAL_PAT.LOOPBACK_RESPONSE",
+      "family": "SUB.NET",
+      "t_mono_ms": 111,
+      "detail": "connect() returned normally and the app was shown a synthesised 200 response (application/octet-stream). Nothing was transmitted: the egress sink refused this attempt exactly as it refuses every other, and the response is a value this policy declared. [answered by substrate_policy axis network]",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.LOOPBACK_RESPONSE",
+      "family": "SUB.NET",
+      "t_mono_ms": 111,
+      "detail": "getResponseCode() -> 200: synthesised by the substrate's network axis, not received. An app that branches on 2xx takes a success branch it would not have taken on any device this substrate can emulate [substrate_policy axis network = synthetic_loopback] [answered by substrate_policy axis network]",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.LOOPBACK_RESPONSE",
+      "family": "SUB.NET",
+      "t_mono_ms": 111,
+      "detail": "getInputStream() -> a handle onto 0 declared zero bytes. The body is a zero-filled buffer of exactly that length; it contains no received data and none is recorded [substrate_policy axis network = synthetic_loopback] [answered by substrate_policy axis network]",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
+      "pattern": "SIGNAL_PAT.LOOPBACK_RESPONSE",
+      "family": "SUB.NET",
+      "t_mono_ms": 112,
+      "detail": "connect() returned normally and the app was shown a synthesised 200 response (application/octet-stream). Nothing was transmitted: the egress sink refused this attempt exactly as it refuses every other, and the response is a value this policy declared. [answered by substrate_policy axis network]",
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT"
+    },
+    {
       "pattern": "SIGNAL_PAT.WEBVIEW_LOAD",
       "family": "SUB.FW",
       "t_mono_ms": 113,
-      "detail": "WebView.loadUrl to cdn.substrate.invalid:/app.js -> the request is denied at the egress sink, so the page never loads. The hybrid app loses its entire UI, which is SUB.FW.WEBVIEW [substrate_policy axis network = record_and_deny] [answered by substrate_policy axis network]",
+      "detail": "WebView.loadUrl to cdn.substrate.invalid:/app.js -> the request is refused at the egress sink and a response is then synthesised and shown to the app, so the page 'loads' without a byte having moved. The hybrid app loses its entire UI, which is SUB.FW.WEBVIEW [substrate_policy axis network = synthetic_loopback] [answered by substrate_policy axis network]",
       "source": "synthetic_fixture",
       "tier": "T0_DIRECT"
     }
@@ -1848,72 +1943,23 @@
       "notes": "observed by the substrate's own instrumentation, not inferred. A device arm can only establish the environment half of this ID; the substrate establishes the app half."
     },
     {
-      "assumption_id": "SUB.TRUST.DEBUG_DETECT",
-      "family": "SUB.TRUST",
-      "symptom_class": "refuse",
-      "first_t_mono_ms": 14,
-      "last_t_mono_ms": 14,
-      "hit_count": 2,
-      "evidence": [
-        "/filesystem/accesses/0",
-        "/diagnostics/13"
-      ],
-      "source": "synthetic_fixture",
-      "tier": "T0_DIRECT",
-      "confidence": "certain",
-      "notes": "observed by the substrate's own instrumentation, not inferred. A device arm can only establish the environment half of this ID; the substrate establishes the app half."
-    },
-    {
-      "assumption_id": "SUB.NATIVE.LOAD_LIBRARY",
-      "family": "SUB.NATIVE",
-      "symptom_class": "refuse",
-      "first_t_mono_ms": 15,
-      "last_t_mono_ms": 115,
-      "hit_count": 4,
-      "evidence": [
-        "/filesystem/accesses/1",
-        "/diagnostics/14",
-        "/jni/calls/0",
-        "/jni/calls/1"
-      ],
-      "source": "synthetic_fixture",
-      "tier": "T0_DIRECT",
-      "confidence": "certain",
-      "notes": "observed by the substrate's own instrumentation, not inferred. A device arm can only establish the environment half of this ID; the substrate establishes the app half."
-    },
-    {
       "assumption_id": "SUB.KERNEL.PROC_SELF",
       "family": "SUB.KERNEL",
       "symptom_class": "degrade",
-      "first_t_mono_ms": 16,
+      "first_t_mono_ms": 14,
       "last_t_mono_ms": 19,
-      "hit_count": 4,
+      "hit_count": 10,
       "evidence": [
+        "/filesystem/accesses/0",
+        "/diagnostics/13",
+        "/filesystem/accesses/1",
+        "/diagnostics/14",
         "/filesystem/accesses/2",
         "/diagnostics/15",
-        "/filesystem/accesses/5",
-        "/diagnostics/18"
-      ],
-      "source": "synthetic_fixture",
-      "tier": "T0_DIRECT",
-      "confidence": "certain",
-      "notes": "observed by the substrate's own instrumentation, not inferred. A device arm can only establish the environment half of this ID; the substrate establishes the app half."
-    },
-    {
-      "assumption_id": "SUB.TIME.MONOTONIC",
-      "family": "SUB.TIME",
-      "symptom_class": "degrade",
-      "first_t_mono_ms": 17,
-      "last_t_mono_ms": 106,
-      "hit_count": 7,
-      "evidence": [
         "/filesystem/accesses/3",
         "/diagnostics/16",
-        "/diagnostics/33",
-        "/diagnostics/34",
-        "/diagnostics/35",
-        "/diagnostics/36",
-        "/diagnostics/37"
+        "/filesystem/accesses/5",
+        "/diagnostics/18"
       ],
       "source": "synthetic_fixture",
       "tier": "T0_DIRECT",
@@ -2023,7 +2069,7 @@
       "hit_count": 1,
       "evidence": [
         "/diagnostics/27",
-        "/probes/37"
+        "/probes/42"
       ],
       "source": "synthetic_fixture",
       "tier": "T0_DIRECT",
@@ -2051,18 +2097,41 @@
       "notes": "observed by the substrate's own instrumentation, not inferred. A device arm can only establish the environment half of this ID; the substrate establishes the app half."
     },
     {
+      "assumption_id": "SUB.TIME.MONOTONIC",
+      "family": "SUB.TIME",
+      "symptom_class": "degrade",
+      "first_t_mono_ms": 51,
+      "last_t_mono_ms": 106,
+      "hit_count": 5,
+      "evidence": [
+        "/diagnostics/33",
+        "/diagnostics/34",
+        "/diagnostics/35",
+        "/diagnostics/36",
+        "/diagnostics/37"
+      ],
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "confidence": "certain",
+      "notes": "observed by the substrate's own instrumentation, not inferred. A device arm can only establish the environment half of this ID; the substrate establishes the app half."
+    },
+    {
       "assumption_id": "SUB.NET.EGRESS",
       "family": "SUB.NET",
       "symptom_class": "refuse",
       "first_t_mono_ms": 109,
       "last_t_mono_ms": 113,
-      "hit_count": 6,
+      "hit_count": 10,
       "evidence": [
         "/diagnostics/39",
         "/diagnostics/40",
         "/diagnostics/41",
         "/network/attempts/0",
+        "/diagnostics/43",
+        "/diagnostics/44",
+        "/diagnostics/45",
         "/network/attempts/1",
+        "/diagnostics/46",
         "/network/attempts/2"
       ],
       "source": "synthetic_fixture",
@@ -2094,7 +2163,23 @@
       "last_t_mono_ms": 113,
       "hit_count": 1,
       "evidence": [
-        "/diagnostics/43"
+        "/diagnostics/47"
+      ],
+      "source": "synthetic_fixture",
+      "tier": "T0_DIRECT",
+      "confidence": "certain",
+      "notes": "observed by the substrate's own instrumentation, not inferred. A device arm can only establish the environment half of this ID; the substrate establishes the app half."
+    },
+    {
+      "assumption_id": "SUB.NATIVE.LOAD_LIBRARY",
+      "family": "SUB.NATIVE",
+      "symptom_class": "refuse",
+      "first_t_mono_ms": 114,
+      "last_t_mono_ms": 115,
+      "hit_count": 2,
+      "evidence": [
+        "/jni/calls/0",
+        "/jni/calls/1"
       ],
       "source": "synthetic_fixture",
       "tier": "T0_DIRECT",
@@ -2211,7 +2296,32 @@
       {
         "signal": "host_wall_clock",
         "reason_code": "scope_out_of_protocol",
-        "reason": "This run used the substrate's own time axis (virtual), so the host's clock was not exposed. That is a choice, not an absence: the substrate_policy declaration is where a reader finds it, and docs/decisions/0006-substrate-policy.md is why the choice is a parameter."
+        "reason": "This run used the substrate's own time axis (frozen), so the host's clock was not exposed. That is a choice, not an absence: the substrate_policy declaration is where a reader finds it, and docs/decisions/0006-substrate-policy.md is why the choice is a parameter."
+      },
+      {
+        "signal": "substrate_policy_axis_identity",
+        "reason_code": "scope_out_of_protocol",
+        "reason": "This run declared substrate_policy axis identity = withheld rather than the recorder default fabricated. The axis governs environment_identity, identity_probe in this document, and every value it produced is labelled at emission. Facts in those classes are joint properties of the app and this declaration; the two-arm differential in shim/recordings/ is how they are separated."
+      },
+      {
+        "signal": "substrate_policy_axis_system_fs",
+        "reason_code": "scope_out_of_protocol",
+        "reason": "This run declared substrate_policy axis system_fs = absent rather than the recorder default fabricated. The axis governs system_fs in this document, and every value it produced is labelled at emission. Facts in those classes are joint properties of the app and this declaration; the two-arm differential in shim/recordings/ is how they are separated."
+      },
+      {
+        "signal": "substrate_policy_axis_cross_app_packages",
+        "reason_code": "scope_out_of_protocol",
+        "reason": "This run declared substrate_policy axis cross_app_packages = error rather than the recorder default subject_only. The axis governs cross_app_packages in this document, and every value it produced is labelled at emission. Facts in those classes are joint properties of the app and this declaration; the two-arm differential in shim/recordings/ is how they are separated."
+      },
+      {
+        "signal": "substrate_policy_axis_network",
+        "reason_code": "scope_out_of_protocol",
+        "reason": "This run declared substrate_policy axis network = synthetic_loopback rather than the recorder default record_and_deny. The axis governs network in this document, and every value it produced is labelled at emission. Facts in those classes are joint properties of the app and this declaration; the two-arm differential in shim/recordings/ is how they are separated."
+      },
+      {
+        "signal": "substrate_policy_axis_time",
+        "reason_code": "scope_out_of_protocol",
+        "reason": "This run declared substrate_policy axis time = frozen rather than the recorder default virtual. The axis governs time in this document, and every value it produced is labelled at emission. Facts in those classes are joint properties of the app and this declaration; the two-arm differential in shim/recordings/ is how they are separated."
       }
     ],
     "warnings": [
@@ -2229,11 +2339,11 @@
     "event_count": 6,
     "network_attempt_count": 3,
     "network_destinations": 3,
-    "exception_count": 7,
+    "exception_count": 5,
     "fatal_count": 0,
     "class_count": 7,
     "native_library_count": 0,
-    "distinct_families_touched": 11,
+    "distinct_families_touched": 10,
     "families_touched": [
       "SUB.BUILD",
       "SUB.FS",
@@ -2244,9 +2354,8 @@
       "SUB.NATIVE",
       "SUB.NET",
       "SUB.RES",
-      "SUB.TIME",
-      "SUB.TRUST"
+      "SUB.TIME"
     ]
   },
-  "notes": "SYNTHETIC. Produced by shim::scenario::run() and emitted by shim/src/bin/shim-record.rs. Conforms to oracle/schema/ground-truth.schema.json so that a substrate capture and a device capture are the same document shape and directly diffable. Regenerate with: cargo run --quiet --manifest-path shim/Cargo.toml --bin shim-record > shim/recordings/synthetic.recording.json -- SUBSTRATE POLICY: fnv1a64:3831a4e300ed0c91. Every fabricated value in this document was produced by one of the five axes declared in the top-level substrate_policy object, and none of those axes can widen a capability or a capture surface. The two-arm worked differential is in shim/recordings/differential-*.recording.json; read their substrate_policy blocks before diffing anything else."
+  "notes": "SYNTHETIC. Produced by shim::scenario::run() and emitted by shim/src/bin/shim-record.rs. Conforms to oracle/schema/ground-truth.schema.json so that a substrate capture and a device capture are the same document shape and directly diffable. Regenerate with: cargo run --quiet --manifest-path shim/Cargo.toml --bin shim-record > shim/recordings/synthetic.recording.json -- SUBSTRATE POLICY: fnv1a64:b71360edcacb3d39. Every fabricated value in this document was produced by one of the five axes declared in the top-level substrate_policy object, and none of those axes can widen a capability or a capture surface. The two-arm worked differential is in shim/recordings/differential-*.recording.json; read their substrate_policy blocks before diffing anything else."
 }

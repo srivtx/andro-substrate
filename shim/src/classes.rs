@@ -104,7 +104,10 @@ impl ClassLoader {
 
     /// Whether the subject APK defines a descriptor.
     pub fn subject_has(&self, descriptor: &str) -> bool {
-        self.subject.classes.binary_search(&descriptor.to_string()).is_ok()
+        self.subject
+            .classes
+            .binary_search(&descriptor.to_string())
+            .is_ok()
     }
 
     /// Resolve a descriptor, supersede order: shim, then subject, then others.
@@ -112,7 +115,10 @@ impl ClassLoader {
         if self.shim_has(descriptor) {
             let also_app = self.subject_has(descriptor);
             return if also_app {
-                (Resolution::ShimSupersedesApp, Some(self.subject.package.clone()))
+                (
+                    Resolution::ShimSupersedesApp,
+                    Some(self.subject.package.clone()),
+                )
             } else {
                 (Resolution::ShimDex, None)
             };
@@ -218,14 +224,20 @@ mod tests {
             l.resolve("La/b/Main;"),
             (Resolution::AppDex, Some("a.b".into()))
         );
-        assert_eq!(l.resolve("Ljava/util/UUID;"), (Resolution::Unresolvable, None));
+        assert_eq!(
+            l.resolve("Ljava/util/UUID;"),
+            (Resolution::Unresolvable, None)
+        );
         assert_eq!(l.collisions(), vec!["Landroid/app/Activity;".to_string()]);
     }
 
     #[test]
     fn a_third_apk_can_satisfy_a_reference() {
-        let l = ClassLoader::new(vec!["Landroid/app/Activity;".into()], app("a.b", &["La/b/Main;"]))
-            .with_other(app("c.d", &["Lc/d/Other;"]));
+        let l = ClassLoader::new(
+            vec!["Landroid/app/Activity;".into()],
+            app("a.b", &["La/b/Main;"]),
+        )
+        .with_other(app("c.d", &["Lc/d/Other;"]));
         assert_eq!(
             l.resolve("Lc/d/Other;"),
             (Resolution::AppDex, Some("c.d".into()))
@@ -246,9 +258,6 @@ mod tests {
     #[test]
     fn require_distinguishes_missing_from_denied() {
         let l = ClassLoader::new(vec![], app("a.b", &[]));
-        assert_eq!(
-            l.require("Lnope;").unwrap_err().kind(),
-            "ClassNotFound"
-        );
+        assert_eq!(l.require("Lnope;").unwrap_err().kind(), "ClassNotFound");
     }
 }

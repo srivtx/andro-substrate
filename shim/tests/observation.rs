@@ -69,7 +69,11 @@ fn shim_for(dex: &'static [u8], package: &str) -> Shim {
 }
 
 fn events_of(shim: &Shim, group: Group) -> Vec<SubstrateEvent> {
-    shim.events().iter().filter(|e| e.group == group).cloned().collect()
+    shim.events()
+        .iter()
+        .filter(|e| e.group == group)
+        .cloned()
+        .collect()
 }
 
 fn summary(shim: &Shim) -> String {
@@ -118,7 +122,8 @@ fn the_three_resolution_sources_are_distinguishable() {
         Resolution::ShimSupersedesApp
     );
     assert_eq!(
-        shim.note_class_resolution("Lpro/rudloff/search_to_browser/MainActivity;").0,
+        shim.note_class_resolution("Lpro/rudloff/search_to_browser/MainActivity;")
+            .0,
         Resolution::AppDex
     );
     assert_eq!(
@@ -179,7 +184,12 @@ fn a_network_call_is_recorded_redacted_and_denied() {
     )
     .expect("a well-formed URL constructs");
     let conn = shim
-        .invoke("Ljava/net/URL;", "openConnection", "()Ljava/net/URLConnection;", &[Value::Ref("Ljava/net/URL;".into(), 1)])
+        .invoke(
+            "Ljava/net/URL;",
+            "openConnection",
+            "()Ljava/net/URLConnection;",
+            &[Value::Ref("Ljava/net/URL;".into(), 1)],
+        )
         .expect("openConnection");
     shim.invoke(
         "Ljava/net/HttpURLConnection;",
@@ -201,7 +211,10 @@ fn a_network_call_is_recorded_redacted_and_denied() {
     .expect("setRequestProperty");
 
     let r = shim.invoke("Ljava/net/URLConnection;", "connect", "()V", &[conn]);
-    assert!(r.is_err(), "connect must fail: the substrate has no network");
+    assert!(
+        r.is_err(),
+        "connect must fail: the substrate has no network"
+    );
 
     let evs = events_of(&shim, Group::Net);
     assert_eq!(evs.len(), 1, "{}", summary(&shim));
@@ -212,6 +225,7 @@ fn a_network_call_is_recorded_redacted_and_denied() {
             headers,
             body_bytes,
             outcome,
+            presentation,
             recorded_path,
         } => {
             assert_eq!(method.as_str(), "POST");
@@ -227,8 +241,16 @@ fn a_network_call_is_recorded_redacted_and_denied() {
             assert!(meta.query_present && meta.fragment_present);
             assert!(headers.has_sensitive(), "the header NAME is a finding");
             assert!(headers.redacted_count() > 0, "and its value was withheld");
-            assert_eq!(*body_bytes, None, "no body was obtainable, which is not zero");
+            assert_eq!(
+                *body_bytes, None,
+                "no body was obtainable, which is not zero"
+            );
             assert!(outcome.is_err());
+            assert_eq!(
+                *presentation,
+                shim::event::NetPresentation::Denied,
+                "the default network axis presents the refusal and nothing else"
+            );
         }
         other => panic!("expected a net event, got {other:?}"),
     }
@@ -254,7 +276,10 @@ fn a_webview_load_reaches_the_same_sink() {
         "Landroid/webkit/WebView;",
         "loadUrl",
         "(Ljava/lang/String;)V",
-        &[wv, Value::Str("https://cdn.substrate.invalid/a.js?v=SECRET".into())],
+        &[
+            wv,
+            Value::Str("https://cdn.substrate.invalid/a.js?v=SECRET".into()),
+        ],
     )
     .expect("loadUrl records and refuses");
     let evs = events_of(&shim, Group::Net);
@@ -262,7 +287,8 @@ fn a_webview_load_reaches_the_same_sink() {
     assert!(!format!("{:?}", shim.events()).contains("SECRET"));
     let j = events_of(&shim, Group::Probes);
     assert!(
-        j.iter().any(|e| e.summary().contains("SIGNAL_PAT.WEBVIEW_LOAD")),
+        j.iter()
+            .any(|e| e.summary().contains("SIGNAL_PAT.WEBVIEW_LOAD")),
         "a WebView load must be identifiable as one, and not just look like an \
 HttpURLConnection request: SUB.FW.WEBVIEW is a whole family and a study that could not \
 tell the two apart would be measuring a mixture. {}",
@@ -336,7 +362,9 @@ fn a_file_outside_the_data_dir_is_tagged_system_layout() {
     let mut shim = shim_for(fixtures::SEARCH_TO_BROWSER, "pro.rudloff.search_to_browser");
     let _ = shim.read_path_public("/sdcard/foo");
     let fs = events_of(&shim, Group::Fs);
-    assert!(fs.iter().any(|e| e.assumption == Some(AssumptionId::FsSystemLayout)));
+    assert!(fs
+        .iter()
+        .any(|e| e.assumption == Some(AssumptionId::FsSystemLayout)));
 }
 
 // ----------------------------------------------------------------------- jni
@@ -355,7 +383,9 @@ fn a_native_method_call_yields_unsatisfied() {
     let jni = events_of(&shim, Group::Jni);
     assert_eq!(jni.len(), 1, "{}", summary(&shim));
     match &jni[0].detail {
-        Detail::Jni { library, outcome, .. } => {
+        Detail::Jni {
+            library, outcome, ..
+        } => {
             assert_eq!(library.as_deref(), Some("nativecrypto"));
             assert_eq!(*outcome, NativeOutcome::Unsatisfied);
             // There is no success variant to reach, which is the point.
@@ -367,13 +397,19 @@ fn a_native_method_call_yields_unsatisfied() {
 
     // And the exception it throws is recorded, with a stack, and is catchable.
     let exc = events_of(&shim, Group::Exceptions);
-    assert!(exc.iter().any(|e| e.summary().contains("UnsatisfiedLinkError")));
+    assert!(exc
+        .iter()
+        .any(|e| e.summary().contains("UnsatisfiedLinkError")));
     assert!(shim.pending_exception().is_some());
     shim.catch_exception("java.lang.UnsatisfiedLinkError");
     assert!(
-        events_of(&shim, Group::Exceptions)
-            .iter()
-            .any(|e| matches!(&e.detail, Detail::Exceptions { caught: Some(true), .. })),
+        events_of(&shim, Group::Exceptions).iter().any(|e| matches!(
+            &e.detail,
+            Detail::Exceptions {
+                caught: Some(true),
+                ..
+            }
+        )),
         "{}",
         summary(&shim)
     );
@@ -393,7 +429,13 @@ fn a_thrown_exception_carries_a_stack_and_a_tier() {
     let exc = events_of(&shim, Group::Exceptions);
     assert_eq!(exc.len(), 1, "{}", summary(&shim));
     match &exc[0].detail {
-        Detail::Exceptions { class, stack, fatal, caught, .. } => {
+        Detail::Exceptions {
+            class,
+            stack,
+            fatal,
+            caught,
+            ..
+        } => {
             assert_eq!(class, "java.lang.ClassNotFoundException");
             assert!(!stack.is_empty(), "a stack is required by the schema");
             assert!(!fatal, "a missing class is not fatal to the run");
@@ -455,7 +497,11 @@ fn a_cross_app_package_query_is_recorded_as_silently_not_installed() {
         "Landroid/content/pm/PackageManager;",
         "getPackageInfo",
         "(Ljava/lang/String;I)Landroid/content/pm/PackageInfo;",
-        &[pm.clone(), Value::Str("fr.smarquis.sleeptimer".into()), Value::Int(0)],
+        &[
+            pm.clone(),
+            Value::Str("fr.smarquis.sleeptimer".into()),
+            Value::Int(0),
+        ],
     );
     assert!(self_r.is_ok(), "a self-query answers");
     let other = shim.invoke(
@@ -464,7 +510,11 @@ fn a_cross_app_package_query_is_recorded_as_silently_not_installed() {
         "(Ljava/lang/String;I)Landroid/content/pm/PackageInfo;",
         &[pm, Value::Str("com.whatsapp".into()), Value::Int(0)],
     );
-    assert_eq!(other.unwrap(), Value::Null, "and every other package is null");
+    assert_eq!(
+        other.unwrap(),
+        Value::Null,
+        "and every other package is null"
+    );
 
     let ids: Vec<AssumptionId> = events_of(&shim, Group::Probes)
         .iter()
@@ -475,7 +525,11 @@ fn a_cross_app_package_query_is_recorded_as_silently_not_installed() {
         ids.contains(&AssumptionId::IpcPackageManagerOther),
         "the cross-app query is the case the taxonomy calls out"
     );
-    assert!(summary(&shim).contains("not an error"), "{}", summary(&shim));
+    assert!(
+        summary(&shim).contains("not an error"),
+        "{}",
+        summary(&shim)
+    );
 }
 
 #[test]
@@ -487,11 +541,17 @@ fn a_system_service_other_than_the_package_manager_is_null_and_recorded() {
                 "Landroid/content/Context;",
                 "getSystemService",
                 "(Ljava/lang/String;)Ljava/lang/Object;",
-                &[Value::Ref("Landroid/content/Context;".into(), 1), Value::Str(svc.into())],
+                &[
+                    Value::Ref("Landroid/content/Context;".into(), 1),
+                    Value::Str(svc.into()),
+                ],
             )
             .expect("getSystemService");
         if svc == "package" {
-            assert!(matches!(v, Value::Ref(..)), "package returns a shim service");
+            assert!(
+                matches!(v, Value::Ref(..)),
+                "package returns a shim service"
+            );
         } else {
             assert_eq!(v, Value::Null);
         }
@@ -513,13 +573,21 @@ fn the_message_queue_records_work_that_will_never_run() {
             "Landroid/os/Handler;",
             "post",
             "(Ljava/lang/Object;)Z",
-            &[Value::Ref("Landroid/os/Handler;".into(), 1), Value::Ref("Ljava/lang/Runnable;".into(), 1)],
+            &[
+                Value::Ref("Landroid/os/Handler;".into(), 1),
+                Value::Ref("Ljava/lang/Runnable;".into(), 1),
+            ],
         )
         .expect("post");
     }
     assert_eq!(shim.queue_depth(), 3);
     let depth = shim
-        .invoke("Landroid/os/MessageQueue;", "size", "()I", &[Value::Ref("Landroid/os/MessageQueue;".into(), 1)])
+        .invoke(
+            "Landroid/os/MessageQueue;",
+            "size",
+            "()I",
+            &[Value::Ref("Landroid/os/MessageQueue;".into(), 1)],
+        )
         .expect("size");
     assert_eq!(depth, Value::Int(3));
     // The divergence is SUB.TIME.VSYNC: the queue never drains, because there is
@@ -565,7 +633,12 @@ fn the_trait_boundary_is_usable_by_an_interpreter_and_by_a_mock() {
     // observation nobody asked for.
     let before = real.events().len();
     assert_eq!(before, 0, "a fresh shim must have an empty event stream");
-    let _ = real.invoke("Landroid/os/Bundle;", "isEmpty", "()Z", &[Value::Ref("Landroid/os/Bundle;".into(), 1)]);
+    let _ = real.invoke(
+        "Landroid/os/Bundle;",
+        "isEmpty",
+        "()Z",
+        &[Value::Ref("Landroid/os/Bundle;".into(), 1)],
+    );
     assert!(real.events().len() > before, "a call must be observable");
 }
 
@@ -580,7 +653,10 @@ fn a_method_on_a_superclass_resolves_against_a_subclass() {
         "Landroid/app/Activity;",
         "getSystemService",
         "(Ljava/lang/String;)Ljava/lang/Object;",
-        &[Value::Ref("Landroid/app/Activity;".into(), 1), Value::Str("alarm".into())],
+        &[
+            Value::Ref("Landroid/app/Activity;".into(), 1),
+            Value::Str("alarm".into()),
+        ],
     );
     assert!(r.is_ok(), "Activity inherits Context.getSystemService");
     // And a Widget inherits TextView's method three levels up.
@@ -588,7 +664,10 @@ fn a_method_on_a_superclass_resolves_against_a_subclass() {
         "Landroid/widget/EditText;",
         "setText",
         "(Ljava/lang/CharSequence;)V",
-        &[Value::Ref("Landroid/widget/EditText;".into(), 1), Value::Str("x".into())],
+        &[
+            Value::Ref("Landroid/widget/EditText;".into(), 1),
+            Value::Str("x".into()),
+        ],
     );
     assert!(r.is_ok());
 }
@@ -609,8 +688,16 @@ fn every_event_sequence_is_gap_free_and_monotonic() {
         shim.clock_mut().advance(step);
         let _ = shim.note_class_resolution("Landroid/os/Build;");
         let _ = shim.read_path_public("/proc/uptime");
-        let _ = shim.invoke("Landroid/util/Log;", "d", "(ILjava/lang/String;Ljava/lang/String;)I",
-            &[Value::Int(3), Value::Str("t".into()), Value::Str("m".into())]);
+        let _ = shim.invoke(
+            "Landroid/util/Log;",
+            "d",
+            "(ILjava/lang/String;Ljava/lang/String;)I",
+            &[
+                Value::Int(3),
+                Value::Str("t".into()),
+                Value::Str("m".into()),
+            ],
+        );
     }
     let evs = shim.events();
     for (i, e) in evs.iter().enumerate() {
@@ -636,25 +723,78 @@ fn every_taxonomy_id_the_shim_emits_is_in_the_taxonomy_document() {
     let _ = shim.read_path_public("/proc/self/status");
     let _ = shim.read_path_public("/sys/class/power_supply/battery/capacity");
     let _ = shim.read_static("Landroid/os/Build;", "FINGERPRINT");
-    let _ = shim.invoke("Ljava/lang/System;", "loadLibrary", "(Ljava/lang/String;)V", &[Value::Str("x".into())]);
-    let _ = shim.invoke("Landroid/content/pm/PackageManager;", "hasSystemFeature", "(Ljava/lang/String;)Z",
-        &[Value::Ref("Landroid/content/pm/PackageManager;".into(), 1), Value::Str("android.hardware.camera".into())]);
-    let _ = shim.invoke("Landroid/os/Handler;", "post", "(Ljava/lang/Object;)Z",
-        &[Value::Ref("Landroid/os/Handler;".into(), 1), Value::Ref("Ljava/lang/Runnable;".into(), 1)]);
+    let _ = shim.invoke(
+        "Ljava/lang/System;",
+        "loadLibrary",
+        "(Ljava/lang/String;)V",
+        &[Value::Str("x".into())],
+    );
+    let _ = shim.invoke(
+        "Landroid/content/pm/PackageManager;",
+        "hasSystemFeature",
+        "(Ljava/lang/String;)Z",
+        &[
+            Value::Ref("Landroid/content/pm/PackageManager;".into(), 1),
+            Value::Str("android.hardware.camera".into()),
+        ],
+    );
+    let _ = shim.invoke(
+        "Landroid/os/Handler;",
+        "post",
+        "(Ljava/lang/Object;)Z",
+        &[
+            Value::Ref("Landroid/os/Handler;".into(), 1),
+            Value::Ref("Ljava/lang/Runnable;".into(), 1),
+        ],
+    );
     // net, fs and the serialization surface, so the sweep touches every group.
-    let _ = shim.invoke("Ljava/net/URL;", "<init>", "(Ljava/lang/String;)V",
-        &[Value::Str("https://h.invalid/p?q=1".into())]);
-    let _ = shim.invoke("Ljava/net/URL;", "openConnection", "()Ljava/net/URLConnection;",
-        &[Value::Ref("Ljava/net/URL;".into(), 1)]);
-    let _ = shim.invoke("Ljava/net/URLConnection;", "connect", "()V",
-        &[Value::Ref("Ljava/net/HttpURLConnection;".into(), 1)]);
+    let _ = shim.invoke(
+        "Ljava/net/URL;",
+        "<init>",
+        "(Ljava/lang/String;)V",
+        &[Value::Str("https://h.invalid/p?q=1".into())],
+    );
+    let _ = shim.invoke(
+        "Ljava/net/URL;",
+        "openConnection",
+        "()Ljava/net/URLConnection;",
+        &[Value::Ref("Ljava/net/URL;".into(), 1)],
+    );
+    let _ = shim.invoke(
+        "Ljava/net/URLConnection;",
+        "connect",
+        "()V",
+        &[Value::Ref("Ljava/net/HttpURLConnection;".into(), 1)],
+    );
     let _ = shim.write_path_public("/data/data/fr.smarquis.sleeptimer/files/a", b"x");
-    let _ = shim.invoke("Landroid/os/Bundle;", "putString", "(Ljava/lang/String;Ljava/lang/String;)V",
-        &[Value::Ref("Landroid/os/Bundle;".into(), 1), Value::Str("k".into()), Value::Str("v".into())]);
-    let _ = shim.invoke("Landroid/content/Context;", "getSystemService", "(Ljava/lang/String;)Ljava/lang/Object;",
-        &[Value::Ref("Landroid/content/Context;".into(), 1), Value::Str("window".into())]);
-    let _ = shim.invoke("Landroid/app/Activity;", "setContentView", "(I)V",
-        &[Value::Ref("Landroid/app/Activity;".into(), 1), Value::Int(7)]);
+    let _ = shim.invoke(
+        "Landroid/os/Bundle;",
+        "putString",
+        "(Ljava/lang/String;Ljava/lang/String;)V",
+        &[
+            Value::Ref("Landroid/os/Bundle;".into(), 1),
+            Value::Str("k".into()),
+            Value::Str("v".into()),
+        ],
+    );
+    let _ = shim.invoke(
+        "Landroid/content/Context;",
+        "getSystemService",
+        "(Ljava/lang/String;)Ljava/lang/Object;",
+        &[
+            Value::Ref("Landroid/content/Context;".into(), 1),
+            Value::Str("window".into()),
+        ],
+    );
+    let _ = shim.invoke(
+        "Landroid/app/Activity;",
+        "setContentView",
+        "(I)V",
+        &[
+            Value::Ref("Landroid/app/Activity;".into(), 1),
+            Value::Int(7),
+        ],
+    );
     let _ = shim.invoke("Ljava/lang/Thread;", "sleep", "(J)V", &[Value::Long(5)]);
 
     let mut emitted: BTreeSet<AssumptionId> = BTreeSet::new();
@@ -663,7 +803,10 @@ fn every_taxonomy_id_the_shim_emits_is_in_the_taxonomy_document() {
             emitted.insert(id);
         }
     }
-    assert!(emitted.len() >= 8, "the sweep should reach several families: {emitted:?}");
+    assert!(
+        emitted.len() >= 8,
+        "the sweep should reach several families: {emitted:?}"
+    );
     for id in emitted {
         assert!(
             doc.contains(id.as_str()),
@@ -674,7 +817,11 @@ fn every_taxonomy_id_the_shim_emits_is_in_the_taxonomy_document() {
     }
     // And the whole registered set, not just the exercised one, must be real.
     for id in AssumptionId::ALL {
-        assert!(doc.contains(id.as_str()), "{} is unregistered in the taxonomy", id.as_str());
+        assert!(
+            doc.contains(id.as_str()),
+            "{} is unregistered in the taxonomy",
+            id.as_str()
+        );
     }
 }
 
@@ -695,16 +842,20 @@ fn the_fixture_census_is_what_conformance_measures_against() {
         }
         out
     });
-    assert!(all.len() > 60, "the reference set should be substantial: {}", all.len());
-    let covered: usize = all
-        .iter()
-        .filter(|c| registry::find(c).is_some())
-        .count();
+    assert!(
+        all.len() > 60,
+        "the reference set should be substantial: {}",
+        all.len()
+    );
+    let covered: usize = all.iter().filter(|c| registry::find(c).is_some()).count();
     eprintln!(
         "android.*/java.* types referenced by 4 real DEX fixtures: {}, covered by the shim: \
 {covered} ({:.1}%)",
         all.len(),
         100.0 * covered as f64 / all.len() as f64
     );
-    assert!(covered > 20, "the shim should cover a real fraction, not a token amount");
+    assert!(
+        covered > 20,
+        "the shim should cover a real fraction, not a token amount"
+    );
 }

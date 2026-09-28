@@ -59,7 +59,11 @@ pub struct BuiltinClass {
 }
 
 const fn leaf(descriptor: &'static str) -> BuiltinClass {
-    BuiltinClass { descriptor, superclass: Some("Ljava/lang/Object;"), interfaces: &[] }
+    BuiltinClass {
+        descriptor,
+        superclass: Some("Ljava/lang/Object;"),
+        interfaces: &[],
+    }
 }
 
 const fn node(
@@ -67,11 +71,19 @@ const fn node(
     superclass: &'static str,
     interfaces: &'static [&'static str],
 ) -> BuiltinClass {
-    BuiltinClass { descriptor, superclass: Some(superclass), interfaces }
+    BuiltinClass {
+        descriptor,
+        superclass: Some(superclass),
+        interfaces,
+    }
 }
 
 const fn root(descriptor: &'static str) -> BuiltinClass {
-    BuiltinClass { descriptor, superclass: None, interfaces: &[] }
+    BuiltinClass {
+        descriptor,
+        superclass: None,
+        interfaces: &[],
+    }
 }
 
 /// The builtin classes, parents before children so the table can be walked in
@@ -87,59 +99,227 @@ pub static BUILTINS: &[BuiltinClass] = &[
     node("Ljava/lang/Exception;", "Ljava/lang/Throwable;", &[]),
     node("Ljava/lang/Error;", "Ljava/lang/Throwable;", &[]),
     node("Ljava/lang/RuntimeException;", "Ljava/lang/Exception;", &[]),
-    node("Ljava/lang/ReflectiveOperationException;", "Ljava/lang/Exception;", &[]),
+    node(
+        "Ljava/lang/ReflectiveOperationException;",
+        "Ljava/lang/Exception;",
+        &[],
+    ),
     node("Ljava/lang/VirtualMachineError;", "Ljava/lang/Error;", &[]),
     node("Ljava/lang/LinkageError;", "Ljava/lang/Error;", &[]),
     node("Ljava/lang/AssertionError;", "Ljava/lang/Error;", &[]),
     node("Ljava/lang/ThreadDeath;", "Ljava/lang/Error;", &[]),
-    node("Ljava/lang/InterruptedException;", "Ljava/lang/Exception;", &[]),
-    node("Ljava/lang/CloneNotSupportedException;", "Ljava/lang/Exception;", &[]),
-    node("Ljava/lang/ClassNotFoundException;", "Ljava/lang/ReflectiveOperationException;", &[]),
-    node("Ljava/lang/IllegalAccessException;", "Ljava/lang/ReflectiveOperationException;", &[]),
-    node("Ljava/lang/InstantiationException;", "Ljava/lang/ReflectiveOperationException;", &[]),
-    node("Ljava/lang/NoSuchFieldException;", "Ljava/lang/ReflectiveOperationException;", &[]),
-    node("Ljava/lang/NoSuchMethodException;", "Ljava/lang/ReflectiveOperationException;", &[]),
-    node("Ljava/lang/InvocationTargetException;", "Ljava/lang/ReflectiveOperationException;", &[]),
-    node("Ljava/lang/ArithmeticException;", "Ljava/lang/RuntimeException;", &[]),
-    node("Ljava/lang/ArrayStoreException;", "Ljava/lang/RuntimeException;", &[]),
-    node("Ljava/lang/ClassCastException;", "Ljava/lang/RuntimeException;", &[]),
-    node("Ljava/lang/IllegalArgumentException;", "Ljava/lang/RuntimeException;", &[]),
-    node("Ljava/lang/IllegalMonitorStateException;", "Ljava/lang/RuntimeException;", &[]),
-    node("Ljava/lang/IllegalStateException;", "Ljava/lang/RuntimeException;", &[]),
-    node("Ljava/lang/IllegalThreadStateException;", "Ljava/lang/IllegalArgumentException;", &[]),
-    node("Ljava/lang/IndexOutOfBoundsException;", "Ljava/lang/RuntimeException;", &[]),
-    node("Ljava/lang/NegativeArraySizeException;", "Ljava/lang/RuntimeException;", &[]),
-    node("Ljava/lang/NullPointerException;", "Ljava/lang/RuntimeException;", &[]),
-    node("Ljava/lang/NumberFormatException;", "Ljava/lang/IllegalArgumentException;", &[]),
-    node("Ljava/lang/ArrayIndexOutOfBoundsException;", "Ljava/lang/IndexOutOfBoundsException;", &[]),
-    node("Ljava/lang/StringIndexOutOfBoundsException;", "Ljava/lang/IndexOutOfBoundsException;", &[]),
-    node("Ljava/lang/UnsupportedOperationException;", "Ljava/lang/RuntimeException;", &[]),
-    node("Ljava/lang/SecurityException;", "Ljava/lang/RuntimeException;", &[]),
-    node("Ljava/lang/StackOverflowError;", "Ljava/lang/VirtualMachineError;", &[]),
-    node("Ljava/lang/OutOfMemoryError;", "Ljava/lang/VirtualMachineError;", &[]),
-    node("Ljava/lang/InternalError;", "Ljava/lang/VirtualMachineError;", &[]),
-    node("Ljava/lang/NoClassDefFoundError;", "Ljava/lang/LinkageError;", &[]),
-    node("Ljava/lang/ExceptionInInitializerError;", "Ljava/lang/LinkageError;", &[]),
-    node("Ljava/lang/BootstrapMethodError;", "Ljava/lang/LinkageError;", &[]),
-    node("Ljava/lang/UnsatisfiedLinkError;", "Ljava/lang/LinkageError;", &[]),
+    node(
+        "Ljava/lang/InterruptedException;",
+        "Ljava/lang/Exception;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/CloneNotSupportedException;",
+        "Ljava/lang/Exception;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/ClassNotFoundException;",
+        "Ljava/lang/ReflectiveOperationException;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/IllegalAccessException;",
+        "Ljava/lang/ReflectiveOperationException;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/InstantiationException;",
+        "Ljava/lang/ReflectiveOperationException;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/NoSuchFieldException;",
+        "Ljava/lang/ReflectiveOperationException;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/NoSuchMethodException;",
+        "Ljava/lang/ReflectiveOperationException;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/InvocationTargetException;",
+        "Ljava/lang/ReflectiveOperationException;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/ArithmeticException;",
+        "Ljava/lang/RuntimeException;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/ArrayStoreException;",
+        "Ljava/lang/RuntimeException;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/ClassCastException;",
+        "Ljava/lang/RuntimeException;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/IllegalArgumentException;",
+        "Ljava/lang/RuntimeException;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/IllegalMonitorStateException;",
+        "Ljava/lang/RuntimeException;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/IllegalStateException;",
+        "Ljava/lang/RuntimeException;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/IllegalThreadStateException;",
+        "Ljava/lang/IllegalArgumentException;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/IndexOutOfBoundsException;",
+        "Ljava/lang/RuntimeException;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/NegativeArraySizeException;",
+        "Ljava/lang/RuntimeException;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/NullPointerException;",
+        "Ljava/lang/RuntimeException;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/NumberFormatException;",
+        "Ljava/lang/IllegalArgumentException;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/ArrayIndexOutOfBoundsException;",
+        "Ljava/lang/IndexOutOfBoundsException;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/StringIndexOutOfBoundsException;",
+        "Ljava/lang/IndexOutOfBoundsException;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/UnsupportedOperationException;",
+        "Ljava/lang/RuntimeException;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/SecurityException;",
+        "Ljava/lang/RuntimeException;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/StackOverflowError;",
+        "Ljava/lang/VirtualMachineError;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/OutOfMemoryError;",
+        "Ljava/lang/VirtualMachineError;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/InternalError;",
+        "Ljava/lang/VirtualMachineError;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/NoClassDefFoundError;",
+        "Ljava/lang/LinkageError;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/ExceptionInInitializerError;",
+        "Ljava/lang/LinkageError;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/BootstrapMethodError;",
+        "Ljava/lang/LinkageError;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/UnsatisfiedLinkError;",
+        "Ljava/lang/LinkageError;",
+        &[],
+    ),
     node("Ljava/lang/VerifyError;", "Ljava/lang/LinkageError;", &[]),
-    node("Ljava/lang/IncompatibleClassChangeError;", "Ljava/lang/LinkageError;", &[]),
-    node("Ljava/lang/AbstractMethodError;", "Ljava/lang/IncompatibleClassChangeError;", &[]),
-    node("Ljava/lang/IllegalAccessError;", "Ljava/lang/IncompatibleClassChangeError;", &[]),
-    node("Ljava/lang/InstantiationError;", "Ljava/lang/IncompatibleClassChangeError;", &[]),
-    node("Ljava/lang/NoSuchFieldError;", "Ljava/lang/IncompatibleClassChangeError;", &[]),
-    node("Ljava/lang/NoSuchMethodError;", "Ljava/lang/IncompatibleClassChangeError;", &[]),
-    node("Ljava/lang/ClassFormatError;", "Ljava/lang/LinkageError;", &[]),
+    node(
+        "Ljava/lang/IncompatibleClassChangeError;",
+        "Ljava/lang/LinkageError;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/AbstractMethodError;",
+        "Ljava/lang/IncompatibleClassChangeError;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/IllegalAccessError;",
+        "Ljava/lang/IncompatibleClassChangeError;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/InstantiationError;",
+        "Ljava/lang/IncompatibleClassChangeError;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/NoSuchFieldError;",
+        "Ljava/lang/IncompatibleClassChangeError;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/NoSuchMethodError;",
+        "Ljava/lang/IncompatibleClassChangeError;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/ClassFormatError;",
+        "Ljava/lang/LinkageError;",
+        &[],
+    ),
     // --------------------------------------------------- java.lang core
     // `CharSequence` and `Comparable` come first because `String` implements
     // both, and an interface must be declared before its implementor.
     leaf("Ljava/lang/CharSequence;"),
     leaf("Ljava/lang/Comparable;"),
     leaf("Ljava/io/Serializable;"),
-    node("Ljava/lang/String;", "Ljava/lang/Object;", &["Ljava/lang/CharSequence;", "Ljava/lang/Comparable;"]),
-    node("Ljava/lang/StringBuilder;", "Ljava/lang/Object;", &["Ljava/lang/CharSequence;"]),
-    node("Ljava/lang/StringBuffer;", "Ljava/lang/Object;", &["Ljava/lang/CharSequence;"]),
-    node("Ljava/lang/Class;", "Ljava/lang/Object;", &["Ljava/io/Serializable;"]),
+    node(
+        "Ljava/lang/String;",
+        "Ljava/lang/Object;",
+        &["Ljava/lang/CharSequence;", "Ljava/lang/Comparable;"],
+    ),
+    node(
+        "Ljava/lang/StringBuilder;",
+        "Ljava/lang/Object;",
+        &["Ljava/lang/CharSequence;"],
+    ),
+    node(
+        "Ljava/lang/StringBuffer;",
+        "Ljava/lang/Object;",
+        &["Ljava/lang/CharSequence;"],
+    ),
+    node(
+        "Ljava/lang/Class;",
+        "Ljava/lang/Object;",
+        &["Ljava/io/Serializable;"],
+    ),
     leaf("Ljava/lang/Enum;"),
     leaf("Ljava/lang/Number;"),
     leaf("Ljava/lang/Integer;"),
@@ -153,7 +333,11 @@ pub static BUILTINS: &[BuiltinClass] = &[
     node("Ljava/lang/Math;", "Ljava/lang/Object;", &[]),
     node("Ljava/lang/System;", "Ljava/lang/Object;", &[]),
     node("Ljava/lang/Runnable;", "Ljava/lang/Object;", &[]),
-    node("Ljava/lang/Thread;", "Ljava/lang/Object;", &["Ljava/lang/Runnable;"]),
+    node(
+        "Ljava/lang/Thread;",
+        "Ljava/lang/Object;",
+        &["Ljava/lang/Runnable;"],
+    ),
     node("Ljava/lang/ThreadLocal;", "Ljava/lang/Object;", &[]),
     node("Ljava/lang/Iterable;", "Ljava/lang/Object;", &[]),
     node("Ljava/lang/Process;", "Ljava/lang/Object;", &[]),
@@ -178,9 +362,21 @@ pub static BUILTINS: &[BuiltinClass] = &[
     leaf("Ljava/lang/invoke/CallSite;"),
     leaf("Ljava/lang/invoke/ConstantCallSite;"),
     leaf("Ljava/lang/invoke/LambdaMetafactory;"),
-    node("Ljava/lang/annotation/Annotation;", "Ljava/lang/Object;", &[]),
-    node("Ljava/lang/annotation/Retention;", "Ljava/lang/Object;", &["Ljava/lang/annotation/Annotation;"]),
-    node("Ljava/lang/annotation/Target;", "Ljava/lang/Object;", &["Ljava/lang/annotation/Annotation;"]),
+    node(
+        "Ljava/lang/annotation/Annotation;",
+        "Ljava/lang/Object;",
+        &[],
+    ),
+    node(
+        "Ljava/lang/annotation/Retention;",
+        "Ljava/lang/Object;",
+        &["Ljava/lang/annotation/Annotation;"],
+    ),
+    node(
+        "Ljava/lang/annotation/Target;",
+        "Ljava/lang/Object;",
+        &["Ljava/lang/annotation/Annotation;"],
+    ),
     node("Ljava/lang/Deprecated;", "Ljava/lang/Object;", &[]),
     node("Ljava/lang/Override;", "Ljava/lang/Object;", &[]),
     node("Ljava/lang/SuppressWarnings;", "Ljava/lang/Object;", &[]),
@@ -188,12 +384,28 @@ pub static BUILTINS: &[BuiltinClass] = &[
     node("Ljava/lang/SafeVarargs;", "Ljava/lang/Object;", &[]),
     // ------------------------------------------------------------- java.io
     leaf("Ljava/lang/AutoCloseable;"),
-    node("Ljava/io/Closeable;", "Ljava/lang/Object;", &["Ljava/lang/AutoCloseable;"]),
+    node(
+        "Ljava/io/Closeable;",
+        "Ljava/lang/Object;",
+        &["Ljava/lang/AutoCloseable;"],
+    ),
     leaf("Ljava/io/Flushable;"),
     node("Ljava/io/IOException;", "Ljava/lang/Exception;", &[]),
-    node("Ljava/io/FileNotFoundException;", "Ljava/io/IOException;", &[]),
-    node("Ljava/io/UncheckedIOException;", "Ljava/lang/RuntimeException;", &[]),
-    node("Ljava/io/InterruptedIOException;", "Ljava/io/IOException;", &[]),
+    node(
+        "Ljava/io/FileNotFoundException;",
+        "Ljava/io/IOException;",
+        &[],
+    ),
+    node(
+        "Ljava/io/UncheckedIOException;",
+        "Ljava/lang/RuntimeException;",
+        &[],
+    ),
+    node(
+        "Ljava/io/InterruptedIOException;",
+        "Ljava/io/IOException;",
+        &[],
+    ),
     leaf("Ljava/io/File;"),
     leaf("Ljava/io/InputStream;"),
     leaf("Ljava/io/OutputStream;"),
@@ -211,19 +423,47 @@ pub static BUILTINS: &[BuiltinClass] = &[
     leaf("Ljava/io/FileOutputStream;"),
     leaf("Ljava/io/BufferedReader;"),
     leaf("Ljava/io/BufferedWriter;"),
-    node("Ljava/io/Externalizable;", "Ljava/lang/Object;", &["Ljava/io/Serializable;"]),
+    node(
+        "Ljava/io/Externalizable;",
+        "Ljava/lang/Object;",
+        &["Ljava/io/Serializable;"],
+    ),
     // ----------------------------------------------------------- java.util
-    node("Ljava/util/Collection;", "Ljava/lang/Object;", &["Ljava/lang/Iterable;"]),
-    node("Ljava/util/List;", "Ljava/lang/Object;", &["Ljava/util/Collection;"]),
-    node("Ljava/util/Set;", "Ljava/lang/Object;", &["Ljava/util/Collection;"]),
+    node(
+        "Ljava/util/Collection;",
+        "Ljava/lang/Object;",
+        &["Ljava/lang/Iterable;"],
+    ),
+    node(
+        "Ljava/util/List;",
+        "Ljava/lang/Object;",
+        &["Ljava/util/Collection;"],
+    ),
+    node(
+        "Ljava/util/Set;",
+        "Ljava/lang/Object;",
+        &["Ljava/util/Collection;"],
+    ),
     node("Ljava/util/Map;", "Ljava/lang/Object;", &[]),
     node("Ljava/util/Map$Entry;", "Ljava/lang/Object;", &[]),
     node("Ljava/util/Iterator;", "Ljava/lang/Object;", &[]),
-    node("Ljava/util/ListIterator;", "Ljava/lang/Object;", &["Ljava/util/Iterator;"]),
+    node(
+        "Ljava/util/ListIterator;",
+        "Ljava/lang/Object;",
+        &["Ljava/util/Iterator;"],
+    ),
     node("Ljava/util/Enumeration;", "Ljava/lang/Object;", &[]),
     node("Ljava/util/Comparator;", "Ljava/lang/Object;", &[]),
-    node("Ljava/util/Queue;", "Ljava/lang/Object;", &["Ljava/util/Collection;"]),
-    node("Ljava/util/Deque;", "Ljava/lang/Object;", &["Ljava/util/Queue;"]),
+    node(
+        "Ljava/util/Queue;",
+        "Ljava/lang/Object;",
+        &["Ljava/util/Collection;"],
+    ),
+    node(
+        "Ljava/util/Deque;",
+        "Ljava/lang/Object;",
+        &["Ljava/util/Queue;"],
+    ),
     leaf("Ljava/util/ArrayList;"),
     leaf("Ljava/util/LinkedList;"),
     leaf("Ljava/util/HashMap;"),
@@ -245,15 +485,39 @@ pub static BUILTINS: &[BuiltinClass] = &[
     leaf("Ljava/util/Objects;"),
     leaf("Ljava/util/Base64;"),
     leaf("Ljava/util/Scanner;"),
-    node("Ljava/util/NoSuchElementException;", "Ljava/lang/RuntimeException;", &[]),
-    node("Ljava/util/ConcurrentModificationException;", "Ljava/lang/RuntimeException;", &[]),
-    node("Ljava/util/EmptyStackException;", "Ljava/lang/RuntimeException;", &[]),
-    node("Ljava/util/MissingResourceException;", "Ljava/lang/RuntimeException;", &[]),
-    node("Ljava/util/InputMismatchException;", "Ljava/util/NoSuchElementException;", &[]),
+    node(
+        "Ljava/util/NoSuchElementException;",
+        "Ljava/lang/RuntimeException;",
+        &[],
+    ),
+    node(
+        "Ljava/util/ConcurrentModificationException;",
+        "Ljava/lang/RuntimeException;",
+        &[],
+    ),
+    node(
+        "Ljava/util/EmptyStackException;",
+        "Ljava/lang/RuntimeException;",
+        &[],
+    ),
+    node(
+        "Ljava/util/MissingResourceException;",
+        "Ljava/lang/RuntimeException;",
+        &[],
+    ),
+    node(
+        "Ljava/util/InputMismatchException;",
+        "Ljava/util/NoSuchElementException;",
+        &[],
+    ),
     node("Ljava/util/regex/Pattern;", "Ljava/lang/Object;", &[]),
     node("Ljava/util/regex/Matcher;", "Ljava/lang/Object;", &[]),
     node("Ljava/util/zip/ZipEntry;", "Ljava/lang/Object;", &[]),
-    node("Ljava/util/zip/ZipInputStream;", "Ljava/io/InputStream;", &[]),
+    node(
+        "Ljava/util/zip/ZipInputStream;",
+        "Ljava/io/InputStream;",
+        &[],
+    ),
     node("Ljava/util/concurrent/Executor;", "Ljava/lang/Object;", &[]),
     leaf("Ljava/util/concurrent/ExecutorService;"),
     leaf("Ljava/util/concurrent/Future;"),
@@ -275,11 +539,23 @@ pub static BUILTINS: &[BuiltinClass] = &[
     leaf("Ljava/net/ProxySelector;"),
     leaf("Ljava/net/CookieManager;"),
     leaf("Ljava/net/HttpCookie;"),
-    node("Ljava/net/UnknownHostException;", "Ljava/io/IOException;", &[]),
+    node(
+        "Ljava/net/UnknownHostException;",
+        "Ljava/io/IOException;",
+        &[],
+    ),
     node("Ljava/net/SocketException;", "Ljava/io/IOException;", &[]),
     node("Ljava/net/ProtocolException;", "Ljava/io/IOException;", &[]),
-    node("Ljava/net/MalformedURLException;", "Ljava/io/IOException;", &[]),
-    node("Ljava/net/SocketTimeoutException;", "Ljava/io/InterruptedIOException;", &[]),
+    node(
+        "Ljava/net/MalformedURLException;",
+        "Ljava/io/IOException;",
+        &[],
+    ),
+    node(
+        "Ljava/net/SocketTimeoutException;",
+        "Ljava/io/InterruptedIOException;",
+        &[],
+    ),
     node("Ljava/net/ConnectException;", "Ljava/io/IOException;", &[]),
     // -------------------------------------------------- java.util.function
     leaf("Ljava/util/function/Function;"),
@@ -417,6 +693,12 @@ pub const THROWABLE: &str = "Ljava/lang/Throwable;";
 
 #[cfg(test)]
 mod tests {
+    // The crate forbids `unwrap` on anything that came out of a file, and that
+    // ban is what keeps a malformed DEX from killing the process. It has no
+    // business in a test: every value unwrapped below was built by the test
+    // itself, and a test that cannot reach its own fixture should fail loudly
+    // rather than contort itself around a type it has already proven.
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
     use super::*;
 
     #[test]
@@ -434,20 +716,38 @@ mod tests {
             if let Some(s) = c.superclass {
                 let at = BUILTINS.iter().position(|b| b.descriptor == s);
                 assert!(at.is_some(), "{}: superclass {} missing", c.descriptor, s);
-                assert!(at.unwrap() < i, "{}: superclass {} declared later", c.descriptor, s);
+                assert!(
+                    at.unwrap() < i,
+                    "{}: superclass {} declared later",
+                    c.descriptor,
+                    s
+                );
             }
             for iface in c.interfaces {
                 let at = BUILTINS.iter().position(|b| b.descriptor == *iface);
-                assert!(at.is_some(), "{}: interface {} missing", c.descriptor, iface);
-                assert!(at.unwrap() < i, "{}: interface {} declared later", c.descriptor, iface);
+                assert!(
+                    at.is_some(),
+                    "{}: interface {} missing",
+                    c.descriptor,
+                    iface
+                );
+                assert!(
+                    at.unwrap() < i,
+                    "{}: interface {} declared later",
+                    c.descriptor,
+                    iface
+                );
             }
         }
     }
 
     #[test]
     fn exactly_one_root_and_it_is_object() {
-        let roots: Vec<&str> =
-            BUILTINS.iter().filter(|c| c.superclass.is_none()).map(|c| c.descriptor).collect();
+        let roots: Vec<&str> = BUILTINS
+            .iter()
+            .filter(|c| c.superclass.is_none())
+            .map(|c| c.descriptor)
+            .collect();
         assert_eq!(roots, vec!["Ljava/lang/Object;"]);
     }
 

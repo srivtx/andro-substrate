@@ -382,16 +382,28 @@ function validateNode(schema, value, path, root, out, seen) {
         out.push({ path, keyword: "oneOf", message: `expected exactly 1 matching branch, got ${okCount}` });
       }
     }
-    if ("not" in schema) {
-      const scratch = [];
-      validateNode(schema.not, value, path, root, scratch, seen);
-      if (scratch.length === 0) out.push({ path, keyword: "not", message: "value matched a forbidden schema" });
-    }
     if ("if" in schema) {
       const scratch = [];
       validateNode(schema.if, value, path, root, scratch, seen);
       const branch = scratch.length === 0 ? "then" : "else";
       if (schema[branch] !== undefined) validateNode(schema[branch], value, path, root, out, seen);
+    }
+  }
+
+  // `not` is evaluated here, OUTSIDE the object branch above, because `not` is
+  // not a property of objects. It used to be reached only for object values,
+  // which made a `not` written against an ARRAY or a STRING a silent no-op --
+  // precisely the failure mode this validator's "an unsupported keyword is an
+  // error, not a no-op" rule exists to prevent, in the one place the rule could
+  // not see. It bit
+  // `substrate_policy.axis_declarations[].governs`, whose entire purpose is to
+  // forbid an axis from claiming the app class: the constraint was in the schema
+  // and enforced against nothing.
+  if ("not" in schema) {
+    const scratch = [];
+    validateNode(schema.not, value, path, root, scratch, seen);
+    if (scratch.length === 0) {
+      out.push({ path, keyword: "not", message: "value matched a forbidden schema" });
     }
   }
 }

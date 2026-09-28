@@ -1,5 +1,78 @@
 # Recordings
 
+## The four files here
+
+| file | what it is |
+|---|---|
+| `synthetic.recording.json` | the shim under the **default** substrate policy. The regression fixture for the observation layer. |
+| `differential-left.fabricated.recording.json` | the **left arm**: the same script under the default policy. |
+| `differential-right.loud.recording.json` | the **right arm**: the same script under the loudest substrate in the family. |
+| `differential.report.txt` | the attribution table, computed **from the two JSON files alone**. |
+
+**All four are synthetic fixtures, not evidence.** See the note below; it applies
+to every file in this directory.
+
+## The differential, and why it is committed
+
+The shim terminates every side effect, so an app's control flow after a refusal is
+determined by the shim. Every fact downstream of that — an exception, a lifecycle
+terminal, a `MISBEHAVE` outcome — is a **joint** property of app and substrate, and
+one recording cannot separate them. The fix is not a better annotation; it is a
+second run.
+
+Both arms execute **the same function**, `shim::scenario::run_with`, with no
+per-policy branch anywhere in the script. The only thing that differs is the
+`SubstratePolicy` value, and each arm's recording carries that value in its
+top-level `substrate_policy` block. All five axes differ:
+
+| axis | left | right |
+|---|---|---|
+| `identity` | `fabricated` | `withheld` |
+| `system_fs` | `fabricated` | `absent` |
+| `cross_app_packages` | `subject_only` | `error` |
+| `network` | `record_and_deny` | `synthetic_loopback` |
+| `time` | `virtual` | `frozen` |
+
+The result, in the report's own words: **1432 of 1617 compared leaves are
+byte-identical**, every moved fact is attributed to an axis that actually changed,
+and the `app` class — the things the substrate did not decide — moved zero.
+
+### Read this before you cite the number
+
+1432 of 1617 is evidence about a **deterministic script** under two substrates. It
+demonstrates that the attribution mechanism works. It is **not** a measurement of
+any app, and it cannot be: the input is a fixed call sequence, so it contains no
+app nondeterminism for the harness to mistake for a substrate effect. The arm that
+would fix that — the same APK twice under the *same* policy, to measure the noise
+floor — does not exist yet because the interpreter does not.
+`docs/decisions/0006-substrate-policy.md` says so at length.
+
+### Regenerating
+
+```sh
+cargo run --quiet --manifest-path shim/Cargo.toml --bin shim-record \
+    > shim/recordings/synthetic.recording.json
+
+cargo run --quiet --manifest-path shim/Cargo.toml --bin shim-differential \
+    > /tmp/differential.txt
+```
+
+`shim-differential` prints both arms and the report to **stdout**, separated by
+`==== … ====` marker lines, because this crate's `std::fs` surface is empty and
+that is one of the two halves of the invariant `tests/egress_denial.rs` checks. To
+split it into the three committed files:
+
+```sh
+awk '/^==== left arm/  {f="recordings/differential-left.fabricated.recording.json"; next}
+     /^==== right arm/ {f="recordings/differential-right.loud.recording.json"; next}
+     /^==== report/     {f="recordings/differential.report.txt"; next}
+     /^==== /           {next}
+                       {print > f}' /tmp/differential.txt
+```
+
+`tests/policy.rs` asserts all three are byte-identical to what the binary prints
+today, so regeneration is **checked**, not asserted.
+
 ## `synthetic.recording.json`
 
 **This is a synthetic fixture, not evidence.** It is labelled

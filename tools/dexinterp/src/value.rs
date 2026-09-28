@@ -133,7 +133,11 @@ impl Value {
     pub fn as_int(self, what: &'static str) -> Result<i32, WrongType> {
         match self {
             Value::Int(i) => Ok(i),
-            other => Err(WrongType { expected: "int", found: other.type_name(), what }),
+            other => Err(WrongType {
+                expected: "int",
+                found: other.type_name(),
+                what,
+            }),
         }
     }
 
@@ -146,27 +150,57 @@ impl Value {
         match self {
             Value::Long(l) => Ok(l),
             Value::Int(i) => Ok(i64::from(i)),
-            other => Err(WrongType { expected: "long", found: other.type_name(), what }),
+            other => Err(WrongType {
+                expected: "long",
+                found: other.type_name(),
+                what,
+            }),
         }
     }
 
-    /// Read this value as a `float`. `Int` and `Long` are widened.
+    /// Read this value as a `float`. `Int` is widened.
+    ///
+    /// A `long` is *not* accepted, and the reason is the register model rather
+    /// than caution: a `float` occupies one register word, and the only things
+    /// that can put a number in one word are `const`/`const-string` (an `int`),
+    /// `int-to-float`/`double-to-float` (a `float`) and a shim. A `long` in a
+    /// float operand slot is a type error, and widening it would invent a huge
+    /// number that looks like a plausible result.
     pub fn as_float(self, what: &'static str) -> Result<f32, WrongType> {
         match self {
             Value::Float(f) => Ok(f),
             Value::Int(i) => Ok(i as f32),
-            Value::Long(l) => Ok(l as f32),
-            other => Err(WrongType { expected: "float", found: other.type_name(), what }),
+            other => Err(WrongType {
+                expected: "float",
+                found: other.type_name(),
+                what,
+            }),
         }
     }
 
-    /// Read this value as a `double`. `Int` and `Long` are widened.
+    /// Read this value as a `double`.
+    ///
+    /// **A `long` is reinterpreted, not converted.** Dalvik has no
+    /// `const-double`: a double literal is materialised with `const-wide`, whose
+    /// payload *is* the IEEE-754 bit pattern, and the Dalvik verifier types the
+    /// register pair as a `double` by context. So `const-wide v0, 0x3fe0000000000000L`
+    /// followed by `add-double v2, v0, v4` is how a compiler writes `0.5 + x`, and
+    /// this engine holds those two words as [`Value::Long`]. Reading them as a
+    /// *number* — `0x3fe0000000000000 as f64`, which is 4.6e18 — turns every
+    /// double constant in a real APK into a plausible wrong answer, which is the
+    /// single worst failure mode an instrument like this can have.
+    ///
+    /// `int` is not accepted: a `double` in one register word does not exist, and
+    /// accepting it would hide the same class of bug on the other side.
     pub fn as_double(self, what: &'static str) -> Result<f64, WrongType> {
         match self {
             Value::Double(d) => Ok(d),
-            Value::Int(i) => Ok(f64::from(i)),
-            Value::Long(l) => Ok(l as f64),
-            other => Err(WrongType { expected: "double", found: other.type_name(), what }),
+            Value::Long(bits) => Ok(f64::from_bits(bits as u64)),
+            other => Err(WrongType {
+                expected: "double",
+                found: other.type_name(),
+                what,
+            }),
         }
     }
 
@@ -174,8 +208,16 @@ impl Value {
     pub fn as_ref(self, what: &'static str) -> Result<Ref, WrongType> {
         match self {
             Value::Ref(r) => Ok(r),
-            Value::Null => Err(WrongType { expected: "non-null reference", found: "null", what }),
-            other => Err(WrongType { expected: "reference", found: other.type_name(), what }),
+            Value::Null => Err(WrongType {
+                expected: "non-null reference",
+                found: "null",
+                what,
+            }),
+            other => Err(WrongType {
+                expected: "reference",
+                found: other.type_name(),
+                what,
+            }),
         }
     }
 
@@ -184,7 +226,11 @@ impl Value {
         match self {
             Value::Ref(r) => Ok(Some(r)),
             Value::Null => Ok(None),
-            other => Err(WrongType { expected: "reference", found: other.type_name(), what }),
+            other => Err(WrongType {
+                expected: "reference",
+                found: other.type_name(),
+                what,
+            }),
         }
     }
 }
@@ -205,7 +251,11 @@ pub struct WrongType {
 
 impl fmt::Display for WrongType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}: expected {}, register held {}", self.what, self.expected, self.found)
+        write!(
+            f,
+            "{}: expected {}, register held {}",
+            self.what, self.expected, self.found
+        )
     }
 }
 
@@ -264,10 +314,10 @@ impl JType {
         if bytes.is_empty() {
             return JType::Ref(descriptor.to_string());
         }
-        if descriptor.starts_with('[') {
+        if let Some(element) = descriptor.strip_prefix('[') {
             // `[V` is not a legal array type, but keeping it addressable is
             // better than failing, and it can only come from a corrupt file.
-            return JType::Array(Box::new(JType::parse(&descriptor[1..])));
+            return JType::Array(Box::new(JType::parse(element)));
         }
         for (name, ty) in JType::PRIMITIVES {
             if descriptor == name {
@@ -413,15 +463,33 @@ fn descriptor_width(s: &str) -> usize {
 
 #[cfg(test)]
 mod tests {
+    // The crate forbids `unwrap` on anything that came out of a file, and that
+    // ban is what keeps a malformed DEX from killing the process. It has no
+    // business in a test: every value unwrapped below was built by the test
+    // itself, and a test that cannot reach its own fixture should fail loudly
+    // rather than contort itself around a type it has already proven.
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
     use super::*;
 
     #[test]
     fn a_descriptor_is_consumed_one_at_a_time() {
         // The whole point: `(IJLjava/lang/String;)` is three parameters, not one.
-        assert_eq!(descriptor_width("IJLjava/lang/String;)V"), 1, "a primitive is one byte");
-        assert_eq!(descriptor_width("Ljava/lang/String;)V"), 18, "`Ljava/lang/String;` is 18 bytes");
+        assert_eq!(
+            descriptor_width("IJLjava/lang/String;)V"),
+            1,
+            "a primitive is one byte"
+        );
+        assert_eq!(
+            descriptor_width("Ljava/lang/String;)V"),
+            18,
+            "`Ljava/lang/String;` is 18 bytes"
+        );
         assert_eq!(descriptor_width("[I"), 2);
-        assert_eq!(descriptor_width("[[Ljava/lang/String;"), 20, "two `[` plus the 18-byte class");
+        assert_eq!(
+            descriptor_width("[[Ljava/lang/String;"),
+            20,
+            "two `[` plus the 18-byte class"
+        );
         assert_eq!(descriptor_width("I"), 1);
     }
 
@@ -455,18 +523,38 @@ mod tests {
         assert_eq!(JType::parse("[Ljava/lang/String;").element_width(), 4);
         assert_eq!(JType::parse("[Z").element_width(), 4);
         assert_eq!(JType::parse("Z").element_width(), 1);
-        assert_eq!(JType::parse("[C").component().map(|c| c.element_width()), Some(2));
-        assert_eq!(JType::parse("[J").component().map(|c| c.element_width()), Some(8));
-        assert_eq!(JType::parse("[[I").component().map(|c| c.element_width()), Some(4));
+        assert_eq!(
+            JType::parse("[C").component().map(|c| c.element_width()),
+            Some(2)
+        );
+        assert_eq!(
+            JType::parse("[J").component().map(|c| c.element_width()),
+            Some(8)
+        );
+        assert_eq!(
+            JType::parse("[[I").component().map(|c| c.element_width()),
+            Some(4)
+        );
         // `[[I` is an array of `int[]`: each level is a 4-byte reference, and the
         // `int` at the bottom is 4 bytes too. A `fill-array-data` payload for a
         // `int[]` is therefore 4 bytes per element, not 16 and not 1.
         let two = JType::parse("[[I");
-        assert_eq!(two.component().and_then(|c| c.component()).map(|c| c.element_width()), Some(4));
+        assert_eq!(
+            two.component()
+                .and_then(|c| c.component())
+                .map(|c| c.element_width()),
+            Some(4)
+        );
         assert_eq!(two.component().map(|c| c.element_width()), Some(4));
         // `byte[][]` bottoms out at 1, one level further down.
         let bytes = JType::parse("[[B");
-        assert_eq!(bytes.component().and_then(|c| c.component()).map(|c| c.element_width()), Some(1));
+        assert_eq!(
+            bytes
+                .component()
+                .and_then(|c| c.component())
+                .map(|c| c.element_width()),
+            Some(1)
+        );
     }
 
     #[test]
@@ -480,7 +568,14 @@ mod tests {
     #[test]
     fn prototypes_split_on_the_first_closing_paren() {
         let (p, r) = JType::parse_prototype("(IJLjava/lang/String;)Ljava/lang/Object;");
-        assert_eq!(p, vec![JType::Int, JType::Long, JType::Ref("Ljava/lang/String;".into())]);
+        assert_eq!(
+            p,
+            vec![
+                JType::Int,
+                JType::Long,
+                JType::Ref("Ljava/lang/String;".into())
+            ]
+        );
         assert_eq!(r, JType::Ref("Ljava/lang/Object;".into()));
 
         let (p, r) = JType::parse_prototype("()V");

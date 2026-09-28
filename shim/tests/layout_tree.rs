@@ -24,12 +24,22 @@ use shim::taxonomy::AssumptionId;
 use shim::{Shim, ShimCaller};
 
 fn login_form() -> View {
-    let mut root = View::group("root", "LinearLayout", NodeKind::LinearLayout, Orientation::Vertical);
+    let mut root = View::group(
+        "root",
+        "LinearLayout",
+        NodeKind::LinearLayout,
+        Orientation::Vertical,
+    );
     root.layout_params.width = Dimension::MatchParent;
     let mut title = View::text("title", "TextView", NodeKind::TextView, "Sign in");
     title.layout_params.width = Dimension::MatchParent;
     root.add(title);
-    let mut field = View::text("email", "EditText", NodeKind::EditText, "person@example.invalid");
+    let mut field = View::text(
+        "email",
+        "EditText",
+        NodeKind::EditText,
+        "person@example.invalid",
+    );
     field.layout_params.width = Dimension::MatchParent;
     root.add(field);
     let mut button = View::text("go", "Button", NodeKind::Button, "Continue");
@@ -49,18 +59,29 @@ fn rect_of(t: &layout::BoxNode, id: &str) -> layout::Rect {
 #[test]
 fn measure_then_layout_produces_a_consistent_box_tree() {
     let mut v = login_form();
-    let m = v.measure(Size { width: 360, height: 640 });
+    let m = v.measure(Size {
+        width: 360,
+        height: 640,
+    });
     // A vertical LinearLayout of three children is at least as tall as the sum of
     // them, and never taller than the offer.
     assert!(m.height > 0 && m.height <= 640, "{m:?}");
     assert!(m.width > 0 && m.width <= 360, "{m:?}");
-    v.layout(layout::Rect { left: 0, top: 0, right: m.width, bottom: m.height });
+    v.layout(layout::Rect {
+        left: 0,
+        top: 0,
+        right: m.width,
+        bottom: m.height,
+    });
     let t = v.draw(TextPolicy::ShapeOnly);
 
     // The three invariants a box tree must satisfy if the layout pass is real.
     for node in &t.flatten().into_iter().map(|(_, r)| r).collect::<Vec<_>>() {
         assert!(node.width() >= 0 && node.height() >= 0);
-        assert!(node.right >= node.left && node.bottom >= node.top, "{node:?}");
+        assert!(
+            node.right >= node.left && node.bottom >= node.top,
+            "{node:?}"
+        );
     }
     // Children lie inside their parent.
     let root = &t;
@@ -84,14 +105,25 @@ fn measure_then_layout_produces_a_consistent_box_tree() {
 
 #[test]
 fn weights_divide_the_leftover_space_exactly() {
-    let mut root = View::group("row", "LinearLayout", NodeKind::LinearLayout, Orientation::Horizontal);
+    let mut root = View::group(
+        "row",
+        "LinearLayout",
+        NodeKind::LinearLayout,
+        Orientation::Horizontal,
+    );
     root.layout_params.width = Dimension::MatchParent;
     for (id, w) in [("a", 1.0), ("b", 1.0), ("c", 2.0)] {
         let mut v = View::leaf(id, "View", NodeKind::View);
         v.layout_params.weight = w;
         root.add(v);
     }
-    let t = root.run(Size { width: 304, height: 10 }, TextPolicy::Omit);
+    let t = root.run(
+        Size {
+            width: 304,
+            height: 10,
+        },
+        TextPolicy::Omit,
+    );
     // 304 - 8 padding = 296 to divide, in the ratio 1:1:2 -> 74, 74, 148.
     let a = rect_of(&t, "a");
     let b = rect_of(&t, "b");
@@ -105,9 +137,18 @@ fn weights_divide_the_leftover_space_exactly() {
 #[test]
 fn a_zero_or_negative_viewport_does_not_panic_and_produces_zero_sized_boxes() {
     for vp in [
-        Size { width: 0, height: 0 },
-        Size { width: 1, height: 1 },
-        Size { width: i32::MAX, height: i32::MAX },
+        Size {
+            width: 0,
+            height: 0,
+        },
+        Size {
+            width: 1,
+            height: 1,
+        },
+        Size {
+            width: i32::MAX,
+            height: i32::MAX,
+        },
     ] {
         let mut v = login_form();
         let t = v.run(vp, TextPolicy::ShapeOnly);
@@ -126,17 +167,32 @@ fn deep_and_wide_trees_do_not_blow_the_stack_or_the_output() {
     // silently applied.
     let mut v = View::leaf("leaf", "View", NodeKind::View);
     for i in 0..500 {
-        let mut parent = View::group(&format!("p{i}"), "LinearLayout", NodeKind::LinearLayout, Orientation::Vertical);
+        let mut parent = View::group(
+            &format!("p{i}"),
+            "LinearLayout",
+            NodeKind::LinearLayout,
+            Orientation::Vertical,
+        );
         parent.layout_params.width = Dimension::MatchParent;
         parent.add(v);
         v = parent;
     }
-    let t = v.run(Size { width: 100, height: 100 }, TextPolicy::Omit);
+    let t = v.run(
+        Size {
+            width: 100,
+            height: 100,
+        },
+        TextPolicy::Omit,
+    );
     assert_eq!(t.count(), 501);
     let (out, truncated) = layout::tree_for_probe(&t, 8000);
     assert!(truncated, "a 501-node tree cannot fit in 8000 bytes");
-    assert!(out.len() <= 8000, "{} bytes: the marker must be reserved, not appended past the \
-limit", out.len());
+    assert!(
+        out.len() <= 8000,
+        "{} bytes: the marker must be reserved, not appended past the \
+limit",
+        out.len()
+    );
     assert!(out.contains("\"truncated\":true"));
 }
 
@@ -148,27 +204,48 @@ fn text_measurement_is_a_real_function_of_the_string() {
     let w = |s: &str| layout::metrics::text_width(s, layout::metrics::TEXT_SIZE);
     assert_eq!(w(""), 0);
     assert!(w("WWWW") > w("iiii"), "a wide glyph must advance further");
-    assert!(w("漢字") > w("abc"), "a fullwidth form is about twice a Latin letter");
-    assert_eq!(w("hello"), w("hello"), "determinism is the property that matters");
+    assert!(
+        w("漢字") > w("abc"),
+        "a fullwidth form is about twice a Latin letter"
+    );
+    assert_eq!(
+        w("hello"),
+        w("hello"),
+        "determinism is the property that matters"
+    );
     assert!(w("hello") > w("hell"));
     // Wrapping is real, so a long string takes more lines than a short one.
     assert_eq!(layout::metrics::line_count("", 14, 100), 0);
     assert_eq!(layout::metrics::line_count("a", 14, 100), 1);
     assert!(layout::metrics::line_count(&"word ".repeat(40), 14, 100) > 1);
-    assert!(layout::metrics::text_height(&"word ".repeat(40), 14, 100) > layout::metrics::text_height("word", 14, 100));
+    assert!(
+        layout::metrics::text_height(&"word ".repeat(40), 14, 100)
+            > layout::metrics::text_height("word", 14, 100)
+    );
 }
 
 #[test]
 fn the_font_model_is_named_in_the_output() {
     // A number in a box tree must never be mistaken for a device measurement.
     let mut v = login_form();
-    let t = v.run(Size { width: 360, height: 640 }, TextPolicy::Omit);
+    let t = v.run(
+        Size {
+            width: 360,
+            height: 640,
+        },
+        TextPolicy::Omit,
+    );
     let mut s = Shim::new("a.b", vec![]).expect("shim");
     let a = s
         .invoke("Landroid/app/Activity;", "<init>", "()V", &[])
         .expect("Activity");
     s.set_view_tree(&a, v).expect("install the view tree");
-    let tree = s.run_layout(Size { width: 360, height: 640 }).expect("layout");
+    let tree = s
+        .run_layout(Size {
+            width: 360,
+            height: 640,
+        })
+        .expect("layout");
     let probes: Vec<String> = s
         .events()
         .iter()
@@ -187,8 +264,13 @@ fn the_layout_pass_is_recorded_with_its_taxonomy_id() {
     let a = s
         .invoke("Landroid/app/Activity;", "<init>", "()V", &[])
         .expect("Activity");
-    s.set_view_tree(&a, login_form()).expect("install the view tree");
-    s.run_layout(Size { width: 360, height: 640 }).expect("layout");
+    s.set_view_tree(&a, login_form())
+        .expect("install the view tree");
+    s.run_layout(Size {
+        width: 360,
+        height: 640,
+    })
+    .expect("layout");
     let ev = s
         .events()
         .iter()
@@ -200,7 +282,12 @@ fn the_layout_pass_is_recorded_with_its_taxonomy_id() {
 
 #[test]
 fn gone_children_leave_the_tree_and_invisible_ones_do_not() {
-    let mut root = View::group("root", "LinearLayout", NodeKind::LinearLayout, Orientation::Vertical);
+    let mut root = View::group(
+        "root",
+        "LinearLayout",
+        NodeKind::LinearLayout,
+        Orientation::Vertical,
+    );
     root.layout_params.width = Dimension::MatchParent;
     let mut gone = View::leaf("gone", "View", NodeKind::View);
     gone.visibility = Visibility::Gone;
@@ -210,7 +297,13 @@ fn gone_children_leave_the_tree_and_invisible_ones_do_not() {
     invisible.layout_params.height = Dimension::Exact(40);
     root.add(gone);
     root.add(invisible);
-    let t = root.run(Size { width: 100, height: 100 }, TextPolicy::Omit);
+    let t = root.run(
+        Size {
+            width: 100,
+            height: 100,
+        },
+        TextPolicy::Omit,
+    );
     let ids: Vec<String> = t.flatten().into_iter().map(|(k, _)| k).collect();
     assert!(!ids.contains(&"gone".to_string()));
     assert!(ids.contains(&"invisible".to_string()));
@@ -219,13 +312,24 @@ fn gone_children_leave_the_tree_and_invisible_ones_do_not() {
     // the two, and getting it wrong is a layout bug an app can see. With only a
     // `GONE` child of 40 dp, the row must be shorter than with an `INVISIBLE` one.
     let gone_only = {
-        let mut r = View::group("r", "LinearLayout", NodeKind::LinearLayout, Orientation::Vertical);
+        let mut r = View::group(
+            "r",
+            "LinearLayout",
+            NodeKind::LinearLayout,
+            Orientation::Vertical,
+        );
         r.layout_params.width = Dimension::MatchParent;
         let mut g = View::leaf("g", "View", NodeKind::View);
         g.visibility = Visibility::Gone;
         g.layout_params.height = Dimension::Exact(40);
         r.add(g);
-        r.run(Size { width: 100, height: 100 }, TextPolicy::Omit)
+        r.run(
+            Size {
+                width: 100,
+                height: 100,
+            },
+            TextPolicy::Omit,
+        )
     };
     assert!(
         gone_only.frame.height() < t.frame.height(),
@@ -237,7 +341,12 @@ fn gone_children_leave_the_tree_and_invisible_ones_do_not() {
 
 #[test]
 fn frame_layout_stacks_and_gravity_places() {
-    let mut root = View::group("root", "FrameLayout", NodeKind::FrameLayout, Orientation::Vertical);
+    let mut root = View::group(
+        "root",
+        "FrameLayout",
+        NodeKind::FrameLayout,
+        Orientation::Vertical,
+    );
     root.layout_params.width = Dimension::MatchParent;
     let mut top_left = View::leaf("tl", "View", NodeKind::View);
     top_left.layout_params.width = Dimension::Exact(10);
@@ -248,7 +357,13 @@ fn frame_layout_stacks_and_gravity_places() {
     centre.layout_params.gravity = layout::gravity::CENTER;
     root.add(top_left);
     root.add(centre);
-    let t = root.run(Size { width: 100, height: 100 }, TextPolicy::Omit);
+    let t = root.run(
+        Size {
+            width: 100,
+            height: 100,
+        },
+        TextPolicy::Omit,
+    );
     let tl = rect_of(&t, "tl");
     let c = rect_of(&t, "c");
     assert_eq!(
@@ -259,7 +374,10 @@ fn frame_layout_stacks_and_gravity_places() {
     // The FrameLayout does not grow to the viewport vertically: wrap_content is
     // the largest child, which is the documented behaviour and a common source of
     // "my layout is only as tall as its content" surprises.
-    assert_eq!(c.left, tl.left + (t.frame.width() - 2 * layout::metrics::PADDING - 10) / 2);
+    assert_eq!(
+        c.left,
+        tl.left + (t.frame.width() - 2 * layout::metrics::PADDING - 10) / 2
+    );
     // Overlap is visible in the area accounting, which is the point of counting
     // leaf area rather than the bounding box.
     assert!(t.leaf_area() >= 200, "two 10x10 children");
@@ -297,7 +415,10 @@ fn a_text_shape_reveals_the_shape_without_the_characters() {
         assert_eq!(s.looks_like_phone, phone, "{input}");
         assert_eq!(s.looks_numeric, numeric, "{input}");
         assert_eq!(s.chars, input.chars().count());
-        assert!(s.text.is_none(), "{input}: the characters must never be held");
+        assert!(
+            s.text.is_none(),
+            "{input}: the characters must never be held"
+        );
         // And the rendered shape must not contain the input either.
         let json = serde_json::to_string(&s).expect("json");
         if !input.is_empty() {
@@ -311,15 +432,31 @@ fn a_malformed_view_tree_cannot_be_serialised_into_a_valid_looking_document() {
     // Truncation must be visible. A `probes[].output` that is silently cut is a
     // tree an analyst will read as complete.
     let mut big = {
-        let mut root = View::group("root", "LinearLayout", NodeKind::LinearLayout, Orientation::Vertical);
+        let mut root = View::group(
+            "root",
+            "LinearLayout",
+            NodeKind::LinearLayout,
+            Orientation::Vertical,
+        );
         for i in 0..200 {
-            let mut v = View::text(&format!("v{i}"), "TextView", NodeKind::TextView, &"w".repeat(40));
+            let mut v = View::text(
+                &format!("v{i}"),
+                "TextView",
+                NodeKind::TextView,
+                &"w".repeat(40),
+            );
             v.layout_params.width = Dimension::MatchParent;
             root.add(v);
         }
         root
     };
-    let t = big.run(Size { width: 400, height: 4000 }, TextPolicy::Omit);
+    let t = big.run(
+        Size {
+            width: 400,
+            height: 4000,
+        },
+        TextPolicy::Omit,
+    );
     let (out, truncated) = layout::tree_for_probe(&t, 8000);
     assert!(truncated);
     assert!(out.contains("\"truncated\":true"));

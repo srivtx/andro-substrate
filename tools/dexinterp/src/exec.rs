@@ -47,9 +47,13 @@ use dexcore::reader::DexReader;
 use crate::config::{Config, ShimRecord, Stats};
 use crate::error::{Budget, ExecError, ExecResult, Malformed, Site, Unsupported};
 use crate::heap::{ClassId, Heap, ObjectKind};
-use crate::host::{Call, CallSite, FieldAccess, Host, HostOutcome, HostValue, InvokeKind, ThrowSpec};
+use crate::host::{
+    Call, CallSite, FieldAccess, Host, HostOutcome, HostValue, InvokeKind, ThrowSpec,
+};
 use crate::ops::{self, NumErr};
-use crate::program::{CallSiteMeta, ClassSource, DecodedCode, EncodedValue, MethodDecl, Program, VTableEntry};
+use crate::program::{
+    CallSiteMeta, ClassSource, DecodedCode, EncodedValue, MethodDecl, Program, VTableEntry,
+};
 use crate::value::{JType, Ref, Value};
 
 /// One activation record.
@@ -64,6 +68,14 @@ struct Frame {
     /// The result of the most recent call, for `move-result*` and
     /// `move-exception`.
     result: Option<Value>,
+    /// The declared return type, for normalising what `return-wide` hands back.
+    ///
+    /// A `double` is a wide register pair, and the engine represents that pair as
+    /// a [`Value::Long`] when it came from `const-wide` (whose payload *is* the
+    /// bit pattern) and as a [`Value::Double`] when it came from `long-to-double`.
+    /// The declared type is what tells those two apart at the boundary, so a
+    /// caller never sees a `double` return in two different shapes.
+    return_type: JType,
     /// The decoded body.
     code: Rc<DecodedCode>,
     /// Monitors this frame holds, innermost last.
@@ -163,8 +175,10 @@ impl std::fmt::Debug for Interpreter<'_> {
 /// decode all of them.
 pub fn new_interpreter<'a>(dex: DexReader<'a>, config: Config) -> ExecResult<Interpreter<'a>> {
     let program = Program::build(&dex)?;
-    let mut stats = Stats::default();
-    stats.instruction_budget = config.instruction_budget;
+    let stats = Stats {
+        instruction_budget: config.instruction_budget,
+        ..Stats::default()
+    };
     Ok(Interpreter {
         dex,
         program,
@@ -264,7 +278,10 @@ impl<'a> Interpreter<'a> {
 
     /// Whether `v` is an instance of `descriptor`, interfaces included.
     pub fn is_instance_of(&mut self, v: Value, descriptor: &str) -> bool {
-        let target = match self.class_id_for_test(descriptor).or_else(|| self.class_id_for(descriptor)) {
+        let target = match self
+            .class_id_for_test(descriptor)
+            .or_else(|| self.class_id_for(descriptor))
+        {
             Some(t) => t,
             None => return false,
         };
@@ -304,6 +321,53 @@ impl<'a> Interpreter<'a> {
     pub fn get_static(&mut self, class: &str, name: &str, ty: &str) -> ExecResult<Value> {
         let idx = self.field_index(class, name, ty)?;
         self.read_static(self.class_id_known(class), idx, &JType::parse(ty))
+    }
+
+    /// Decode a method's body **without running it**.
+    ///
+    /// The structural facts a study wants about a file — how many methods have a
+    /// try table, how wide the widest method is, which opcodes a method uses —
+    /// are available without executing anything, and getting them by running the
+    /// method would confound the answer with whatever the method *does*. This
+    /// returns the same [`DecodedCode`] the interpreter would execute, from the
+    /// same cache, so the two can never disagree.
+    ///
+    /// A method that exists but has no `code_item` is
+    /// [`Unsupported::MethodNotImplemented`]: an `abstract` or `native` method has
+    /// no body to decode, and that is a question about the shim rather than about
+    /// the bytecode.
+    pub fn decode_body(
+        &mut self,
+        class: &str,
+        name: &str,
+        signature: &str,
+    ) -> ExecResult<Rc<DecodedCode>> {
+        let decl = self
+            .class_id_known(class)
+            .and_then(|c| self.program.find_method(c, name, signature).cloned());
+        match decl {
+            Some(d) if d.has_code() => self.program.code(&self.dex, d.code_off),
+            Some(d) => Err(ExecError::Unsupported {
+                kind: Unsupported::MethodNotImplemented,
+                detail: format!(
+                    "{}.{}{} is {} and has no code_item",
+                    self.class_name(d.class),
+                    d.name,
+                    d.signature,
+                    if d.is_unimplemented() {
+                        "abstract or native"
+                    } else {
+                        "declared without a body"
+                    }
+                ),
+                site: Site::default(),
+            }),
+            None => Err(ExecError::Malformed {
+                kind: Malformed::BadPoolIndex,
+                detail: format!("no method {class}->{name}{signature}"),
+                site: Site::default(),
+            }),
+        }
     }
 
     /// Write a static field by descriptor.
@@ -369,8 +433,18 @@ impl<'a> Interpreter<'a> {
         // The file either does not declare it, or declares it with no body. Both
         // are the same shape of question for a shim — `Bundle.getString` and a
         // `native` method on the app's own class differ only in who is asking.
-        let kind = if args.is_empty() { InvokeKind::Static } else { InvokeKind::Direct };
-        let call = Call { class, name, signature, kind, args };
+        let kind = if args.is_empty() {
+            InvokeKind::Static
+        } else {
+            InvokeKind::Direct
+        };
+        let call = Call {
+            class,
+            name,
+            signature,
+            kind,
+            args,
+        };
         self.stats.framework_calls += 1;
         let outcome = self.host.invoke(&call);
         self.record_call(&call, &outcome);
@@ -418,18 +492,21 @@ impl<'a> Interpreter<'a> {
     fn push_frame(&mut self, decl: &MethodDecl, args: &[Value]) -> ExecResult<()> {
         if self.frames.len() >= self.config.max_call_depth as usize {
             let site = self.site();
-            return Err(ExecError::StackOverflow { limit: self.config.max_call_depth, site });
+            return Err(ExecError::StackOverflow {
+                limit: self.config.max_call_depth,
+                site,
+            });
         }
         let code = self.program.code(&self.dex, decl.code_off)?;
         let registers_size = code.registers_size as usize;
         let window_start = (registers_size as i64) - i64::from(code.ins_size);
-        let expected = decl.incoming_slots();
+        let expected = decl.incoming_values();
         if args.len() != expected {
             return Err(self.frame_error(
                 decl,
                 Malformed::TypeMismatch,
                 format!(
-                    "{}.{}{} takes {} argument word(s), the caller supplied {}",
+                    "{}.{}{} takes {} argument(s), the caller supplied {}",
                     self.class_name(decl.class),
                     decl.name,
                     decl.signature,
@@ -492,6 +569,7 @@ impl<'a> Interpreter<'a> {
             registers,
             pc: 0,
             result: None,
+            return_type: JType::parse(&decl.return_type()),
             code,
             held: Vec::new(),
         });
@@ -502,7 +580,11 @@ impl<'a> Interpreter<'a> {
         ExecError::Malformed {
             kind,
             detail,
-            site: Site { method: Some(render_signature(self, decl)), unit: 0, opcode: None },
+            site: Site {
+                method: Some(render_signature(self, decl)),
+                unit: 0,
+                opcode: None,
+            },
         }
     }
 
@@ -518,7 +600,11 @@ impl<'a> Interpreter<'a> {
                     Some(i) => (i.unit, i.instruction.opcode()),
                     None => (f.pc as u32, None),
                 };
-                Site { method: Some(f.signature_text.clone()), unit, opcode }
+                Site {
+                    method: Some(f.signature_text.clone()),
+                    unit,
+                    opcode,
+                }
             }
             None => Site::default(),
         }
@@ -583,11 +669,13 @@ impl<'a> Interpreter<'a> {
                     unit: insn.unit,
                     opcode: insn.instruction.opcode(),
                 };
-                // `Instruction::width` is in *bytes*; the pc is in code units.
-                // Dividing here rather than at every comparison keeps the one
-                // conversion in the one place the two notions meet.
-                let width = (insn.instruction.width() as usize / 2).max(1);
-                (insn.instruction.clone(), site, width.max(1))
+                // The width comes from the decoded list rather than from
+                // `Instruction::width()`, because `program.rs` is the one place
+                // that corrects the two widths the decoder gets wrong (a `32x`
+                // instruction and a data payload). Taking the two from different
+                // sources is how a pc and an instruction list drift apart.
+                let width = (insn.units as usize).max(1);
+                (insn.instruction.clone(), site, width)
             };
 
             if self.remaining == 0 {
@@ -627,11 +715,11 @@ impl<'a> Interpreter<'a> {
             }
             match flow {
                 Flow::Next | Flow::Call => {}
-                Flow::Return(value) => {
-                    if let Some(v) = self.pop_frame(value) {
-                        return Ok(v);
-                    }
-                }
+                Flow::Return(value) => match self.pop_frame(value) {
+                    Ok(Some(v)) => return Ok(v),
+                    Ok(None) => {}
+                    Err(e) => return Err(self.locate(e, &site)),
+                },
                 Flow::Thrown(exc) => {
                     if self.unwind(exc, site.unit)? {
                         continue;
@@ -649,12 +737,16 @@ impl<'a> Interpreter<'a> {
             return e;
         }
         match e {
-            ExecError::Unsupported { kind, detail, .. } => {
-                ExecError::Unsupported { kind, detail, site: site.clone() }
-            }
-            ExecError::Malformed { kind, detail, .. } => {
-                ExecError::Malformed { kind, detail, site: site.clone() }
-            }
+            ExecError::Unsupported { kind, detail, .. } => ExecError::Unsupported {
+                kind,
+                detail,
+                site: site.clone(),
+            },
+            ExecError::Malformed { kind, detail, .. } => ExecError::Malformed {
+                kind,
+                detail,
+                site: site.clone(),
+            },
             other => other,
         }
     }
@@ -665,24 +757,58 @@ impl<'a> Interpreter<'a> {
         }
     }
 
-    /// Pop the current frame, delivering `value` to the caller. `None` means the
-    /// stack is now empty and `value` is the top-level result.
-    fn pop_frame(&mut self, value: Value) -> Option<Value> {
-        let frame = self.frames.pop()?;
-        for r in frame.held.iter().rev() {
+    /// Pop the current frame, delivering `value` to the caller. `Ok(None)` means
+    /// the stack is now empty and `value` is the top-level result.
+    ///
+    /// A frame that returns while still holding a monitor is reported rather
+    /// than silently unwound. The specification's reason is that a `synchronized`
+    /// method is `monitor-enter` in the prologue, so an unbalanced return leaves
+    /// the monitor held for good; and the Dalvik verifier does track monitor
+    /// state along every path, so no real DEX can reach here. Reaching it means
+    /// either a file ART would have rejected or a bug in this crate, and both
+    /// belong in the `engine_fault` bucket rather than being swallowed.
+    fn pop_frame(&mut self, value: Value) -> ExecResult<Option<Value>> {
+        let frame = match self.frames.pop() {
+            Some(f) => f,
+            None => return Ok(None),
+        };
+        if let Some(r) = frame.held.last().copied() {
+            let site = Site {
+                method: Some(frame.signature_text.clone()),
+                unit: 0,
+                opcode: None,
+            };
+            return Err(ExecError::Malformed {
+                kind: Malformed::UnbalancedMonitor,
+                detail: format!(
+                    "{} returned while still holding the monitor on {} ({} unbalanced entr{})",
+                    frame.signature_text,
+                    self.describe(r),
+                    frame.held.len(),
+                    if frame.held.len() == 1 { "y" } else { "ies" }
+                ),
+                site,
+            });
+        }
+        self.release_held(&frame.held);
+        if self.frames.is_empty() {
+            return Ok(Some(value));
+        }
+        if let Some(caller) = self.frames.last_mut() {
+            caller.result = Some(value);
+        }
+        Ok(None)
+    }
+
+    /// Release every monitor a frame held, innermost last.
+    fn release_held(&mut self, held: &[Ref]) {
+        for r in held.iter().rev() {
             if let Some(obj) = self.heap.get_mut(*r) {
                 let mut m = obj.monitor;
                 m.exit();
                 obj.monitor = m;
             }
         }
-        if self.frames.is_empty() {
-            return Some(value);
-        }
-        if let Some(caller) = self.frames.last_mut() {
-            caller.result = Some(value);
-        }
-        None
     }
 
     /// Search for a handler for `exc`, popping frames until one is found.
@@ -691,7 +817,11 @@ impl<'a> Interpreter<'a> {
         let exc_class = self.class_id_of_object(exc);
         loop {
             let (tries, ins_size, registers_len) = match self.frames.last() {
-                Some(f) => (f.code.tries.clone(), f.code.ins_size as usize, f.registers.len()),
+                Some(f) => (
+                    f.code.tries.clone(),
+                    f.code.ins_size as usize,
+                    f.registers.len(),
+                ),
                 None => return Ok(false),
             };
             let mut found: Option<u32> = None;
@@ -732,7 +862,9 @@ impl<'a> Interpreter<'a> {
                     {
                         return Err(ExecError::Malformed {
                             kind: Malformed::BadBranchTarget,
-                            detail: format!("catch handler at unit {address} is not an instruction"),
+                            detail: format!(
+                                "catch handler at unit {address} is not an instruction"
+                            ),
                             site: Site::default(),
                         });
                     }
@@ -771,13 +903,19 @@ impl<'a> Interpreter<'a> {
         if self.frames.is_empty() {
             self.stats.exceptions_uncaught += 1;
         }
-        let class =
-            self.class_of(exc).unwrap_or_else(|| "Ljava/lang/Throwable;".to_string());
+        let class = self
+            .class_of(exc)
+            .unwrap_or_else(|| "Ljava/lang/Throwable;".to_string());
         let message = match exc {
             Value::Ref(r) => self.heap.get(r).and_then(|o| o.detail_message.clone()),
             _ => None,
         };
-        ExecError::ExceptionRaised { object: exc, class, message, site: site.clone() }
+        ExecError::ExceptionRaised {
+            object: exc,
+            class,
+            message,
+            site: site.clone(),
+        }
     }
 
     // ============================================================ instruction
@@ -787,7 +925,7 @@ impl<'a> Interpreter<'a> {
         use Instruction as I;
         match insn {
             I::F10X { op } => match op {
-                0x00 => Ok(Flow::Next),             // nop
+                0x00 => Ok(Flow::Next),                // nop
                 0x0e => Ok(Flow::Return(Value::Void)), // return-void
                 _ => self.foreign(*op, site),
             },
@@ -855,40 +993,104 @@ impl<'a> Interpreter<'a> {
                 _ => self.foreign(*op, site),
             },
             I::F22X { op, a, b } => self.op_move(*op, *a as usize, *b as usize, site),
-            I::F32X { op, a, b } => self.op_move(*op, *a as usize, *b as usize, site),
-            I::F22B { op, a, b, literal } => self.op_22b(*op, *a as usize, *b as usize, *literal, site),
-            I::F22S { op, a, b, literal } => self.op_22s(*op, *a as usize, *b as usize, *literal, site),
-            I::F23X { op, a, b, c } => self.op_23x(*op, *a as usize, *b as usize, *c as usize, site),
+            I::F32X { op, a, b } => {
+                // `32x` is `AA|op BBBB`: the destination register is the *high
+                // byte* of the first code unit and the opcode is the low one.
+                // `dexcore` hands back the whole unit for `a`, so the engine
+                // extracts the byte itself. Doing it here rather than in the
+                // reader is deliberate — the interpreter is the component that
+                // must not trust an operand it did not extract, and a shift is
+                // the whole fix. Without it `move/16 v3, v2` reads as a write to
+                // register 0x0303 and every such instruction dies as
+                // `bad_register`. `tests/coverage.rs` covers all three of the
+                // `32x` opcodes, so a regression here is a test failure.
+                self.op_move(*op, ((*a >> 8) & 0x00ff) as usize, *b as usize, site)
+            }
+            I::F22B { op, a, b, literal } => {
+                self.op_22b(*op, *a as usize, *b as usize, *literal, site)
+            }
+            I::F22S { op, a, b, literal } => {
+                self.op_22s(*op, *a as usize, *b as usize, *literal, site)
+            }
+            I::F23X { op, a, b, c } => {
+                self.op_23x(*op, *a as usize, *b as usize, *c as usize, site)
+            }
             I::F22C { op, a, b, index } => self.op_22c(*op, *a as usize, *b as usize, *index, site),
             I::F22T { op, a, b, offset } => {
-                let x = self.gi(*a as usize, site)?;
-                let y = self.gi(*b as usize, site)?;
-                if int_compare(*op, x, y) {
-                    self.branch(*offset as i32, site)
-                } else {
-                    Ok(Flow::Next)
+                // `if-eq` and `if-ne` are specified over 32-bit words, and d8
+                // emits them for *reference* comparisons: `a == b` on objects is
+                // `if-ne v1, v2`. The verifier types both forms the same way,
+                // because a reference is one 32-bit word. The ordering forms
+                // stay integer-only, which is what the specification says and
+                // what a compiler emits.
+                match op {
+                    0x32 | 0x33 => {
+                        let x = self.cmp32(*a as usize, site)?;
+                        let y = self.cmp32(*b as usize, site)?;
+                        if refs_eq(*op, x, y) {
+                            self.branch(*offset as i32, site)
+                        } else {
+                            Ok(Flow::Next)
+                        }
+                    }
+                    _ => {
+                        let x = self.gi(*a as usize, site)?;
+                        let y = self.gi(*b as usize, site)?;
+                        if int_compare(*op, x, y) {
+                            self.branch(*offset as i32, site)
+                        } else {
+                            Ok(Flow::Next)
+                        }
+                    }
                 }
             }
             I::F21T { op, a, offset } => {
-                let x = self.gi(*a as usize, site)?;
-                if int_compare_zero(*op, x) {
+                // The same distinction one register wide: `if-eqz`/`if-nez` on a
+                // reference is `x == null`, which is how every null check in a
+                // real APK is written.
+                let taken = match op {
+                    0x38 | 0x39 => {
+                        let x = self.cmp32(*a as usize, site)?;
+                        refs_eq_zero(*op, x)
+                    }
+                    _ => int_compare_zero(*op, self.gi(*a as usize, site)?),
+                };
+                if taken {
                     self.branch(*offset as i32, site)
                 } else {
                     Ok(Flow::Next)
                 }
             }
             I::F31T { op, a, offset } => self.op_31t(*op, *a as usize, *offset, site),
-            I::F35C { op, a, index, regs, .. } => {
-                self.op_call_forms(*op, &regs.to_vec(), *index, *a, 0, None, site)
-            }
-            I::F3RC { op, index, first_reg, reg_count, .. } => {
+            I::F35C {
+                op, a, index, regs, ..
+            } => self.op_call_forms(*op, regs.as_ref(), *index, *a, 0, None, site),
+            I::F3RC {
+                op,
+                index,
+                first_reg,
+                reg_count,
+                ..
+            } => {
                 let list = range_regs(*first_reg, *reg_count);
                 self.op_call_forms(*op, &list, *index, 0, *reg_count, None, site)
             }
-            I::F45CC { op, a, index, regs, proto, .. } => {
-                self.op_call_forms(*op, &regs.to_vec(), *index, *a, 0, Some(*proto), site)
-            }
-            I::F4RCC { op, index, first_reg, reg_count, proto, .. } => {
+            I::F45CC {
+                op,
+                a,
+                index,
+                regs,
+                proto,
+                ..
+            } => self.op_call_forms(*op, regs.as_ref(), *index, *a, 0, Some(*proto), site),
+            I::F4RCC {
+                op,
+                index,
+                first_reg,
+                reg_count,
+                proto,
+                ..
+            } => {
                 let list = range_regs(*first_reg, *reg_count);
                 self.op_call_forms(*op, &list, *index, 0, *reg_count, Some(*proto), site)
             }
@@ -968,8 +1170,11 @@ impl<'a> Interpreter<'a> {
         self.sv(r, v)?;
         if slots == 2 {
             let high = r + 1;
-            let fits =
-                self.frames.last().map(|f| high < f.registers.len()).unwrap_or(false);
+            let fits = self
+                .frames
+                .last()
+                .map(|f| high < f.registers.len())
+                .unwrap_or(false);
             if !fits {
                 let site = self.site();
                 return Err(self.bad_register(high, &site));
@@ -992,7 +1197,8 @@ impl<'a> Interpreter<'a> {
         if v == Value::Uninit {
             return Err(self.uninit(r, site));
         }
-        v.as_int("integer operand").map_err(|e| self.wrong_type(e, site))
+        v.as_int("integer operand")
+            .map_err(|e| self.wrong_type(e, site))
     }
 
     fn gl(&self, r: usize, site: &Site) -> ExecResult<i64> {
@@ -1000,7 +1206,8 @@ impl<'a> Interpreter<'a> {
         if v == Value::Uninit {
             return Err(self.uninit(r, site));
         }
-        v.as_long("long operand").map_err(|e| self.wrong_type(e, site))
+        v.as_long("long operand")
+            .map_err(|e| self.wrong_type(e, site))
     }
 
     fn gf(&self, r: usize, site: &Site) -> ExecResult<f32> {
@@ -1008,7 +1215,8 @@ impl<'a> Interpreter<'a> {
         if v == Value::Uninit {
             return Err(self.uninit(r, site));
         }
-        v.as_float("float operand").map_err(|e| self.wrong_type(e, site))
+        v.as_float("float operand")
+            .map_err(|e| self.wrong_type(e, site))
     }
 
     fn gd(&self, r: usize, site: &Site) -> ExecResult<f64> {
@@ -1016,7 +1224,8 @@ impl<'a> Interpreter<'a> {
         if v == Value::Uninit {
             return Err(self.uninit(r, site));
         }
-        v.as_double("double operand").map_err(|e| self.wrong_type(e, site))
+        v.as_double("double operand")
+            .map_err(|e| self.wrong_type(e, site))
     }
 
     fn gr(&self, r: usize, site: &Site) -> ExecResult<Option<Ref>> {
@@ -1024,7 +1233,50 @@ impl<'a> Interpreter<'a> {
         if v == Value::Uninit {
             return Err(self.uninit(r, site));
         }
-        v.ref_or_null("reference operand").map_err(|e| self.wrong_type(e, site))
+        v.ref_or_null("reference operand")
+            .map_err(|e| self.wrong_type(e, site))
+    }
+
+    /// Read a register for an equality comparison, which may be an `int` **or** a
+    /// reference.
+    ///
+    /// This is not leniency for its own sake. `if-eq`, `if-ne`, `if-eqz` and
+    /// `if-nez` are defined over 32-bit *words*, and a Dalvik reference is one
+    /// word, so a compiler emits all four for reference comparison: `x == null`
+    /// becomes `if-nez v0` and `a == b` becomes `if-ne v1, v2`. Two real
+    /// examples from `fr.smarquis.sleeptimer_16200`:
+    ///
+    /// ```text
+    /// Ld;.equals(Ljava/lang/Object;)Z   unit 1:  if-ne v5, v4     -- o != this
+    /// Le;.b(Ljava/lang/Object;Ljava/lang/Object;)Z  unit 0:  if-nez v0  -- a != null
+    /// ```
+    ///
+    /// Requiring an `int` here — which this engine did — refuses the most common
+    /// instruction in real Android bytecode and reports it as a *malformed file*,
+    /// which is a finding about the file that is not true. It would put a
+    /// substrate limitation into the taxonomy's `engine_fault` bucket, which the
+    /// pre-registered protocol reserves for things ART would have rejected at
+    /// install time.
+    ///
+    /// A `long` or `double` in one of these registers is still refused: those are
+    /// two words, and no comparison of that width is expressible with a single
+    /// register operand.
+    fn cmp32(&self, r: usize, site: &Site) -> ExecResult<Value> {
+        let v = self.gv(r, site)?;
+        if v == Value::Uninit {
+            return Err(self.uninit(r, site));
+        }
+        match v {
+            Value::Int(_) | Value::Null | Value::Ref(_) => Ok(v),
+            other => Err(self.wrong_type(
+                crate::value::WrongType {
+                    expected: "int or reference",
+                    found: other.type_name(),
+                    what: "equality comparison",
+                },
+                site,
+            )),
+        }
     }
 
     fn wrong_type(&self, e: crate::value::WrongType, site: &Site) -> ExecError {
@@ -1078,7 +1330,7 @@ impl<'a> Interpreter<'a> {
 
     fn op_11x(&mut self, op: u8, a: usize, site: &Site) -> ExecResult<Flow> {
         match op {
-            0x0a | 0x0b | 0x0c => {
+            0x0a..=0x0c => {
                 let result = self
                     .frames
                     .last()
@@ -1095,14 +1347,26 @@ impl<'a> Interpreter<'a> {
                 Ok(Flow::Next)
             }
             0x0d => {
-                let exc =
-                    self.frames.last().and_then(|f| f.result).ok_or_else(|| self.no_result(site))?;
+                let exc = self
+                    .frames
+                    .last()
+                    .and_then(|f| f.result)
+                    .ok_or_else(|| self.no_result(site))?;
                 self.sv(a, exc)?;
                 Ok(Flow::Next)
             }
-            0x0f | 0x10 | 0x11 => {
+            0x0f..=0x11 => {
                 let v = self.gv(a, site)?;
-                Ok(Flow::Return(check_return(v, site)?))
+                let checked = check_return(v, site)?;
+                // Normalise the one representation the register model cannot
+                // pin down: a wide pair that means a `double`. See
+                // `Frame::return_type` and `ops::coerce_return`.
+                let ty = self.frames.last().map(|f| f.return_type.clone());
+                let value = match ty {
+                    Some(t) => ops::coerce_return(checked, &t),
+                    None => checked,
+                };
+                Ok(Flow::Return(value))
             }
             0x1d => self.monitor_enter(a, site),
             0x1e => self.monitor_exit(a, site),
@@ -1147,29 +1411,27 @@ impl<'a> Interpreter<'a> {
                 let v = self.gv(b, site)?;
                 self.set_wide(a, v)?;
             }
-            0x21 => {
-                match self.gr(b, site)? {
-                    None => {
-                        return Ok(Flow::Thrown(self.new_throwable(
-                            "Ljava/lang/NullPointerException;",
-                            "array-length on null",
-                        )?))
-                    }
-                    Some(r) => {
-                        let len = match self.heap.get(r).map(|o| &o.kind) {
-                            Some(ObjectKind::Array { elements, .. }) => elements.len() as i32,
-                            _ => {
-                                return Err(ExecError::Malformed {
-                                    kind: Malformed::TypeMismatch,
-                                    detail: format!("array-length on {}", self.describe(r)),
-                                    site: site.clone(),
-                                })
-                            }
-                        };
-                        self.sv(a, Value::Int(len))?;
-                    }
+            0x21 => match self.gr(b, site)? {
+                None => {
+                    return Ok(Flow::Thrown(self.new_throwable(
+                        "Ljava/lang/NullPointerException;",
+                        "array-length on null",
+                    )?))
                 }
-            }
+                Some(r) => {
+                    let len = match self.heap.get(r).map(|o| &o.kind) {
+                        Some(ObjectKind::Array { elements, .. }) => elements.len() as i32,
+                        _ => {
+                            return Err(ExecError::Malformed {
+                                kind: Malformed::TypeMismatch,
+                                detail: format!("array-length on {}", self.describe(r)),
+                                site: site.clone(),
+                            })
+                        }
+                    };
+                    self.sv(a, Value::Int(len))?;
+                }
+            },
             0x7b..=0x8f => self.unary_12x(op, a, b, site)?,
             0xb0..=0xcf => {
                 if let Some(f) = self.binary_2addr(op, a, b, site)? {
@@ -1361,8 +1623,9 @@ impl<'a> Interpreter<'a> {
             0x1f => {
                 // check-cast
                 let v = self.gv(a, site)?;
-                if let Some(r) =
-                    v.ref_or_null("check-cast").map_err(|e| self.wrong_type(e, site))?
+                if let Some(r) = v
+                    .ref_or_null("check-cast")
+                    .map_err(|e| self.wrong_type(e, site))?
                 {
                     let d = self.type_at(index as u32, site)?;
                     let target = self.class_id_for_test(&d);
@@ -1429,7 +1692,10 @@ impl<'a> Interpreter<'a> {
                 let result = match r {
                     None => false,
                     Some(r) => {
-                        match (self.class_id_for_test(&d), self.class_id_of_object(Value::Ref(r))) {
+                        match (
+                            self.class_id_for_test(&d),
+                            self.class_id_of_object(Value::Ref(r)),
+                        ) {
                             (Some(t), Some(c)) => self.program.is_a(c, t),
                             _ => false,
                         }
@@ -1530,7 +1796,16 @@ impl<'a> Interpreter<'a> {
         let y = i32::from(literal);
         let x = self.gi(b, site)?;
         let r = match op {
-            0xd8..=0xdf => match ops::int32_binop(op - 0xd8, x, y) {
+            // `rsub-int/lit8 vA, vB, #CC` is `#CC - vB`, the one arithmetic
+            // opcode whose operand order is the reverse of what its mnemonic and
+            // its neighbours suggest. Its 16-bit twin (`rsub-int`, handled in
+            // `op_22s`) has the same reversal; getting only one of the two right
+            // is how a subtraction silently becomes an addition.
+            //
+            // This arm comes *before* the `0xd8..=0xdf` range below, because a
+            // range arm would swallow 0xd9 and compute `vB - #CC` instead.
+            0xd9 => y.wrapping_sub(x),
+            0xd8 | 0xda..=0xdf => match ops::int32_binop(op - 0xd8, x, y) {
                 Ok(v) => v,
                 Err(e) => return self.num_throwable(e),
             },
@@ -1545,7 +1820,14 @@ impl<'a> Interpreter<'a> {
         Ok(Flow::Next)
     }
 
-    fn op_22s(&mut self, op: u8, a: usize, b: usize, literal: i16, site: &Site) -> ExecResult<Flow> {
+    fn op_22s(
+        &mut self,
+        op: u8,
+        a: usize,
+        b: usize,
+        literal: i16,
+        site: &Site,
+    ) -> ExecResult<Flow> {
         let y = i32::from(literal);
         let x = self.gi(b, site)?;
         let r = match op {
@@ -1608,8 +1890,11 @@ impl<'a> Interpreter<'a> {
             }
             (0x2c, Payload::SparseSwitch(p)) => {
                 let key = self.gi(a, site)?;
-                let found =
-                    p.keys.iter().position(|k| *k == key).and_then(|i| p.targets.get(i).copied());
+                let found = p
+                    .keys
+                    .iter()
+                    .position(|k| *k == key)
+                    .and_then(|i| p.targets.get(i).copied());
                 if let Some(offset) = found {
                     let target = switch_target(site.unit, offset, site)?;
                     self.jump_to(target, offset, site)?;
@@ -1685,7 +1970,11 @@ impl<'a> Interpreter<'a> {
                 // that wrote zeros.
                 let d = self.type_at(index as u32, site)?;
                 let component = component_descriptor(&d);
-                let arity = if a != 0 { a as usize } else { trimmed_len(all_regs) };
+                let arity = if a != 0 {
+                    a as usize
+                } else {
+                    trimmed_len(all_regs)
+                };
                 let list = select_regs(all_regs, arity, false);
                 if list.len() != arity {
                     return self.arity_error(op, arity, list.len(), site);
@@ -1794,13 +2083,7 @@ impl<'a> Interpreter<'a> {
 
     // ============================================================== invoking
 
-    fn do_invoke(
-        &mut self,
-        op: u8,
-        regs: &[u8],
-        method_idx: u32,
-        site: &Site,
-    ) -> ExecResult<Flow> {
+    fn do_invoke(&mut self, op: u8, regs: &[u8], method_idx: u32, site: &Site) -> ExecResult<Flow> {
         let (class_desc, name, signature) = match self.program.methods.get(method_idx as usize) {
             Some(t) => t.clone(),
             None => {
@@ -1832,7 +2115,16 @@ impl<'a> Interpreter<'a> {
             }
         };
         let named = self.class_id_known(&class_desc);
-        self.dispatch(kind, named, &class_desc, &name, &signature, args, receiver, site)
+        self.dispatch(
+            kind,
+            named,
+            &class_desc,
+            &name,
+            &signature,
+            args,
+            receiver,
+            site,
+        )
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -1876,8 +2168,9 @@ impl<'a> Interpreter<'a> {
                 }
                 found
             }
-            (InvokeKind::Direct, _) => lookup_class
-                .and_then(|c| self.program.find_own_method(c, name, signature).cloned()),
+            (InvokeKind::Direct, _) => {
+                lookup_class.and_then(|c| self.program.find_own_method(c, name, signature).cloned())
+            }
             _ => lookup_class.and_then(|c| self.program.find_method(c, name, signature).cloned()),
         };
 
@@ -1915,7 +2208,10 @@ impl<'a> Interpreter<'a> {
     }
 
     fn has_bytecode(&self, c: ClassId) -> bool {
-        self.program.class(c).map(|m| m.source.has_bytecode()).unwrap_or(false)
+        self.program
+            .class(c)
+            .map(|m| m.source.has_bytecode())
+            .unwrap_or(false)
     }
 
     /// The vtable entry's target: a concrete declaration, or `None` when the slot
@@ -1938,7 +2234,13 @@ impl<'a> Interpreter<'a> {
         site: &Site,
     ) -> ExecResult<Flow> {
         self.stats.framework_calls += 1;
-        let call = Call { class, name, signature, kind, args };
+        let call = Call {
+            class,
+            name,
+            signature,
+            kind,
+            args,
+        };
         let outcome = self.host.invoke(&call);
         self.record_call(&call, &outcome);
         match outcome {
@@ -1983,7 +2285,12 @@ impl<'a> Interpreter<'a> {
     /// class is in the file. "The file has no `call_site_ids`", "the bootstrap's
     /// class is not in this dex" and "the bootstrap is here but the shim declined
     /// to resolve it" are three different results and the study needs all three.
-    fn do_invoke_custom(&mut self, regs: &[u8], call_site_idx: u32, site: &Site) -> ExecResult<Flow> {
+    fn do_invoke_custom(
+        &mut self,
+        regs: &[u8],
+        call_site_idx: u32,
+        site: &Site,
+    ) -> ExecResult<Flow> {
         let call_site = self.program.call_site(call_site_idx)?;
         let handle = &call_site.handle;
         let (bootstrap_owner, bootstrap_name, bootstrap_sig) = match handle.method_idx {
@@ -2046,7 +2353,11 @@ impl<'a> Interpreter<'a> {
                         "call_site@{call_site_idx}: bootstrap handle {handle_desc} names \
                          {bootstrap_owner}.{bootstrap_name}{bootstrap_sig}; that class is {} \
                          this dex, and the host resolved no call site. {} bootstrap argument(s).",
-                        if owner_known { "present in" } else { "NOT present in" },
+                        if owner_known {
+                            "present in"
+                        } else {
+                            "NOT present in"
+                        },
                         arguments.len()
                     ),
                     site: site.clone(),
@@ -2174,7 +2485,12 @@ impl<'a> Interpreter<'a> {
         let declared = JType::parse(&ty);
         if !self.field_is_dex_backed(field_idx) {
             self.stats.framework_field_accesses += 1;
-            let access = FieldAccess { class: &class_desc, name: &name, ty: &ty, target: None };
+            let access = FieldAccess {
+                class: &class_desc,
+                name: &name,
+                ty: &ty,
+                target: None,
+            };
             match self.host.get_field(&access) {
                 HostOutcome::Value(v) => {
                     let v = self.materialise(v)?;
@@ -2201,7 +2517,12 @@ impl<'a> Interpreter<'a> {
         let value = self.gv(a, site)?;
         if !self.field_is_dex_backed(field_idx) {
             self.stats.framework_field_accesses += 1;
-            let access = FieldAccess { class: &class_desc, name: &name, ty: &ty, target: None };
+            let access = FieldAccess {
+                class: &class_desc,
+                name: &name,
+                ty: &ty,
+                target: None,
+            };
             let hv = self.to_host_value(value);
             if let HostOutcome::Throw(spec) = self.host.set_field(&access, hv) {
                 let exc = self.raise(spec, site)?;
@@ -2243,7 +2564,9 @@ impl<'a> Interpreter<'a> {
 
     fn instance_offset(&self, field_idx: u32) -> Option<usize> {
         let owner = self.field_owner(field_idx)?;
-        self.program.instance_field_offset(owner, field_idx).map(|(o, _)| o)
+        self.program
+            .instance_field_offset(owner, field_idx)
+            .map(|(o, _)| o)
     }
 
     fn instance_offset_for(&self, class: &str, name: &str, ty: &str) -> ExecResult<usize> {
@@ -2382,7 +2705,8 @@ impl<'a> Interpreter<'a> {
         declared: &JType,
     ) -> ExecResult<()> {
         if let Some(id) = owner {
-            self.statics.insert((id, field_idx), ops::coerce_to(value, declared));
+            self.statics
+                .insert((id, field_idx), ops::coerce_to(value, declared));
         }
         Ok(())
     }
@@ -2396,7 +2720,10 @@ impl<'a> Interpreter<'a> {
             _ => return ArrayOp::Fault(ArrayFault::NotAnArray),
         };
         let (component, elements) = match self.heap.get(r).map(|o| &o.kind) {
-            Some(ObjectKind::Array { component, elements }) => (component, elements),
+            Some(ObjectKind::Array {
+                component,
+                elements,
+            }) => (component, elements),
             _ => return ArrayOp::Fault(ArrayFault::NotAnArray),
         };
         let len = elements.len();
@@ -2418,7 +2745,10 @@ impl<'a> Interpreter<'a> {
             _ => return ArrayOp::Fault(ArrayFault::NotAnArray),
         };
         let (component, len) = match self.heap.get(r).map(|o| &o.kind) {
-            Some(ObjectKind::Array { component, elements }) => (component.clone(), elements.len()),
+            Some(ObjectKind::Array {
+                component,
+                elements,
+            }) => (component.clone(), elements.len()),
             _ => return ArrayOp::Fault(ArrayFault::NotAnArray),
         };
         let at = match checked_index(index, len) {
@@ -2429,7 +2759,8 @@ impl<'a> Interpreter<'a> {
             Some(v) => v,
             None => return ArrayOp::Fault(ArrayFault::Store),
         };
-        if let Some(ObjectKind::Array { elements, .. }) = self.heap.get_mut(r).map(|o| &mut o.kind) {
+        if let Some(ObjectKind::Array { elements, .. }) = self.heap.get_mut(r).map(|o| &mut o.kind)
+        {
             if let Some(slot) = elements.get_mut(at) {
                 *slot = narrowed;
             }
@@ -2441,16 +2772,14 @@ impl<'a> Interpreter<'a> {
     ///
     /// The payload's `element_width` must match the array's component type: a
     /// mismatch is a malformed file, not a silently mis-parsed array.
-    fn fill_array(
-        &mut self,
-        arr: Value,
-        fill: &FillArrayData,
-    ) -> ExecResult<Option<Flow>> {
+    fn fill_array(&mut self, arr: Value, fill: &FillArrayData) -> ExecResult<Option<Flow>> {
         let r = match arr {
             Value::Ref(r) => r,
             Value::Null => {
-                let exc =
-                    self.new_throwable("Ljava/lang/NullPointerException;", "fill-array-data on null")?;
+                let exc = self.new_throwable(
+                    "Ljava/lang/NullPointerException;",
+                    "fill-array-data on null",
+                )?;
                 return Ok(Some(Flow::Thrown(exc)));
             }
             _ => {
@@ -2462,7 +2791,10 @@ impl<'a> Interpreter<'a> {
             }
         };
         let (component, len) = match self.heap.get(r).map(|o| &o.kind) {
-            Some(ObjectKind::Array { component, elements }) => (component.clone(), elements.len()),
+            Some(ObjectKind::Array {
+                component,
+                elements,
+            }) => (component.clone(), elements.len()),
             _ => {
                 return Err(ExecError::Malformed {
                     kind: Malformed::TypeMismatch,
@@ -2514,7 +2846,9 @@ impl<'a> Interpreter<'a> {
                 (JType::Boolean, Some(b)) => {
                     Value::Int(i32::from(b.first().copied().unwrap_or(0) != 0))
                 }
-                (JType::Byte, Some(b)) => Value::Int(i32::from(b.first().copied().unwrap_or(0) as i8)),
+                (JType::Byte, Some(b)) => {
+                    Value::Int(i32::from(b.first().copied().unwrap_or(0) as i8))
+                }
                 (JType::Short, Some(b)) => Value::Int(i32::from(ops::read_i16(b))),
                 (JType::Char, Some(b)) => Value::Int(i32::from(ops::read_u16(b))),
                 (JType::Int, Some(b)) => Value::Int(ops::read_i32(b)),
@@ -2527,7 +2861,8 @@ impl<'a> Interpreter<'a> {
             };
             values.push(v);
         }
-        if let Some(ObjectKind::Array { elements, .. }) = self.heap.get_mut(r).map(|o| &mut o.kind) {
+        if let Some(ObjectKind::Array { elements, .. }) = self.heap.get_mut(r).map(|o| &mut o.kind)
+        {
             for (slot, v) in elements.iter_mut().zip(values) {
                 *slot = v;
             }
@@ -2578,7 +2913,14 @@ impl<'a> Interpreter<'a> {
             elements.push(v);
         }
         let class_id = self.array_class(component)?;
-        let r = self.alloc(class_id, ObjectKind::Array { component: ty, elements }, None)?;
+        let r = self.alloc(
+            class_id,
+            ObjectKind::Array {
+                component: ty,
+                elements,
+            },
+            None,
+        )?;
         Ok(Value::Ref(r))
     }
 
@@ -2592,13 +2934,13 @@ impl<'a> Interpreter<'a> {
     fn array_class(&mut self, component: &str) -> ExecResult<ClassId> {
         // `component` is an element descriptor; the class is `[component`.
         let array_descriptor = format!("[{component}");
-        self.program.class_for(&array_descriptor, true).ok_or_else(|| {
-            ExecError::Unsupported {
+        self.program
+            .class_for(&array_descriptor, true)
+            .ok_or_else(|| ExecError::Unsupported {
                 kind: Unsupported::ClassNotFound,
                 detail: format!("no class for array type {array_descriptor}"),
                 site: self.site(),
-            }
-        })
+            })
     }
 
     /// Resolve a descriptor for a *type test* (`instance-of`, `check-cast`,
@@ -2634,11 +2976,18 @@ impl<'a> Interpreter<'a> {
         // throwable is actually allocated; bumping it here too counted every
         // shim-raised exception twice.
         let message = message.into();
-        let spec =
-            if message.is_empty() { None } else { Some(message) };
+        let spec = if message.is_empty() {
+            None
+        } else {
+            Some(message)
+        };
         self.new_throwable_opt(class, spec)
     }
-    fn new_throwable_opt(&mut self, class: &'static str, message: Option<String>) -> ExecResult<Value> {
+    fn new_throwable_opt(
+        &mut self,
+        class: &'static str,
+        message: Option<String>,
+    ) -> ExecResult<Value> {
         self.stats.vm_exceptions += 1;
         // `class_id_for`, not `class_id_known`: a throwable the substrate raises
         // has to exist as a class. Falling back to class 0 would give the object
@@ -2646,7 +2995,11 @@ impl<'a> Interpreter<'a> {
         // would not match it -- the clause would look wrong when the throwable
         // is what is missing.
         let class_id = self.class_id_for(class).unwrap_or(ClassId(0));
-        let slots = self.program.class(class_id).map(|m| m.instance_slots).unwrap_or(0);
+        let slots = self
+            .program
+            .class(class_id)
+            .map(|m| m.instance_slots)
+            .unwrap_or(0);
         let mut fields = vec![Value::Uninit; slots];
         self.init_instance_fields(class_id, 0, &mut fields)?;
         let r = self.alloc(class_id, ObjectKind::Instance { fields }, message)?;
@@ -2721,7 +3074,7 @@ impl<'a> Interpreter<'a> {
             .unwrap_or(false);
         if !held {
             return Err(ExecError::Malformed {
-                kind: Malformed::TypeMismatch,
+                kind: Malformed::UnbalancedMonitor,
                 detail: format!(
                     "monitor-exit on {} which this frame does not hold",
                     self.describe(r)
@@ -2810,7 +3163,11 @@ impl<'a> Interpreter<'a> {
                 })
             }
         };
-        let slots = self.program.class(class).map(|m| m.instance_slots).unwrap_or(0);
+        let slots = self
+            .program
+            .class(class)
+            .map(|m| m.instance_slots)
+            .unwrap_or(0);
         let mut fields = vec![Value::Uninit; slots];
         self.init_instance_fields(class, 0, &mut fields)?;
         let r = self.alloc(class, ObjectKind::Instance { fields }, None)?;
@@ -2869,10 +3226,18 @@ impl<'a> Interpreter<'a> {
         let ty = JType::parse(&component_descriptor(array_descriptor));
         // A multi-dimensional array is an array of arrays; the elements are
         // `null` until the app fills them in with `new-array`.
-        let elements: Vec<Value> =
-            (0..len).map(|_| Value::default_for(&ty).unwrap_or(Value::Null)).collect();
+        let elements: Vec<Value> = (0..len)
+            .map(|_| Value::default_for(&ty).unwrap_or(Value::Null))
+            .collect();
         let class_id = self.array_class(array_descriptor)?;
-        let r = self.alloc(class_id, ObjectKind::Array { component: ty, elements }, None)?;
+        let r = self.alloc(
+            class_id,
+            ObjectKind::Array {
+                component: ty,
+                elements,
+            },
+            None,
+        )?;
         Ok(Value::Ref(r))
     }
 
@@ -2889,13 +3254,17 @@ impl<'a> Interpreter<'a> {
             Value::Ref(r) => match self.heap.get(r).map(|o| &o.kind) {
                 Some(ObjectKind::Str { text }) => HostValue::Str(text.clone()),
                 Some(ObjectKind::Class { descriptor }) => HostValue::Class(descriptor.clone()),
-                Some(ObjectKind::Array { component, elements }) => HostValue::Array {
+                Some(ObjectKind::Array {
+                    component,
+                    elements,
+                }) => HostValue::Array {
                     component: component.descriptor(),
                     items: elements.iter().map(|e| self.to_host_value(*e)).collect(),
                 },
-                Some(ObjectKind::Instance { .. }) => {
-                    HostValue::Opaque { class: self.class_name_of(r), key: format!("id:{r}") }
-                }
+                Some(ObjectKind::Instance { .. }) => HostValue::Opaque {
+                    class: self.class_name_of(r),
+                    key: format!("id:{r}"),
+                },
                 _ => HostValue::Ref(v),
             },
             Value::Uninit | Value::Void | Value::WidePad => HostValue::Null,
@@ -2934,12 +3303,18 @@ impl<'a> Interpreter<'a> {
                     None => {
                         return Err(ExecError::Unsupported {
                             kind: Unsupported::ClassNotFound,
-                            detail: format!("the shim returned an instance of unknown class {class}"),
+                            detail: format!(
+                                "the shim returned an instance of unknown class {class}"
+                            ),
                             site: self.site(),
                         })
                     }
                 };
-                let slots = self.program.class(class_id).map(|m| m.instance_slots).unwrap_or(0);
+                let slots = self
+                    .program
+                    .class(class_id)
+                    .map(|m| m.instance_slots)
+                    .unwrap_or(0);
                 let mut fields = vec![Value::Uninit; slots];
                 self.init_instance_fields(class_id, 0, &mut fields)?;
                 let r = self.alloc(class_id, ObjectKind::Instance { fields }, None)?;
@@ -2953,7 +3328,14 @@ impl<'a> Interpreter<'a> {
                 }
                 let class_id = self.array_class(&component)?;
                 let ty = JType::parse(&component);
-                let r = self.alloc(class_id, ObjectKind::Array { component: ty, elements }, None)?;
+                let r = self.alloc(
+                    class_id,
+                    ObjectKind::Array {
+                        component: ty,
+                        elements,
+                    },
+                    None,
+                )?;
                 Ok(Value::Ref(r))
             }
         }
@@ -2986,7 +3368,10 @@ impl<'a> Interpreter<'a> {
             EncodedValue::MethodHandle(i) => {
                 let h = self.program.method_handle(*i)?;
                 let target = h.method_idx.and_then(|m| {
-                    self.program.methods.get(m as usize).map(|(c, n, s)| format!("{c}.{n}{s}"))
+                    self.program
+                        .methods
+                        .get(m as usize)
+                        .map(|(c, n, s)| format!("{c}.{n}{s}"))
                 });
                 self.new_method_handle(h.kind, target)?
             }
@@ -3010,7 +3395,14 @@ impl<'a> Interpreter<'a> {
                     elements.push(self.materialise_encoded(it)?);
                 }
                 let ty = JType::parse(&component);
-                let r = self.alloc(class_id, ObjectKind::Array { component: ty, elements }, None)?;
+                let r = self.alloc(
+                    class_id,
+                    ObjectKind::Array {
+                        component: ty,
+                        elements,
+                    },
+                    None,
+                )?;
                 Value::Ref(r)
             }
         })
@@ -3036,8 +3428,16 @@ impl<'a> Interpreter<'a> {
         // `NoClassDefFoundError` on a device, and the class has to be in the
         // table for a later `instance-of` against it to mean anything.
         self.class_id_for(descriptor);
-        let class = self.class_id_known("Ljava/lang/Class;").unwrap_or(ClassId(0));
-        let r = self.alloc(class, ObjectKind::Class { descriptor: descriptor.to_string() }, None)?;
+        let class = self
+            .class_id_known("Ljava/lang/Class;")
+            .unwrap_or(ClassId(0));
+        let r = self.alloc(
+            class,
+            ObjectKind::Class {
+                descriptor: descriptor.to_string(),
+            },
+            None,
+        )?;
         Ok(Value::Ref(r))
     }
 
@@ -3045,7 +3445,13 @@ impl<'a> Interpreter<'a> {
         let class = self
             .class_id_known("Ljava/lang/reflect/MethodType;")
             .unwrap_or(ClassId(0));
-        let r = self.alloc(class, ObjectKind::MethodType { proto: proto.to_string() }, None)?;
+        let r = self.alloc(
+            class,
+            ObjectKind::MethodType {
+                proto: proto.to_string(),
+            },
+            None,
+        )?;
         Ok(Value::Ref(r))
     }
 
@@ -3065,7 +3471,10 @@ impl<'a> Interpreter<'a> {
         kind: ObjectKind,
         detail_message: Option<String>,
     ) -> ExecResult<Ref> {
-        match self.heap.alloc(class, kind, self.config.max_objects, self.config.max_bytes) {
+        match self
+            .heap
+            .alloc(class, kind, self.config.max_objects, self.config.max_bytes)
+        {
             Ok(r) => {
                 if let Some(m) = detail_message {
                     if let Some(obj) = self.heap.get_mut(r) {
@@ -3077,50 +3486,65 @@ impl<'a> Interpreter<'a> {
                 Ok(r)
             }
             Err(limit) => {
-                let kind = if self.heap.len() as u64 >= self.config.max_objects.unwrap_or(u64::MAX) {
+                let kind = if self.heap.len() as u64 >= self.config.max_objects.unwrap_or(u64::MAX)
+                {
                     Budget::Objects
                 } else {
                     Budget::Bytes
                 };
                 let site = self.site();
-                Err(ExecError::OutOfMemory { kind, limit, requested: 0, site })
+                Err(ExecError::OutOfMemory {
+                    kind,
+                    limit,
+                    requested: 0,
+                    site,
+                })
             }
         }
     }
 
     fn string_at(&self, index: u32, site: &Site) -> ExecResult<String> {
-        self.program.strings.get(index as usize).cloned().ok_or_else(|| {
-            ExecError::Malformed {
+        self.program
+            .strings
+            .get(index as usize)
+            .cloned()
+            .ok_or_else(|| ExecError::Malformed {
                 kind: Malformed::BadPoolIndex,
                 detail: format!("string@{index} does not exist"),
                 site: site.clone(),
-            }
-        })
+            })
     }
 
     fn type_at(&self, index: u32, site: &Site) -> ExecResult<String> {
-        self.program.types.get(index as usize).cloned().ok_or_else(|| {
-            ExecError::Malformed {
+        self.program
+            .types
+            .get(index as usize)
+            .cloned()
+            .ok_or_else(|| ExecError::Malformed {
                 kind: Malformed::BadPoolIndex,
                 detail: format!("type@{index} does not exist"),
                 site: site.clone(),
-            }
-        })
+            })
     }
 
     fn proto_signature(&self, index: u32, site: &Site) -> ExecResult<String> {
-        self.dex.proto_at(index).map(|p| p.signature()).map_err(|e| {
-            ExecError::Malformed {
+        self.dex
+            .proto_at(index)
+            .map(|p| p.signature())
+            .map_err(|e| ExecError::Malformed {
                 kind: Malformed::BadPoolIndex,
                 detail: format!("proto@{index}: {e}"),
                 site: site.clone(),
-            }
-        })
+            })
     }
 
     /// `(return descriptor, parameter count, parameter descriptors)` of a
     /// `method_ids` entry.
-    fn method_proto(&self, method_idx: u32, site: &Site) -> ExecResult<(String, usize, Vec<String>)> {
+    fn method_proto(
+        &self,
+        method_idx: u32,
+        site: &Site,
+    ) -> ExecResult<(String, usize, Vec<String>)> {
         let (_, _, sig) = match self.program.methods.get(method_idx as usize) {
             Some(t) => t.clone(),
             None => {
@@ -3132,7 +3556,11 @@ impl<'a> Interpreter<'a> {
             }
         };
         let (params, ret) = JType::parse_prototype(&sig);
-        Ok((ret.descriptor(), params.len(), params.iter().map(|p| p.descriptor()).collect()))
+        Ok((
+            ret.descriptor(),
+            params.len(),
+            params.iter().map(|p| p.descriptor()).collect(),
+        ))
     }
 }
 
@@ -3174,14 +3602,58 @@ fn int_compare_zero(op: u8, x: i32) -> bool {
     }
 }
 
+/// `if-eq` / `if-ne` over two 32-bit words, which may be integers or references.
+///
+/// An `int` is never equal to a reference, because the two occupy the same
+/// register width but not the same *domain* — a register holding `null` is not
+/// the integer 0. Two references are equal when they name the same object, and
+/// `null` equals only `null`.
+fn refs_eq(op: u8, x: Value, y: Value) -> bool {
+    let equal = match (x, y) {
+        (Value::Int(a), Value::Int(b)) => a == b,
+        (Value::Null, Value::Null) => true,
+        (Value::Ref(a), Value::Ref(b)) => a == b,
+        _ => false,
+    };
+    if op == 0x32 {
+        equal
+    } else {
+        !equal
+    }
+}
+
+/// `if-eqz` / `if-nez`: the same comparison against zero, where `null` is the
+/// reference's zero.
+fn refs_eq_zero(op: u8, x: Value) -> bool {
+    let is_zero = match x {
+        Value::Int(i) => i == 0,
+        Value::Null => true,
+        _ => false,
+    };
+    if op == 0x38 {
+        is_zero
+    } else {
+        !is_zero
+    }
+}
+
 fn render_signature(vm: &Interpreter<'_>, decl: &MethodDecl) -> String {
-    format!("{}.{}{}", vm.class_name(decl.class), decl.name, decl.signature)
+    format!(
+        "{}.{}{}",
+        vm.class_name(decl.class),
+        decl.name,
+        decl.signature
+    )
 }
 
 /// The contiguous register list of a `3rc`-family instruction.
 fn range_regs(first: u16, count: u16) -> Vec<u8> {
     (0..count)
-        .filter_map(|i| first.checked_add(i).map(|r| r.min(u16::MAX as u8 as u16) as u8))
+        .filter_map(|i| {
+            first
+                .checked_add(i)
+                .map(|r| r.min(u16::MAX as u8 as u16) as u8)
+        })
         .collect()
 }
 
@@ -3201,7 +3673,10 @@ fn select_regs(all: &[u8], arity: usize, ranged: bool) -> Vec<u8> {
 /// `dexcore::Instruction::argument_registers` documents; this is the same rule
 /// and it is only used where the alternative (`A`) is zero.
 fn trimmed_len(regs: &[u8]) -> usize {
-    regs.iter().rposition(|&r| r != 0).map(|i| i + 1).unwrap_or(0)
+    regs.iter()
+        .rposition(|&r| r != 0)
+        .map(|i| i + 1)
+        .unwrap_or(0)
 }
 
 /// A switch target, which is relative to the switch instruction.
@@ -3246,25 +3721,41 @@ fn payload_name(p: &Payload) -> &'static str {
 }
 
 fn check_return(v: Value, site: &Site) -> ExecResult<Value> {
-    if v == Value::Uninit {
-        return Err(ExecError::Malformed {
+    match v {
+        Value::Uninit => Err(ExecError::Malformed {
             kind: Malformed::UninitialisedRegister,
             detail: "return of a register that was never written".to_string(),
             site: site.clone(),
-        });
-    }
-    if v == Value::Void {
-        return Err(ExecError::Malformed {
+        }),
+        // The high word of a `long`/`double` pair is poison, and returning it is
+        // the one way to observe that a method returned the *wrong half* of a
+        // 64-bit value. Reading it as a number would be a plausible wrong answer
+        // of exactly the kind this crate must not produce — see the register
+        // model in `crate::value`.
+        Value::WidePad => Err(ExecError::Malformed {
+            kind: Malformed::TypeMismatch,
+            detail: "return of a wide value's high word, which is the pad rather than a value; \
+                     a long- or double-returning method reads the low word"
+                .to_string(),
+            site: site.clone(),
+        }),
+        Value::Void => Err(ExecError::Malformed {
             kind: Malformed::TypeMismatch,
             detail: "return of a void value from a value-returning method".to_string(),
             site: site.clone(),
-        });
+        }),
+        other => Ok(other),
     }
-    Ok(v)
 }
 
 #[cfg(test)]
 mod tests {
+    // The crate forbids `unwrap` on anything that came out of a file, and that
+    // ban is what keeps a malformed DEX from killing the process. It has no
+    // business in a test: every value unwrapped below was built by the test
+    // itself, and a test that cannot reach its own fixture should fail loudly
+    // rather than contort itself around a type it has already proven.
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
     use super::*;
 
     #[test]
@@ -3285,7 +3776,11 @@ mod tests {
 
     #[test]
     fn a_switch_target_is_relative_to_the_switch_not_the_payload() {
-        let s = Site { method: None, unit: 10, opcode: Some(0x2b) };
+        let s = Site {
+            method: None,
+            unit: 10,
+            opcode: Some(0x2b),
+        };
         assert_eq!(switch_target(10, 5, &s), Ok(15));
         assert_eq!(switch_target(10, -3, &s), Ok(7));
         assert!(switch_target(0, -1, &s).is_err());
@@ -3304,8 +3799,14 @@ mod tests {
     #[test]
     fn component_descriptor_strips_exactly_one_dimension() {
         assert_eq!(component_descriptor("[I"), "I");
-        assert_eq!(component_descriptor("[[Ljava/lang/String;"), "[Ljava/lang/String;");
-        assert_eq!(component_descriptor("Ljava/lang/String;"), "Ljava/lang/String;");
+        assert_eq!(
+            component_descriptor("[[Ljava/lang/String;"),
+            "[Ljava/lang/String;"
+        );
+        assert_eq!(
+            component_descriptor("Ljava/lang/String;"),
+            "Ljava/lang/String;"
+        );
     }
 
     #[test]
@@ -3331,9 +3832,14 @@ mod tests {
         assert!(int_compare(0x36, 2, 1));
         assert!(int_compare(0x37, 1, 2));
         assert!(!int_compare(0x34, 2, 1));
-        for (op, x, want) in
-            [(0x38u8, 0i32, true), (0x39, 0, false), (0x3a, -1, true), (0x3b, -1, false), (0x3c, 1, true), (0x3d, 1, false)]
-        {
+        for (op, x, want) in [
+            (0x38u8, 0i32, true),
+            (0x39, 0, false),
+            (0x3a, -1, true),
+            (0x3b, -1, false),
+            (0x3c, 1, true),
+            (0x3d, 1, false),
+        ] {
             assert_eq!(int_compare_zero(op, x), want, "opcode 0x{op:02x}");
         }
     }

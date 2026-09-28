@@ -113,7 +113,9 @@ pub struct ShimClass {
 impl ShimClass {
     /// Every method on the class, direct then virtual.
     pub fn methods(&self) -> impl Iterator<Item = &'static ShimMethod> {
-        self.direct_methods.iter().chain(self.virtual_methods.iter())
+        self.direct_methods
+            .iter()
+            .chain(self.virtual_methods.iter())
     }
 }
 

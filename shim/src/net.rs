@@ -82,7 +82,13 @@ impl EgressSink {
     /// `HttpURLConnection`, an `HttpsURLConnection`, a `Socket`, a `DatagramSocket`
     /// or a third-party HTTP library. It always fails.
     pub fn request(&mut self, req: &EgressRequest<'_>) -> Result<Never, EgressDenial> {
-        let _ = (req.meta, req.method, req.headers, req.body_bytes, req.timeout_ms);
+        let _ = (
+            req.meta,
+            req.method,
+            req.headers,
+            req.body_bytes,
+            req.timeout_ms,
+        );
         self.denials = self.denials.saturating_add(1);
         Err(EgressDenial::default())
     }
@@ -140,6 +146,9 @@ mod tests {
     fn the_endpoint_string_has_no_query() {
         let meta = RequestMeta::parse("https://api.example.invalid/v1/sync?k=v#f").unwrap();
         let sink = EgressSink::new(PathPolicy::Full);
-        assert_eq!(sink.endpoint_for(&meta), "https://api.example.invalid:443/v1/sync");
+        assert_eq!(
+            sink.endpoint_for(&meta),
+            "https://api.example.invalid:443/v1/sync"
+        );
     }
 }

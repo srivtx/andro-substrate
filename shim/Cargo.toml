@@ -19,6 +19,10 @@ path = "src/lib.rs"
 name = "shim-record"
 path = "src/bin/shim-record.rs"
 
+[[bin]]
+name = "shim-differential"
+path = "src/bin/shim-differential.rs"
+
 [dependencies]
 dexcore = { path = "../tools/dexcore" }
 serde = { version = "1", features = ["derive"] }

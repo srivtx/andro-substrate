@@ -98,9 +98,7 @@ pub mod program;
 pub mod value;
 
 pub use config::{Config, ShimRecord, Stats, DEFAULT_INSTRUCTION_BUDGET, DEFAULT_MAX_CALL_DEPTH};
-pub use error::{
-    Budget, ExecError, ExecResult, Malformed, Site, Termination, Unsupported,
-};
+pub use error::{Budget, ExecError, ExecResult, Malformed, Site, Termination, Unsupported};
 pub use exec::{new_interpreter, Interpreter};
 pub use heap::{ClassId, Heap, Monitor, Object, ObjectKind};
 pub use host::{

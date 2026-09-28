@@ -44,10 +44,12 @@ use std::collections::BTreeMap;
 use crate::classes::{AppDex, ClassLoader};
 use crate::error::{EgressDenial, ShimError, VfsError};
 use crate::event::{
-    CapturePolicy, Detail, FsOp, Group, NativeOutcome, Resolution, Source, SubstrateEvent, Tier,
+    axis_value_suffix, CapturePolicy, Detail, FsOp, Group, NativeOutcome, NetPresentation,
+    Resolution, Source, SubstrateEvent, Tier,
 };
 use crate::layout::{self, BoxNode, Size, TextPolicy, View};
 use crate::net::{EgressRequest, EgressSink};
+use crate::policy::{HostClock, SubstratePolicy};
 use crate::redact::{HeaderNames, HttpMethod, RequestMeta};
 use crate::registry::{self, Behaviour};
 use crate::system::{self, BuildInfo, Capabilities, Clock, SystemTree};
@@ -244,6 +246,17 @@ pub struct PendingException {
 /// Holds every side-effect capability the substrate has. Everything else in the
 /// crate is a helper for one of these fields, and nothing outside this struct
 /// can reach the VFS or the sink.
+///
+/// # The policy field is not a capability
+///
+/// [`substrate_policy`](Shim::substrate_policy) decides what the shim
+/// *returns*, and it is the one field here whose value changes the answers. It
+/// cannot change what the substrate is *allowed to do*: `sink` holds no policy
+/// at all, so no policy value reaches `EgressSink`, and `vfs` holds no policy,
+/// so no policy value can make a read come from anywhere but memory. The
+/// redaction types are not reachable from the policy either — the policy's
+/// fields are five enums, and none of them has a field that could hold a body,
+/// a header value or a query value.
 #[derive(Debug)]
 pub struct Shim {
     pub(crate) loader: ClassLoader,
@@ -254,6 +267,9 @@ pub struct Shim {
     pub(crate) vfs: Vfs,
     pub(crate) sink: EgressSink,
     pub(crate) policy: CapturePolicy,
+    pub(crate) substrate_policy: SubstratePolicy,
+    /// Sampled only under [`TimeMode::HostReal`](crate::policy::TimeMode::HostReal).
+    host_clock: HostClock,
     pub(crate) text_policy: TextPolicy,
     pub(crate) objects: BTreeMap<u32, ObjState>,
     pub(crate) next_id: u32,
@@ -269,26 +285,61 @@ pub struct Shim {
 }
 
 impl Shim {
-    /// Build a shim over one app DEX.
+    /// Build a shim over one app DEX, under the default substrate policy.
     ///
     /// `app_classes` is the app's own descriptor list, which the loader needs so
     /// that a class resolution can say *where* a class came from — an answer a
     /// device arm cannot give at all.
     pub fn new(package: &str, app_classes: Vec<String>) -> Result<Shim, ShimError> {
+        Shim::with_policy(package, app_classes, SubstratePolicy::default())
+    }
+
+    /// Build a shim under an explicit substrate policy.
+    ///
+    /// The only way to run a non-default substrate, so that "which substrate
+    /// produced this" is always a value in a `Shim`, never an ambient
+    /// configuration: no environment variable, no feature flag, no file. A
+    /// recording that says which policy it ran under can always be reproduced
+    /// by constructing the same `Shim`.
+    pub fn with_policy(
+        package: &str,
+        app_classes: Vec<String>,
+        substrate_policy: SubstratePolicy,
+    ) -> Result<Shim, ShimError> {
         let data_dir = VPath::parse(&format!("/data/data/{package}"))?;
         let vfs = Vfs::with_android_skeleton(&data_dir)?;
+        // `identity = refusing` removes the identity classes from the shim's own
+        // table rather than adding a special case to the field path, so the
+        // failure an app sees is an ordinary `NoClassDefFoundError` from the
+        // ordinary classloader — the same mechanism `SUB.FW.CLASS_LOADER` is
+        // about, which is the point.
+        let descriptors: Vec<String> = registry::descriptors()
+            .into_iter()
+            .filter(|d| {
+                substrate_policy.identity.serves_build_class()
+                    || !d.starts_with("Landroid/os/Build")
+            })
+            .collect();
+        let host_clock = substrate_policy
+            .host_clock()
+            .unwrap_or_else(HostClock::sample);
         Ok(Shim {
-            loader: ClassLoader::new(registry::descriptors(), AppDex {
-                package: package.to_string(),
-                classes: app_classes,
-            }),
-            build: BuildInfo::default(),
+            loader: ClassLoader::new(
+                descriptors,
+                AppDex {
+                    package: package.to_string(),
+                    classes: app_classes,
+                },
+            ),
+            build: substrate_policy.identity.environment_identity(),
             capabilities: Capabilities::default(),
             system: SystemTree::default(),
             clock: Clock::new(),
             vfs,
             sink: EgressSink::new(crate::redact::PathPolicy::Full),
             policy: CapturePolicy::default(),
+            substrate_policy,
+            host_clock,
             text_policy: TextPolicy::ShapeOnly,
             objects: BTreeMap::new(),
             next_id: 1,
@@ -298,6 +349,35 @@ impl Shim {
             package: package.to_string(),
             data_dir,
         })
+    }
+
+    /// The substrate policy this shim is answering under.
+    pub fn substrate_policy(&self) -> &SubstratePolicy {
+        &self.substrate_policy
+    }
+
+    /// The virtual time, and the time the `time` axis presents for it.
+    ///
+    /// Two functions because they are two different questions. The virtual clock
+    /// is the recorded schedule and is the substrate's own bookkeeping; the
+    /// presented value is what the app is shown, and the two are equal under
+    /// every default. Every clock read in the crate goes through here, so no
+    /// clock answer can bypass the axis.
+    pub(crate) fn now_ms(&self) -> u64 {
+        self.substrate_policy
+            .time
+            .elapsed(self.clock.now_ms(), self.host_clock)
+    }
+
+    /// The virtual time, untransformed. For the recorded schedule and for the
+    /// "the time axis transformed this from X" clause in the probe detail.
+    pub(crate) fn virtual_ms(&self) -> u64 {
+        self.clock.now_ms()
+    }
+
+    /// The value the `time` axis presents for `System.currentTimeMillis`.
+    pub(crate) fn wall_ms(&self) -> u64 {
+        self.substrate_policy.time.wall(self.host_clock)
     }
 
     /// Replace the path policy. Events already recorded keep the path they were
@@ -419,6 +499,11 @@ impl Shim {
                     tree.leaf_area(),
                     layout::metrics::MODEL
                 ),
+                // No axis: the layout arithmetic is the shim's own work on the
+                // app's own tree, not a fabricated environment answer. The
+                // missing rasteriser is declared in `native`/`gfx` `limits`,
+                // which is where an absence of a *capability* belongs.
+                axis: None,
             },
         });
         Ok(tree)
@@ -484,9 +569,15 @@ impl Shim {
     }
 
     /// Record an event, stamping the sequence and the current virtual time.
+    ///
+    /// The **virtual** time, not the time the `time` axis presents: `t_mono_ms`
+    /// is the recording's own timeline and the substrate owns it, so a `frozen`
+    /// or `scaled` policy changes what the app is *told* without rewriting the
+    /// recorder's clock. See [`Shim::read_system_tree`] for the same decision
+    /// stated at the other site.
     pub(crate) fn record(&mut self, mut ev: SubstrateEvent) {
         ev.seq = self.events.len() as u64;
-        ev.t_mono_ms = self.clock.now_ms();
+        ev.t_mono_ms = self.virtual_ms();
         self.events.push(ev);
     }
 
@@ -497,14 +588,34 @@ impl Shim {
     }
 
     /// Read a system-tree path, recording both the `fs` and the `probes` event.
+    ///
+    /// The three `system_fs` values produce three different observations from
+    /// the same call, and all three record the *attempt*:
+    ///
+    /// * `fabricated` — an `fs` read with a plausible length and a `probes` entry
+    ///   carrying the fabricated value.
+    /// * `empty` — an `fs` read of zero bytes, plus the `probes` entry, because a
+    ///   path that exists and is empty is not a path that is missing.
+    /// * `absent` — an `fs` `open` with `ENOENT`, **and** a `probes` entry saying
+    ///   so. The old code recorded only the `fs` event on this path, which meant
+    ///   the loudest substrate of the three was also the least legible one: a
+    ///   reader saw an `ENOENT` with no statement that the substrate had chosen
+    ///   it.
     fn read_system_tree(&mut self, input: &str, op: FsOp) -> Option<String> {
         let path = VPath::parse(input).ok()?;
         let base = self.next_seq();
-        let t = self.clock.now_ms();
-        match self.system.read(&path) {
+        // The *virtual* time, deliberately: `t_mono_ms` is the recording's own
+        // timeline and belongs to the recorder, not to the app. The `time` axis
+        // governs what the app is *shown*, which is recorded in the probe detail
+        // with both values. Letting the axis rewrite the timeline would make every
+        // pointer in the document move under a `scaled` or `frozen` policy and
+        // bury the facts that actually did.
+        let t = self.virtual_ms();
+        let mode = self.substrate_policy.system_fs;
+        match self.system.read_with(&path, mode) {
             Some((contents, assumption)) => {
                 let (fs_ev, probe_ev) =
-                    system::sysfs_events(&path, Some(contents), assumption, base, t);
+                    system::sysfs_events(&path, Some(contents), assumption, mode, base, t);
                 self.record_raw(fs_ev);
                 self.record_raw(probe_ev);
                 Some(contents.to_string())
@@ -525,6 +636,26 @@ impl Shim {
                         path: path.as_str().to_string(),
                         bytes: 0,
                         result: Err(VfsError::NoEntry),
+                    },
+                });
+                // The probe too, with the axis value spelled out. See the
+                // function's own note for why this is not redundant.
+                self.record_raw(SubstrateEvent {
+                    seq: base.saturating_add(1),
+                    t_mono_ms: t,
+                    group: Group::Probes,
+                    source: Source::SyntheticSysfs,
+                    tier: Tier::T0Direct,
+                    assumption: Some(assumption),
+                    detail: Detail::Probes {
+                        pattern: system::pattern_for_sysfs(path.as_str()),
+                        detail: format!(
+                            "{} -> ENOENT under the substrate's system_fs axis{}; the read failed \
+                             and no content was invented. The attempt is the measurement.",
+                            path,
+                            axis_value_suffix(crate::policy::Axis::SystemFs, mode.as_str())
+                        ),
+                        axis: Some(crate::policy::Axis::SystemFs),
                     },
                 });
                 None
@@ -548,7 +679,13 @@ impl Shim {
     /// A VFS file operation, recorded whatever the outcome. A denial is
     /// information: an app probing for `/system/build.prop` must appear in the
     /// trace whether or not the node exists.
-    pub(crate) fn vfs_op(&mut self, op: FsOp, path: &VPath, bytes: u64, result: Result<u64, VfsError>) {
+    pub(crate) fn vfs_op(
+        &mut self,
+        op: FsOp,
+        path: &VPath,
+        bytes: u64,
+        result: Result<u64, VfsError>,
+    ) {
         let assumption = if path.under(&self.data_dir) {
             AssumptionId::FsDataDir
         } else {
@@ -586,19 +723,27 @@ impl Shim {
         r
     }
 
-    /// Read a path, routing `/proc` and `/sys` to the fabricated system tree.
+    /// Read a path, routing `/proc`, `/sys` and `/dev` to the fabricated system
+    /// tree.
+    ///
+    /// A modelled path that the `system_fs` axis resolves to *nothing* is an
+    /// error, not an empty read. This was wrong before the policy family: a
+    /// missing `/proc` entry returned `Ok([])`, so an app could not tell "the
+    /// file is empty" from "the file is not there" — and the app, not the
+    /// recording, is where that distinction is acted on. With the axis, an empty
+    /// file and an absent one are two declared values of one axis, and the only
+    /// way they are two values is if the substrate tells the truth about which
+    /// one it is serving.
     pub(crate) fn read_path(&mut self, input: &str) -> Result<Vec<u8>, ShimError> {
         let path = VPath::parse(input)?;
         if self.is_system_path(&path) {
-            return Ok(self
-                .read_system_tree(path.as_str(), FsOp::Read)
-                .unwrap_or_default()
-                .into_bytes());
+            return match self.read_system_tree(path.as_str(), FsOp::Read) {
+                Some(contents) => Ok(contents.into_bytes()),
+                None => Err(ShimError::Vfs(VfsError::NoEntry)),
+            };
         }
-        self.with_vfs(FsOp::Read, &path, |vfs, p| {
-            vfs.read(p).map(|b| b.to_vec())
-        })
-        .map_err(ShimError::Vfs)
+        self.with_vfs(FsOp::Read, &path, |vfs, p| vfs.read(p).map(|b| b.to_vec()))
+            .map_err(ShimError::Vfs)
     }
 
     /// Write a path. A write into `/proc` or `/sys` is refused, which is exactly
@@ -613,14 +758,33 @@ impl Shim {
             .map_err(ShimError::Vfs)
     }
 
+    /// Whether a path is served by the `system_fs` axis's fabricated tree
+    /// rather than by the VFS.
+    ///
+    /// `/dev` is here because the tree models `/dev/urandom` and the classifier,
+    /// the `limits` prose and the axis statements all count it. A model that
+    /// lists a path the router never reaches is a model that cannot be claimed
+    /// for, so the router is the one that gives way.
     fn is_system_path(&self, path: &VPath) -> bool {
-        path.as_str().starts_with("/proc/") || path.as_str().starts_with("/sys/")
+        let p = path.as_str();
+        p.starts_with("/proc/") || p.starts_with("/sys/") || p.starts_with("/dev/")
     }
 
     /// Terminate a request at the sink, recording the redacted attempt.
     ///
     /// The one and only egress path. Every networking in the substrate — URL,
     /// HttpURLConnection, raw Socket, WebView.loadUrl — arrives here.
+    ///
+    /// # The refusal is unconditional and the policy cannot reach it
+    ///
+    /// `EgressSink::request` is called on **every** policy value and returns
+    /// `Err(EgressDenial)` on every one of them, because its return type is
+    /// `Result<Never, EgressDenial>` and `Never` is uninhabited. The `network`
+    /// axis therefore has exactly one thing it can influence and it is
+    /// post-refusal: [`NetPresentation`]. A substrate that presented a 200 did
+    /// not transmit a request; it showed the app a string the policy declared,
+    /// and the recording says so on the same event, in the `network` block, and
+    /// in the `substrate_policy` declaration.
     pub(crate) fn egress(
         &mut self,
         meta: RequestMeta,
@@ -641,6 +805,12 @@ impl Shim {
             timeout_ms: timeout,
         };
         let outcome = self.sink.request(&req);
+        // The presentation, chosen by the policy, layered on top of the refusal
+        // that has already happened.
+        let presentation = match self.substrate_policy.network.loopback_response() {
+            Some(r) => NetPresentation::Loopback(r),
+            None => NetPresentation::Denied,
+        };
         // Fold in whatever header names the app set, if any. Only names.
         if let Some(st) = self.objects.values().find_map(|s| s.connection.as_ref()) {
             for n in st.headers.names() {
@@ -660,6 +830,7 @@ impl Shim {
                 headers,
                 body_bytes: body,
                 outcome: outcome.clone().map(|_| ()),
+                presentation,
                 recorded_path,
             },
         });
@@ -736,6 +907,7 @@ impl Shim {
                 detail: format!(
                     "catch({class}) with nothing in flight; the app caught an exception the shim did not throw"
                 ),
+                axis: None,
             },
         });
     }
@@ -878,10 +1050,12 @@ impl ShimCaller for Shim {
         descriptor: &str,
         args: &[Value],
     ) -> Result<Value, ShimError> {
-        let (def, method) = self.lookup(class, name).ok_or_else(|| ShimError::NoSuchMethod {
-            class: class.to_string(),
-            method: name.to_string(),
-        })?;
+        let (def, method) = self
+            .lookup(class, name)
+            .ok_or_else(|| ShimError::NoSuchMethod {
+                class: class.to_string(),
+                method: name.to_string(),
+            })?;
         if method.access_flags & dexcore::model::access::ACC_ABSTRACT != 0 {
             return Err(ShimError::NoSuchMethod {
                 class: def.descriptor.to_string(),
@@ -899,7 +1073,11 @@ impl ShimCaller for Shim {
         // here is better than a second convention an interpreter has to know.
         let is_static = method.access_flags & dexcore::model::access::ACC_STATIC != 0
             || method.access_flags & dexcore::model::access::ACC_CONSTRUCTOR != 0;
-        let params: &[Value] = if is_static { args } else { args.get(1..).unwrap_or(&[]) };
+        let params: &[Value] = if is_static {
+            args
+        } else {
+            args.get(1..).unwrap_or(&[])
+        };
         match method.behaviour {
             Behaviour::Init | Behaviour::Construct => {
                 let v = self.ref_for(class);

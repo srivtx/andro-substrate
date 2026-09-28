@@ -67,7 +67,10 @@ fn report_the_measured_coverage() {
     let all = reference_set();
     let covered: BTreeSet<&String> = all.iter().filter(|c| registry::find(c).is_some()).collect();
     let android_total = all.iter().filter(|c| c.starts_with("Landroid/")).count();
-    let android_covered = covered.iter().filter(|c| c.starts_with("Landroid/")).count();
+    let android_covered = covered
+        .iter()
+        .filter(|c| c.starts_with("Landroid/"))
+        .count();
     let java_total = all.len() - android_total;
     let java_covered = covered.len() - android_covered;
 
@@ -90,7 +93,12 @@ fn report_the_measured_coverage() {
         covered.len(),
         pct(covered.len(), all.len())
     );
-    println!("SHIM:    {} classes, {} methods, {} fields", registry::class_count(), registry::method_count(), registry::field_count());
+    println!(
+        "SHIM:    {} classes, {} methods, {} fields",
+        registry::class_count(),
+        registry::method_count(),
+        registry::field_count()
+    );
     for (k, v) in shim::emit::behaviour_counts() {
         println!("         {k}: {v}");
     }
@@ -101,7 +109,10 @@ fn report_the_measured_coverage() {
 
     // Floor, so a coverage regression is a test failure and not a paragraph in a
     // document that nobody re-reads. The measured value is far above it.
-    assert!(covered.len() * 2 >= all.len(), "coverage has fallen below half");
+    assert!(
+        covered.len() * 2 >= all.len(),
+        "coverage has fallen below half"
+    );
 }
 
 fn pct(a: usize, b: usize) -> f64 {
@@ -120,7 +131,12 @@ fn method_coverage() -> (usize, usize) {
         for i in 0..d.method_count() {
             if let Ok(m) = d.method_at(i) {
                 if shim::classes::is_framework_namespace(&m.class) {
-                    all.insert((m.class.clone(), m.name.clone(), m.parameters.join(""), m.return_type.clone()));
+                    all.insert((
+                        m.class.clone(),
+                        m.name.clone(),
+                        m.parameters.join(""),
+                        m.return_type.clone(),
+                    ));
                 }
             }
         }
@@ -143,7 +159,10 @@ fn method_coverage_is_measured_and_floored() {
         "METHODS referenced {referenced} covered {covered} ({:.1}%)",
         100.0 * covered as f64 / referenced as f64
     );
-    assert!(referenced > 150, "the corpus should reference a real number of methods");
+    assert!(
+        referenced > 150,
+        "the corpus should reference a real number of methods"
+    );
     // The floor is a fifth, well below the measured value, and exists so a
     // coverage *regression* is a test failure rather than a paragraph nobody
     // re-reads.
@@ -263,7 +282,8 @@ fn nothing_the_table_marks_observation_bearing_is_inert() {
     let counts = shim::emit::behaviour_counts();
     let total: usize = counts.values().sum();
     let inert = counts.get("inert").copied().unwrap_or(0);
-    let observation = counts.get("probe").copied().unwrap_or(0) + counts.get("dispatch").copied().unwrap_or(0);
+    let observation =
+        counts.get("probe").copied().unwrap_or(0) + counts.get("dispatch").copied().unwrap_or(0);
     println!("behaviour counts: {counts:?}");
     assert!(total > 200, "the table should be substantial");
     assert!(
@@ -291,7 +311,9 @@ it; either move it or document the exception",
         // class pretending to be `android.*`, or vice versa.
         if c.descriptor.starts_with("Landroid/") {
             assert!(
-                c.superclass.map(shim::classes::is_framework_namespace).unwrap_or(true)
+                c.superclass
+                    .map(shim::classes::is_framework_namespace)
+                    .unwrap_or(true)
                     || s_is_java_lang_object(c.superclass),
                 "{} has a superclass outside the framework namespace",
                 c.descriptor
@@ -332,10 +354,13 @@ fn the_supersede_boundary_is_where_the_decision_says_it_is() {
         "La/b/Main;".to_string(),
     ];
     app.sort();
-    let l = shim::classes::ClassLoader::new(registry::descriptors(), shim::classes::AppDex {
-        package: "a.b".to_string(),
-        classes: app,
-    });
+    let l = shim::classes::ClassLoader::new(
+        registry::descriptors(),
+        shim::classes::AppDex {
+            package: "a.b".to_string(),
+            classes: app,
+        },
+    );
     // The shim wins, every time.
     for c in ["Landroid/app/Activity;", "Landroid/os/Build;"] {
         assert_eq!(
@@ -346,10 +371,7 @@ fn the_supersede_boundary_is_where_the_decision_says_it_is() {
     }
     // A class only the app has is unaffected: supersede applies to the framework
     // namespaces, and an app's own `a.b.Main` is the app's.
-    assert_eq!(
-        l.resolve("La/b/Main;").0,
-        shim::event::Resolution::AppDex
-    );
+    assert_eq!(l.resolve("La/b/Main;").0, shim::event::Resolution::AppDex);
     // A class nobody has is unresolvable, which is SUB.FW.CLASS_LOADER.
     assert_eq!(
         l.resolve("Lcom/google/gson/Gson;").0,

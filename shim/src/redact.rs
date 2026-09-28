@@ -290,7 +290,11 @@ impl HeaderNames {
             .filter(|n| {
                 matches!(
                     n.as_str(),
-                    "authorization" | "cookie" | "proxy-authorization" | "x-api-key" | "x-auth-token"
+                    "authorization"
+                        | "cookie"
+                        | "proxy-authorization"
+                        | "x-api-key"
+                        | "x-auth-token"
                 )
             })
             .cloned()
@@ -341,10 +345,7 @@ impl RequestMeta {
         if url.is_empty() {
             return Err(url_err(UrlProblem::Empty));
         }
-        if url
-            .bytes()
-            .any(|b| b < 0x21 || b == 0x7f || b >= 0x80)
-        {
+        if url.bytes().any(|b| b < 0x21 || b == 0x7f || b >= 0x80) {
             return Err(url_err(UrlProblem::IllegalByte));
         }
 
@@ -364,9 +365,7 @@ impl RequestMeta {
         };
 
         // Authority ends at the first '/', '?' or '#'.
-        let auth_end = rest
-            .find(['/', '?', '#'])
-            .unwrap_or(rest.len());
+        let auth_end = rest.find(['/', '?', '#']).unwrap_or(rest.len());
         let authority = &rest[..auth_end];
         let tail = &rest[auth_end..];
 
@@ -452,10 +451,7 @@ impl RequestMeta {
         if path_raw.is_empty() {
             return Err(url_err(UrlProblem::NoHost));
         }
-        if path_raw
-            .bytes()
-            .any(|b| b < 0x21 || b == 0x7f)
-        {
+        if path_raw.bytes().any(|b| b < 0x21 || b == 0x7f) {
             return Err(url_err(UrlProblem::IllegalByte));
         }
         // Belt and braces: the split above cannot produce a '?' but the
@@ -479,7 +475,11 @@ impl RequestMeta {
                 let decoded_ok = name
                     .bytes()
                     .all(|b| b.is_ascii_alphanumeric() || b"-_.%~".contains(&b));
-                let clean = if decoded_ok { name.to_string() } else { ":opaque".to_string() };
+                let clean = if decoded_ok {
+                    name.to_string()
+                } else {
+                    ":opaque".to_string()
+                };
                 if !query_param_names.contains(&clean) {
                     query_param_names.push(clean);
                 }
@@ -653,7 +653,10 @@ mod tests {
         ))
         .expect("well-formed URL");
         assert_eq!(m.path, "/v1/sync");
-        assert_eq!(m.query_param_names, vec!["token".to_string(), "state".to_string()]);
+        assert_eq!(
+            m.query_param_names,
+            vec!["token".to_string(), "state".to_string()]
+        );
         assert!(m.query_present);
         assert!(m.fragment_present);
         // And nothing that could be re-serialised back into a credential.

@@ -147,12 +147,18 @@ pub struct ThrowSpec {
 impl ThrowSpec {
     /// A throwable with a message.
     pub fn new(class: &'static str, message: impl Into<String>) -> ThrowSpec {
-        ThrowSpec { class, message: Some(message.into()) }
+        ThrowSpec {
+            class,
+            message: Some(message.into()),
+        }
     }
 
     /// A throwable with no message.
     pub fn bare(class: &'static str) -> ThrowSpec {
-        ThrowSpec { class, message: None }
+        ThrowSpec {
+            class,
+            message: None,
+        }
     }
 }
 
@@ -334,7 +340,11 @@ impl Host for NoHost {}
 /// Install a host.
 ///
 /// Convenient for callers that build the interpreter in one expression.
-pub fn with_host<'a, H: Host + 'static>(dex: dexcore::DexReader<'a>, config: crate::config::Config, host: H) -> crate::ExecResult<crate::Interpreter<'a>> {
+pub fn with_host<'a, H: Host + 'static>(
+    dex: dexcore::DexReader<'a>,
+    config: crate::config::Config,
+    host: H,
+) -> crate::ExecResult<crate::Interpreter<'a>> {
     let mut vm = crate::new_interpreter(dex, config)?;
     vm.set_host(Box::new(host));
     Ok(vm)

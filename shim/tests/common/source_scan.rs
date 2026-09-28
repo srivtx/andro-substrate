@@ -150,7 +150,10 @@ impl Scanner {
 
     /// Whether the byte at `at` is executable source.
     pub fn is_code(&self, at: usize) -> bool {
-        self.regions.get(at).map(|r| *r == Region::Code).unwrap_or(false)
+        self.regions
+            .get(at)
+            .map(|r| *r == Region::Code)
+            .unwrap_or(false)
     }
 
     /// The byte offsets of every occurrence of `needle` that sits in **code**.
@@ -251,7 +254,11 @@ fn scan_char_literal(b: &[u8], start: usize) -> Option<usize> {
         while i < n && !b[i].is_ascii_alphabetic() && b[i] != b'\'' {
             i += 1;
         }
-        return if i < n && b[i] == b'\'' { Some(i) } else { None };
+        return if i < n && b[i] == b'\'' {
+            Some(i)
+        } else {
+            None
+        };
     }
     // A single (possibly multi-byte) scalar, then a closing quote. A closing
     // quote more than four bytes later is a lifetime, not a literal.

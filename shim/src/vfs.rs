@@ -135,7 +135,9 @@ impl VPath {
             },
             Some((head, _)) => {
                 if head.is_empty() {
-                    VPath { normalised: "/".to_string() }
+                    VPath {
+                        normalised: "/".to_string(),
+                    }
                 } else {
                     VPath {
                         normalised: head.to_string(),
@@ -154,7 +156,9 @@ impl VPath {
             return true;
         }
         self.normalised == prefix.normalised
-            || self.normalised.starts_with(&format!("{}/", prefix.normalised))
+            || self
+                .normalised
+                .starts_with(&format!("{}/", prefix.normalised))
     }
 
     /// Append a component. Never fails: the depth check happens on parse, and
@@ -265,7 +269,10 @@ impl Vfs {
 
     /// Whether a node is a directory.
     pub fn is_dir(&self, path: &VPath) -> bool {
-        self.nodes.get(&path.normalised).map(Node::is_dir).unwrap_or(false)
+        self.nodes
+            .get(&path.normalised)
+            .map(Node::is_dir)
+            .unwrap_or(false)
     }
 
     /// `stat`: the node, or `NoEntry`.
@@ -297,10 +304,12 @@ impl Vfs {
     /// `Context.getDir` both behave.
     pub fn mkdir(&mut self, path: &VPath) -> Result<(), VfsError> {
         if path.normalised == "/" {
-            self.nodes.entry(path.normalised.clone()).or_insert(Node::Dir {
-                children: Vec::new(),
-                mode: 0o755,
-            });
+            self.nodes
+                .entry(path.normalised.clone())
+                .or_insert(Node::Dir {
+                    children: Vec::new(),
+                    mode: 0o755,
+                });
             return Ok(());
         }
         if self.nodes.contains_key(&path.normalised) {
@@ -339,7 +348,9 @@ impl Vfs {
             return Err(VfsError::OutOfSpace);
         }
         if self.nodes.contains_key(&path.normalised) {
-            if let Some(Node::Dir { .. }) = self.nodes.get(&path.normalised) { return Err(VfsError::IsDirectory) }
+            if let Some(Node::Dir { .. }) = self.nodes.get(&path.normalised) {
+                return Err(VfsError::IsDirectory);
+            }
         }
         if let Some(existing) = self.nodes.get(&path.normalised) {
             self.total_bytes = self.total_bytes.saturating_sub(existing.size());
@@ -377,7 +388,10 @@ impl Vfs {
         if node.is_dir() && node.size() > 0 {
             return Err(VfsError::Denied);
         }
-        let removed = self.nodes.remove(&path.normalised).ok_or(VfsError::NoEntry)?;
+        let removed = self
+            .nodes
+            .remove(&path.normalised)
+            .ok_or(VfsError::NoEntry)?;
         self.total_bytes = self.total_bytes.saturating_sub(removed.size());
         let parent = path.parent().normalised;
         if let Some(Node::Dir { children, .. }) = self.nodes.get_mut(&parent) {
@@ -394,9 +408,15 @@ impl Vfs {
     pub fn listing(&self) -> Vec<(String, u64, u32)> {
         self.nodes
             .iter()
-            .map(|(p, n)| (p.clone(), n.size(), match n {
-                Node::Dir { mode, .. } | Node::File { mode, .. } => *mode,
-            }))
+            .map(|(p, n)| {
+                (
+                    p.clone(),
+                    n.size(),
+                    match n {
+                        Node::Dir { mode, .. } | Node::File { mode, .. } => *mode,
+                    },
+                )
+            })
             .collect()
     }
 
@@ -446,7 +466,12 @@ mod tests {
 
     #[test]
     fn hostile_paths_error_rather_than_panic() {
-        for bad in ["", "relative/path", "/a\0b", &format!("/{}", "x".repeat(2000))] {
+        for bad in [
+            "",
+            "relative/path",
+            "/a\0b",
+            &format!("/{}", "x".repeat(2000)),
+        ] {
             assert!(VPath::parse(bad).is_err(), "{bad:?} should be refused");
         }
         let deep = format!("/{}", vec!["x"; MAX_DEPTH + 5].join("/"));
@@ -460,7 +485,10 @@ mod tests {
         v.write(&p("/data/data/a.b/files/t"), b"hello").unwrap();
         assert_eq!(v.read(&p("/data/data/a.b/files/t")).unwrap(), b"hello");
         assert_eq!(v.stat(&p("/data/data/a.b/files/t")).unwrap().size(), 5);
-        assert_eq!(v.read(&p("/data/data/a.b/files")).unwrap_err(), VfsError::IsDirectory);
+        assert_eq!(
+            v.read(&p("/data/data/a.b/files")).unwrap_err(),
+            VfsError::IsDirectory
+        );
         assert_eq!(v.read(&p("/nope")).unwrap_err(), VfsError::NoEntry);
     }
 

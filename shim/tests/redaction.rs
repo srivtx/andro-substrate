@@ -51,30 +51,51 @@ fn a_signed_url_reaches_the_recording_without_its_signature() {
     let url = format!(
         "https://api.substrate.invalid/v1/sync?X-Amz-Signature={CANARY_QUERY}&user={CANARY_USER}#frag"
     );
-    s.invoke("Ljava/net/URL;", "<init>", "(Ljava/lang/String;)V", &[Value::Str(url)])
-        .expect("construct");
+    s.invoke(
+        "Ljava/net/URL;",
+        "<init>",
+        "(Ljava/lang/String;)V",
+        &[Value::Str(url)],
+    )
+    .expect("construct");
     let conn = s
-        .invoke("Ljava/net/URL;", "openConnection", "()Ljava/net/URLConnection;", &[Value::Ref("Ljava/net/URL;".into(), 1)])
+        .invoke(
+            "Ljava/net/URL;",
+            "openConnection",
+            "()Ljava/net/URLConnection;",
+            &[Value::Ref("Ljava/net/URL;".into(), 1)],
+        )
         .expect("openConnection");
     s.invoke(
         "Ljava/net/URLConnection;",
         "setRequestProperty",
         "(Ljava/lang/String;Ljava/lang/String;)V",
-        &[conn.clone(), Value::Str("Authorization".into()), Value::Str(CANARY_BEARER.into())],
+        &[
+            conn.clone(),
+            Value::Str("Authorization".into()),
+            Value::Str(CANARY_BEARER.into()),
+        ],
     )
     .expect("setRequestProperty");
     assert!(
-        s.invoke("Ljava/net/URLConnection;", "connect", "()V", &[conn]).is_err(),
+        s.invoke("Ljava/net/URLConnection;", "connect", "()V", &[conn])
+            .is_err(),
         "connect records the attempt and then throws"
     );
 
     let blob = everything(&s);
     for canary in [CANARY_QUERY, CANARY_BEARER, CANARY_USER] {
-        assert!(!blob.contains(canary), "{canary:?} survived into the shim's state");
+        assert!(
+            !blob.contains(canary),
+            "{canary:?} survived into the shim's state"
+        );
     }
     // The *names* do survive, because a signed-URL finding is only useful if the
     // reader can see that a signature was sent at all.
-    assert!(blob.contains("X-Amz-Signature"), "parameter names are the finding");
+    assert!(
+        blob.contains("X-Amz-Signature"),
+        "parameter names are the finding"
+    );
     assert!(blob.contains("authorization"), "so is the header name");
     assert!(!blob.contains('?'), "no path may carry a query string");
 }
@@ -90,8 +111,14 @@ fn the_committed_recording_contains_no_canary() {
         shim::scenario::CANARY_QUERY_VALUE,
         shim::scenario::CANARY_HEADER_VALUE,
     ] {
-        assert!(!committed.contains(canary), "{canary:?} is in the committed recording");
-        assert!(!fresh.contains(canary), "{canary:?} is in a freshly generated recording");
+        assert!(
+            !committed.contains(canary),
+            "{canary:?} is in the committed recording"
+        );
+        assert!(
+            !fresh.contains(canary),
+            "{canary:?} is in a freshly generated recording"
+        );
     }
     // And the committed file is exactly what the recorder produces, so the two
     // checks are about the same bytes.
@@ -153,7 +180,10 @@ fn header_names_has_no_api_that_accepts_a_value() {
     // Brace-matched, so the check covers the whole impl block and does not depend
     // on where the first method happens to end.
     let start = src.find("impl HeaderNames {").expect("the impl block");
-    let open = src[start..].find('{').map(|i| start + i).expect("open brace");
+    let open = src[start..]
+        .find('{')
+        .map(|i| start + i)
+        .expect("open brace");
     let mut depth = 0usize;
     let mut end = src.len();
     for (i, c) in src[open..].char_indices() {
@@ -258,11 +288,19 @@ body; got {lengths:?}"
         .map(|a| a["auth_header_names"].clone())
         .collect();
     assert!(
-        auth.iter().any(|v| v.as_array().map(|a| a.contains(&serde_json::json!("authorization"))).unwrap_or(false)),
+        auth.iter().any(|v| v
+            .as_array()
+            .map(|a| a.contains(&serde_json::json!("authorization")))
+            .unwrap_or(false)),
         "an Authorization header was set, and its name is a finding: {auth:?}"
     );
     assert!(
-        auth.iter().all(|v| v.as_array().map(|a| a.iter().all(|n| n.as_str().map(|s| s.len() < 40).unwrap_or(false))).unwrap_or(true)),
+        auth.iter().all(|v| v
+            .as_array()
+            .map(|a| a
+                .iter()
+                .all(|n| n.as_str().map(|s| s.len() < 40).unwrap_or(false)))
+            .unwrap_or(true)),
         "and a name is all that is recorded"
     );
 }
@@ -352,7 +390,10 @@ fn hostile_urls_error_rather_than_panic_or_leak() {
             Ok(m) => {
                 // If it parses, it must be safe to hold: no `?` in the path, and
                 // no query value recoverable.
-                assert!(!m.path.contains('?'), "{c:?} produced a path with a query: {m:?}");
+                assert!(
+                    !m.path.contains('?'),
+                    "{c:?} produced a path with a query: {m:?}"
+                );
                 assert!(m.port > 0 || m.scheme == Scheme::Other, "{c:?} -> {m:?}");
             }
         }
@@ -429,14 +470,20 @@ fn a_bundle_value_is_held_for_the_app_but_never_recorded() {
             "Landroid/os/Bundle;",
             "getString",
             "(Ljava/lang/String;)Ljava/lang/String;",
-            &[Value::Ref("Landroid/os/Bundle;".into(), 1), Value::Str("auth_token".into())],
+            &[
+                Value::Ref("Landroid/os/Bundle;".into(), 1),
+                Value::Str("auth_token".into()),
+            ],
         )
         .expect("getString");
     assert_eq!(back, Value::Str(CANARY_BEARER.into()));
     // And it is in no event.
     let blob = everything(&s);
     assert!(blob.contains("auth_token"), "the key is the finding");
-    assert!(!blob.contains(CANARY_BEARER), "the value must not be recorded");
+    assert!(
+        !blob.contains(CANARY_BEARER),
+        "the value must not be recorded"
+    );
     // So no event carries it.
     for e in s.events() {
         assert!(!format!("{:?}", e.detail).contains(CANARY_BEARER));
@@ -448,14 +495,33 @@ fn a_bundle_value_is_held_for_the_app_but_never_recorded() {
 fn view_text_never_reaches_a_box_tree_by_default() {
     // An `EditText` holds whatever the user typed. The box tree records the
     // string's shape, never a character.
-    let mut v = shim::View::text("pw", "EditText", shim::layout::NodeKind::EditText, CANARY_BEARER);
+    let mut v = shim::View::text(
+        "pw",
+        "EditText",
+        shim::layout::NodeKind::EditText,
+        CANARY_BEARER,
+    );
     v.layout_params.width = shim::layout::Dimension::MatchParent;
-    let mut root = shim::View::group("root", "LinearLayout", shim::layout::NodeKind::LinearLayout, shim::layout::Orientation::Vertical);
+    let mut root = shim::View::group(
+        "root",
+        "LinearLayout",
+        shim::layout::NodeKind::LinearLayout,
+        shim::layout::Orientation::Vertical,
+    );
     root.layout_params.width = shim::layout::Dimension::MatchParent;
     root.add(v);
-    let tree = root.run(shim::layout::Size { width: 360, height: 640 }, shim::layout::TextPolicy::ShapeOnly);
+    let tree = root.run(
+        shim::layout::Size {
+            width: 360,
+            height: 640,
+        },
+        shim::layout::TextPolicy::ShapeOnly,
+    );
     let json = shim::layout::tree_to_json(&tree).expect("json");
-    assert!(!json.contains(CANARY_BEARER), "text leaked into the box tree: {json}");
+    assert!(
+        !json.contains(CANARY_BEARER),
+        "text leaked into the box tree: {json}"
+    );
     // The shape is enough to say "this field is long" without holding it.
     let node = tree.children.first().expect("child");
     let shape = node.text.as_ref().expect("a shape");

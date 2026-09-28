@@ -30,18 +30,18 @@
   "coverage": {
     "methodsWithCode": 4196811,
     "methodsUndecodable": 0,
-    "methodsTruncatedTail": 5612,
+    "methodsTruncatedTail": 0,
     "methodsTriesUnparsed": 10206,
     "appsWithAnyUndecodable": 0
   },
   "callSiteSectionsPresent": 0,
   "methodHandleSectionsPresent": 0,
   "headline": {
-    "invokePolymorphic": 82,
-    "invokeCustom": 81,
-    "eitherDynamicInvoke": 119,
-    "constMethodHandle": 119,
-    "constMethodType": 118,
+    "invokePolymorphic": 2,
+    "invokeCustom": 0,
+    "eitherDynamicInvoke": 2,
+    "constMethodHandle": 0,
+    "constMethodType": 0,
     "declaredNativeMethods": 64,
     "loadLibraryCallSites": 63,
     "loadLibraryNamesBound": 56,
@@ -55,11 +55,11 @@
     "dynamicCode": 10
   },
   "headlineAsCounts": {
-    "invokePolymorphic": 82,
-    "invokeCustom": 81,
-    "eitherDynamicInvoke": 119,
-    "constMethodHandle": 119,
-    "constMethodType": 118,
+    "invokePolymorphic": 2,
+    "invokeCustom": 0,
+    "eitherDynamicInvoke": 2,
+    "constMethodHandle": 0,
+    "constMethodType": 0,
     "declaredNativeMethods": 64,
     "loadLibraryCallSites": 63,
     "loadLibraryNamesBound": 56,
@@ -91,10 +91,10 @@
     "dynamicCode": "an external DexClassLoader / InMemoryDexClassLoader / PathClassLoader"
   },
   "dexOnlyStratumHeadline": {
-    "invokePolymorphic": 27,
-    "invokeCustom": 30,
-    "eitherDynamicInvoke": 59,
-    "constMethodHandle": 59,
+    "invokePolymorphic": 0,
+    "invokeCustom": 0,
+    "eitherDynamicInvoke": 0,
+    "constMethodHandle": 0,
     "declaredNativeMethods": 4,
     "loadLibraryCallSites": 3,
     "loadLibraryNamesBound": 3,
@@ -108,7 +108,7 @@
     "dynamicCode": 4
   },
   "nativeStratumHeadline": {
-    "eitherDynamicInvoke": 60,
+    "eitherDynamicInvoke": 2,
     "declaredNativeMethods": 60,
     "loadLibraryCallSites": 60,
     "libEntries": 60,
@@ -117,15 +117,15 @@
     "reflectionCallSites": 60
   },
   "bands": {
-    "REFUSE": 119,
+    "REFUSE": 64,
     "DEGRADE": 0,
-    "LIKELY_RUNS": 0,
-    "MINIMAL": 1,
+    "LIKELY_RUNS": 4,
+    "MINIMAL": 52,
     "UNKNOWN": 0
   },
   "gates": {
     "NATIVE_PAYLOAD": 60,
-    "DYNAMIC_INVOKE": 119,
+    "DYNAMIC_INVOKE": 2,
     "PLAY_SERVICES": 0,
     "NATIVE_METHOD_UNIMPLEMENTED": 4
   },
@@ -141,14 +141,14 @@
       "id": "SUB.FW.SERIALIZATION",
       "apps": 120,
       "members": 17244,
-      "callSites": 139978,
+      "callSites": 139825,
       "confidence": "VERIFIED"
     },
     {
       "id": "SUB.BUILD.SDK_INT",
       "apps": 116,
       "members": 150,
-      "callSites": 59748,
+      "callSites": 59613,
       "confidence": "VERIFIED"
     },
     {

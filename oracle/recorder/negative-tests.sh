@@ -209,6 +209,57 @@ else
 	FAIL=$((FAIL + 1))
 fi
 
+# ---------------------------------------------------------------------------
+# substrate_policy: the optional substrate-only block. It is optional, and every
+# constraint inside it is a `const` or an `enum`, so each of these is a place
+# where a plausible-looking lie could otherwise pass. If a future edit relaxes
+# any of them, the corresponding case below goes green-when-red and this script
+# fails.
+# ---------------------------------------------------------------------------
+SHIM_LEFT="${HERE}/../../shim/recordings/differential-left.fabricated.recording.json"
+if [ -f "$SHIM_LEFT" ]; then
+	mutate "$SHIM_LEFT" "$TMP/policy-ok.json" \
+		'd.substrate_policy.axis_declarations[0].governs = ["app"];' policy_axis_may_not_govern_the_app_class
+neg policy_axis_may_not_govern_the_app_class "$TMP/policy-ok.json"
+
+	mutate "$SHIM_LEFT" "$TMP/policy-egress.json" \
+		'd.substrate_policy.invariants.egress = "allowed_by_policy";' policy_egress_invariant_must_be_structural
+neg policy_egress_invariant_must_be_structural "$TMP/policy-egress.json"
+
+	mutate "$SHIM_LEFT" "$TMP/policy-body.json" \
+		'd.substrate_policy.invariants.bodies_captured = true;' policy_may_not_capture_bodies
+neg policy_may_not_capture_bodies "$TMP/policy-body.json"
+
+	mutate "$SHIM_LEFT" "$TMP/policy-value.json" \
+		'd.substrate_policy.identity = "loudest_possible";' policy_axis_value_must_be_in_the_enum
+neg policy_axis_value_must_be_in_the_enum "$TMP/policy-value.json"
+
+	mutate "$SHIM_LEFT" "$TMP/policy-version.json" \
+		'd.substrate_policy.policy_version = "1";' policy_version_must_be_an_integer
+neg policy_version_must_be_an_integer "$TMP/policy-version.json"
+
+	mutate "$SHIM_LEFT" "$TMP/policy-required.json" \
+		'delete d.substrate_policy.reproducible;' policy_must_declare_reproducibility
+neg policy_must_declare_reproducibility "$TMP/policy-required.json"
+
+	mutate "$SHIM_LEFT" "$TMP/policy-scaled.json" \
+		'd.substrate_policy.time = {mode:"scaled", args:{numerator:3, denominator:0}};' policy_scale_denominator_may_not_be_zero
+neg policy_scale_denominator_may_not_be_zero "$TMP/policy-scaled.json"
+
+	# And the control: the unmodified shim recording must still be ACCEPTED, or
+	# the six cases above would be passing for the wrong reason. A negative suite
+	# with no positive control is a suite that proves nothing.
+	if "$NODE" "$VALIDATOR" "$SHIM_LEFT" >"$TMP/out.policy-control" 2>&1; then
+		echo "  ok   policy_control_substrate_recording_is_accepted: accepted, as intended"
+		PASS=$((PASS + 1))
+	else
+		echo "  FAIL policy_control_substrate_recording_is_accepted: the schema rejects a \
+recording the shim itself produces."
+		sed 's/^/       /' "$TMP/out.policy-control"
+		FAIL=$((FAIL + 1))
+	fi
+fi
+
 # A well-formed JSON document that is not a recording at all.
 printf '{"hello":"world"}\n' >"$TMP/not-a-recording.json"
 neg not_a_recording "$TMP/not-a-recording.json"

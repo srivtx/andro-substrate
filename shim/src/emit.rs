@@ -53,11 +53,7 @@ use crate::registry::{self, Behaviour};
 pub const BRIDGE: &str = "Landroid/substrate/Bridge;";
 
 /// The three native symbols the host registers.
-pub const BRIDGE_SYMBOLS: [&str; 3] = [
-    "shimLog",
-    "shimEgress",
-    "shimNativeUnsatisfied",
-];
+pub const BRIDGE_SYMBOLS: [&str; 3] = ["shimLog", "shimEgress", "shimNativeUnsatisfied"];
 
 /// The taxonomy ID `nativeUnsatisfied` embeds, so the bridge's own bytecode
 /// carries the assumption it reports rather than an opaque integer.
@@ -243,9 +239,10 @@ fn repair_type_lists(bytes: &mut [u8]) -> Result<bool, ShimError> {
             .checked_add(4)
             .ok_or_else(|| ShimError::Encode("type_list offset overflow".into()))?;
         let end = base
-            .checked_add(size.checked_mul(4).ok_or_else(|| {
-                ShimError::Encode("type_list element count overflow".into())
-            })?)
+            .checked_add(
+                size.checked_mul(4)
+                    .ok_or_else(|| ShimError::Encode("type_list element count overflow".into()))?,
+            )
             .ok_or_else(|| ShimError::Encode("type_list extent overflow".into()))?;
         if end > bytes.len() {
             return Err(ShimError::Encode(format!(
@@ -350,7 +347,11 @@ fn prototypes_match(bytes: &[u8]) -> Result<bool, ShimError> {
         let data = d
             .class_data(class.class_data_off)
             .map_err(|e| ShimError::Dex(e.to_string()))?;
-        for m in data.direct_methods.iter().chain(data.virtual_methods.iter()) {
+        for m in data
+            .direct_methods
+            .iter()
+            .chain(data.virtual_methods.iter())
+        {
             let md = d
                 .method_at(m.method_idx)
                 .map_err(|e| ShimError::Dex(e.to_string()))?;
@@ -474,7 +475,11 @@ fn bridge_bodies(idx: &dexcore::writer::IndexMap) -> DexResult<Vec<(&'static str
     a.if_eqz(2, 2);
     a.const4(0, 0).map_err(|_| range("const4"))?;
     a.r#return(0);
-    a.invoke(0x6e, &[2], idx.method("Ljava/lang/String;", "length", &[], "I")?)?;
+    a.invoke(
+        0x6e,
+        &[2],
+        idx.method("Ljava/lang/String;", "length", &[], "I")?,
+    )?;
     a.move_result(0);
     a.r#return(0);
     let log = a.into_code(4, 2, 1);
@@ -514,13 +519,14 @@ fn bridge_bodies(idx: &dexcore::writer::IndexMap) -> DexResult<Vec<(&'static str
         start_addr: 0,
         insn_count: len,
         handler: dexcore::writer::CatchHandler {
-            handlers: vec![
-                (Some("Ljava/lang/Throwable;".to_string()), 0),
-                (None, 1),
-            ],
+            handlers: vec![(Some("Ljava/lang/Throwable;".to_string()), 0), (None, 1)],
         },
     });
-    Ok(vec![("log", log), ("egress", egress), ("nativeUnsatisfied", code)])
+    Ok(vec![
+        ("log", log),
+        ("egress", egress),
+        ("nativeUnsatisfied", code),
+    ])
 }
 
 fn range(what: &'static str) -> dexcore::Error {

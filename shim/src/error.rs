@@ -29,11 +29,17 @@ pub enum ShimError {
     /// The VFS refused the operation.
     Vfs(VfsError),
     /// A bounded resource hit its ceiling. Always `Err`, never a panic.
-    Exhausted { resource: &'static str, limit: usize },
+    Exhausted {
+        resource: &'static str,
+        limit: usize,
+    },
     /// Networking was attempted. This is the *expected* outcome, not a bug.
     EgressDenied(EgressDenial),
     /// A `native` method with no implementation behind it.
-    UnsatisfiedLink { symbol: String, library: Option<String> },
+    UnsatisfiedLink {
+        symbol: String,
+        library: Option<String>,
+    },
     /// dexcore rejected the request, or the writer produced something unreadable.
     Dex(String),
     /// Serialising an event or the recording failed.
@@ -65,7 +71,9 @@ impl fmt::Display for ShimError {
             ShimError::NoSuchMethod { class, method } => {
                 write!(f, "no shim method {class}.{method}")
             }
-            ShimError::NotAShimClass { descriptor } => write!(f, "{descriptor} is not a shim class"),
+            ShimError::NotAShimClass { descriptor } => {
+                write!(f, "{descriptor} is not a shim class")
+            }
             ShimError::ClassNotFound { descriptor } => write!(f, "cannot resolve {descriptor}"),
             ShimError::UnparseableUrl { reason } => write!(f, "unparseable URL: {reason}"),
             ShimError::BadPath { path, reason } => write!(f, "bad path {path:?}: {reason}"),

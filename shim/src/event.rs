@@ -32,6 +32,7 @@ use std::fmt;
 use serde::{Deserialize, Serialize};
 
 use crate::error::{EgressDenial, VfsError};
+use crate::policy::{Axis, LoopbackResponse};
 use crate::redact::{HeaderNames, HttpMethod, PathPolicy, RequestMeta};
 use crate::taxonomy::AssumptionId;
 
@@ -205,6 +206,11 @@ impl Resolution {
             Resolution::DynamicUnavailable => "dynamic_unavailable",
         }
     }
+
+    /// Whether the shim's own table satisfied the reference.
+    pub fn is_served_by_shim(self) -> bool {
+        matches!(self, Resolution::ShimDex | Resolution::ShimSupersedesApp)
+    }
 }
 
 /// What a `native` method attempt resolved to. There is no success case, and
@@ -226,6 +232,41 @@ impl NativeOutcome {
     }
 }
 
+/// What the substrate *presented* to the app when a request reached the sink.
+///
+/// The distinction this type exists for: `Detail::Net::outcome` records what the
+/// **sink** did, and it is `Err` on every policy value without exception. This
+/// records what the **app** was shown, and a policy may choose to show it a
+/// response. Keeping them in two fields is what makes the claim "no policy
+/// enables egress" a property of the type rather than of a code review: the
+/// loopback arm cannot set `outcome` to `Ok`, because
+/// `EgressSink::request` returns `Result<Never, EgressDenial>` and there is no
+/// `Never` value to put in it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NetPresentation {
+    /// The app is shown the sink's `ConnectException`. The substrate's default,
+    /// and the absence of a fabrication rather than a fabrication of one.
+    Denied,
+    /// The app is shown a response the `network` policy axis declared. Nothing
+    /// was transmitted: see the type's own documentation.
+    Loopback(LoopbackResponse),
+}
+
+impl NetPresentation {
+    /// Whether the app was shown a synthesised response.
+    pub fn is_loopback(self) -> bool {
+        matches!(self, NetPresentation::Loopback(_))
+    }
+
+    /// The declared response, if any.
+    pub fn response(self) -> Option<LoopbackResponse> {
+        match self {
+            NetPresentation::Denied => None,
+            NetPresentation::Loopback(r) => Some(r),
+        }
+    }
+}
+
 /// The payload. One variant per group, so a `match` is exhaustive and a new
 /// group cannot be added without every consumer handling it.
 #[derive(Debug, Clone, PartialEq)]
@@ -237,7 +278,11 @@ pub enum Detail {
         headers: HeaderNames,
         /// Length only. Never a byte, never a digest: see [`crate::redact`].
         body_bytes: Option<u64>,
+        /// What the **sink** did. `Err` for every policy value, always.
         outcome: Result<(), EgressDenial>,
+        /// What the **app** was shown. A policy may add a presentation on top of
+        /// the refusal; it can never replace it.
+        presentation: NetPresentation,
         /// The path as it was recorded, after the policy was applied. Stored so
         /// the event is self-contained and the recording cannot re-apply a
         /// different policy to it later.
@@ -279,6 +324,16 @@ pub enum Detail {
         /// pattern shape so the two are diffable.
         pattern: &'static str,
         detail: String,
+        /// The substrate-policy axis whose value produced the answer in
+        /// `detail`, or `None` when this observation is not a fabricated answer
+        /// at all.
+        ///
+        /// This is the *emission-time label* the whole policy family rests on: a
+        /// `Build.FINGERPRINT` read can say which axis answered it, so a reader
+        /// never has to infer it from the shape of the value. `None` is the
+        /// interesting case rather than an oversight — a class resolution or a
+        /// bundle write is the *app's* behaviour and belongs to no axis.
+        axis: Option<Axis>,
     },
 }
 
@@ -331,6 +386,7 @@ impl Detail {
                 recorded_path,
                 body_bytes,
                 outcome,
+                presentation,
                 ..
             } => {
                 let verdict = match outcome {
@@ -338,16 +394,31 @@ impl Detail {
                     Err(d) => d.code,
                 };
                 format!(
-                    "net {} {}://{}:{}{} body={} -> {verdict}",
+                    "net {} {}://{}:{}{} body={} -> {verdict}{}",
                     method.as_str(),
                     meta.scheme.as_str(),
                     meta.host,
                     meta.port,
                     recorded_path,
-                    body_bytes.map(|b| b.to_string()).unwrap_or_else(|| "?".into())
+                    body_bytes
+                        .map(|b| b.to_string())
+                        .unwrap_or_else(|| "?".into()),
+                    match presentation {
+                        NetPresentation::Denied => String::new(),
+                        NetPresentation::Loopback(r) => format!(
+                            "; presented a synthesised {} response ({}) by substrate_policy \
+                             axis network, with nothing transmitted",
+                            r.status, r.content_type
+                        ),
+                    }
                 )
             }
-            Detail::Fs { op, path, bytes, result } => format!(
+            Detail::Fs {
+                op,
+                path,
+                bytes,
+                result,
+            } => format!(
                 "fs {} {path} bytes={bytes} -> {}",
                 op.as_str(),
                 match result {
@@ -393,9 +464,35 @@ impl Detail {
                     None => "?".into(),
                 }
             ),
-            Detail::Probes { pattern, detail } => format!("probes {pattern}: {detail}"),
+            Detail::Probes {
+                pattern,
+                detail,
+                axis,
+                ..
+            } => format!("probes {pattern}: {detail}{}", axis_suffix(*axis)),
         }
     }
+}
+
+/// The emission-time axis label, appended to a probe's rendered detail.
+///
+/// A fixed, greppable shape, because a label an analyst has to parse is a label
+/// nobody will use: `[answered by substrate_policy axis system_fs = empty]`. The
+/// recording's `substrate_policy.axis_declarations` says what that value *does*,
+/// so the label here and the declaration there are enough to read any fabricated
+/// value years later without the crate.
+pub fn axis_suffix(axis: Option<Axis>) -> String {
+    match axis {
+        None => String::new(),
+        Some(a) => format!(" [answered by substrate_policy axis {}]", a.as_str()),
+    }
+}
+
+/// The same label with the axis's *value* spelled out, for the two places where
+/// the value itself is the finding: a read that returned nothing, and an
+/// exception the substrate chose to throw.
+pub fn axis_value_suffix(axis: Axis, value: &str) -> String {
+    format!(" [substrate_policy axis {} = {value}]", axis.as_str())
 }
 
 /// The rendering policy applied when a network event was created. Kept on the
@@ -427,6 +524,7 @@ mod tests {
             headers: HeaderNames::new(),
             body_bytes: Some(0),
             outcome: Err(EgressDenial::default()),
+            presentation: NetPresentation::Denied,
             recorded_path: "/x".to_string(),
         };
         assert_eq!(net.group(), Group::Net);
@@ -466,6 +564,7 @@ mod tests {
             detail: Detail::Probes {
                 pattern: "SIGNAL_PAT.X",
                 detail: String::new(),
+                axis: None,
             },
         };
         ev.detail = Detail::Net {
@@ -474,18 +573,26 @@ mod tests {
             headers: HeaderNames::new(),
             body_bytes: Some(0),
             outcome: Err(EgressDenial::default()),
+            presentation: NetPresentation::Denied,
             recorded_path: "/x".into(),
         };
         assert!(ev.summary().contains("body=0"));
         ev.detail = match ev.detail {
             Detail::Net {
-                meta, method, headers, outcome, recorded_path, ..
+                meta,
+                method,
+                headers,
+                outcome,
+                presentation,
+                recorded_path,
+                ..
             } => Detail::Net {
                 meta,
                 method,
                 headers,
                 body_bytes: None,
                 outcome,
+                presentation,
                 recorded_path,
             },
             _ => unreachable!(),
@@ -495,8 +602,90 @@ mod tests {
 
     #[test]
     fn scheme_tokens_match_the_oracle_enum() {
-        for s in [Scheme::Http, Scheme::Https, Scheme::Ws, Scheme::Wss, Scheme::Other] {
-            assert!(matches!(s.as_str(), "http" | "https" | "ws" | "wss" | "other"));
+        for s in [
+            Scheme::Http,
+            Scheme::Https,
+            Scheme::Ws,
+            Scheme::Wss,
+            Scheme::Other,
+        ] {
+            assert!(matches!(
+                s.as_str(),
+                "http" | "https" | "ws" | "wss" | "other"
+            ));
         }
+    }
+
+    #[test]
+    fn a_denied_request_and_a_loopback_one_are_both_denials() {
+        // The security property, asserted at the layer the policy can reach. A
+        // presentation may be added on top of a refusal; it can never replace it.
+        let meta = RequestMeta::parse("https://a.invalid/x").unwrap();
+        let denied = Detail::Net {
+            meta: meta.clone(),
+            method: HttpMethod::Get,
+            headers: HeaderNames::new(),
+            body_bytes: None,
+            outcome: Err(EgressDenial::default()),
+            presentation: NetPresentation::Denied,
+            recorded_path: "/x".into(),
+        };
+        let Detail::Net {
+            meta,
+            method,
+            headers,
+            body_bytes,
+            outcome,
+            recorded_path,
+            ..
+        } = denied.clone()
+        else {
+            unreachable!()
+        };
+        let looped = Detail::Net {
+            meta,
+            method,
+            headers,
+            body_bytes,
+            outcome,
+            presentation: NetPresentation::Loopback(LoopbackResponse::default()),
+            recorded_path,
+        };
+        for d in [&denied, &looped] {
+            let Detail::Net { outcome, .. } = d else {
+                panic!()
+            };
+            assert!(outcome.is_err(), "the sink refuses on every policy value");
+        }
+        let s = looped.summary();
+        // The refusal is the verdict, under the loopback policy exactly as under
+        // the default; the presentation is a clause after it, never a replacement.
+        assert!(s.contains(EgressDenial::default().code), "{s}");
+        assert!(!s.contains("-> ok"), "{s}");
+        assert!(denied.summary().contains(EgressDenial::default().code));
+        assert!(!denied.summary().contains("presented a synthesised"));
+        assert!(s.contains("presented a synthesised 200 response"), "{s}");
+        assert!(s.contains("with nothing transmitted"), "{s}");
+    }
+
+    #[test]
+    fn a_probe_says_which_axis_answered_it_and_an_app_fact_says_none() {
+        let p = Detail::Probes {
+            pattern: "SIGNAL_PAT.BUILD_FIELD",
+            detail: "Build.FINGERPRINT = andro-substrate/shim".into(),
+            axis: Some(Axis::Identity),
+        };
+        assert!(p
+            .summary()
+            .contains("[answered by substrate_policy axis identity]"));
+        let app_fact = Detail::Probes {
+            pattern: "SIGNAL_PAT.CLASS_RESOLVE",
+            detail: "La/b/Main; -> app_dex".into(),
+            axis: None,
+        };
+        assert_eq!(
+            app_fact.summary(),
+            "probes SIGNAL_PAT.CLASS_RESOLVE: La/b/Main; -> app_dex"
+        );
     }
 }

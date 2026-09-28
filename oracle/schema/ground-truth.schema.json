@@ -51,6 +51,7 @@
     "provenance": { "$ref": "#/$defs/provenance" },
     "recorder": { "$ref": "#/$defs/recorder" },
     "capture": { "$ref": "#/$defs/capture" },
+    "substrate_policy": { "$ref": "#/$defs/substrate_policy" },
     "app": { "$ref": "#/$defs/app_identity" },
     "environment": { "$ref": "#/$defs/environment" },
     "clock": { "$ref": "#/$defs/clock" },
@@ -138,6 +139,169 @@
   ],
 
   "$defs": {
+
+    "substrate_policy": {
+      "description": "OPTIONAL, and SUBSTRATE-ONLY. The declared behaviour of the observation layer that produced this document: what it returned when the app asked it something the platform would have answered, and what it was permitted to do. A DEVICE capture has no `substrate_policy` because a device is not a substrate; absence means \"no substrate was involved\", never \"the default\". A substrate capture that omits it is declaring facts about itself that a reader cannot check, so `capture_quality.warnings` should say so. The object exists because a shim which terminates every side effect cannot, in a single document, tell a reader which recorded facts belong to the app and which to the shim: `substrate_probe_hits` and `diagnostics` in a governed class are JOINT properties. Making the substrate a declared parameter does not separate them inside one document; it makes the separation measurable by running the same program under two policies and diffing (see docs/decisions/0006-substrate-policy.md). The per-value semantics of every axis are stated in `axis_declarations[].statement`, so this object is interpretable without the tool that wrote it. `policy_version` is the vocabulary version: a reader MUST check it against the document they are comparing against before assuming two values mean the same thing.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policy_format",
+        "policy_version",
+        "shim_version",
+        "policy_digest",
+        "identity",
+        "system_fs",
+        "cross_app_packages",
+        "network",
+        "time",
+        "axis_declarations",
+        "invariants",
+        "reproducible"
+      ],
+      "properties": {
+        "policy_format": {
+          "description": "The shape of this declaration. A reader that does not recognise the format MUST refuse to interpret the axis values rather than guess. Monotone; a value is never reused.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "policy_version": {
+          "description": "The MEANING of the axis vocabulary: bumped when a value is added to an axis, removed, or redefined, even if the JSON shape is unchanged. Two documents with different `policy_version` values may use the same token for different things. Monotone; never reused.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "shim_version": {
+          "description": "The version of the instrument. What a value RETURNS is a property of the code, not only of the vocabulary, so a declaration without this does not name an exact instrument.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "policy_digest": {
+          "description": "A content checksum over the canonical declaration, for joining two recordings to \"the same policy\" without diffing prose. NOT a cryptographic digest and not a security property.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "reproducible": {
+          "description": "Whether re-running this declaration produces the same document. False only when an axis reads the host (e.g. a host wall clock), and a reader MUST NOT treat a non-reproducible document as a stable measurement.",
+          "type": "boolean"
+        },
+        "identity": { "$ref": "#/$defs/policy_identity_mode" },
+        "system_fs": { "$ref": "#/$defs/policy_system_fs_mode" },
+        "cross_app_packages": { "$ref": "#/$defs/policy_package_mode" },
+        "network": { "$ref": "#/$defs/policy_network_mode" },
+        "time": { "$ref": "#/$defs/policy_time_mode" },
+        "axis_declarations": {
+          "description": "One entry per axis, in a fixed order, with the classes of recorded fact it governs. The `governs` list is the attribution mechanism: diff two documents, find the fields that differ, and blame the axis whose `governs` list covers them. Without it, attribution requires the tool that produced the documents.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["axis", "value", "governs", "statement"],
+            "properties": {
+              "axis": { "enum": ["identity", "system_fs", "cross_app_packages", "network", "time"] },
+              "value": { "type": "string", "minLength": 1, "maxLength": 60 },
+              "governs": {
+                "description": "The fact classes this axis decides. MUST NOT name `app`, `derived_roll_up` or `policy_declaration`: no axis may claim responsibility for a fact that was not decided by the substrate, for a recorder's own roll-up, or for the declaration itself. A fact in one of those three classes was not the substrate's doing, and a declaration that says otherwise is the exact lie this object exists to prevent, so the schema forbids it rather than trusting the writer.",
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "enum": [
+                    "policy_declaration",
+                    "environment_identity",
+                    "identity_probe",
+                    "system_fs",
+                    "cross_app_packages",
+                    "network",
+                    "time",
+                    "derived_roll_up",
+                    "app"
+                  ]
+                },
+                "not": {
+                  "contains": {
+                    "enum": ["app", "derived_roll_up", "policy_declaration"]
+                  }
+                }
+              },
+              "statement": {
+                "description": "What this value does, in prose, so the declaration is interpretable without the code that wrote it.",
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              }
+            }
+          }
+        },
+        "invariants": {
+          "description": "What NO axis value can do. Declared here so a reader does not have to take it on trust, and so a recording from an instrument that cannot honour them is self-identifying.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "egress",
+            "bodies_captured",
+            "header_values_captured",
+            "query_values_captured"
+          ],
+          "properties": {
+            "egress": {
+              "description": "`structurally_impossible` means no policy value, flag or environment variable can make the observation layer perform real network I/O. Any other value is a finding about the instrument, not about the app.",
+              "const": "structurally_impossible"
+            },
+            "bodies_captured": {
+              "description": "MUST be false under every axis value.",
+              "const": false
+            },
+            "header_values_captured": {
+              "description": "MUST be false under every axis value.",
+              "const": false
+            },
+            "query_values_captured": {
+              "description": "MUST be false under every axis value.",
+              "const": false
+            },
+            "note": { "type": ["string", "null"], "maxLength": 1000 }
+          }
+        },
+        "notes": { "type": ["string", "null"], "maxLength": 4000 }
+      }
+    },
+
+    "policy_identity_mode": {
+      "description": "How `android.os.Build`, `SystemProperties` and `getprop` answer.",
+      "enum": ["fabricated", "withheld", "refusing"]
+    },
+    "policy_system_fs_mode": {
+      "description": "How the fabricated `/proc`, `/sys` and `/dev` trees answer. `empty` is a third answer distinct from both plausible content and `ENOENT`: the path exists and is empty.",
+      "enum": ["fabricated", "empty", "absent"]
+    },
+    "policy_package_mode": {
+      "description": "How a `PackageManager` query about ANOTHER app answers. A self-query is not a cross-app query and no value of this axis may alter it.",
+      "enum": ["subject_only", "all_present", "error"]
+    },
+    "policy_network_mode": {
+      "description": "What the observation layer PRESENTS when a request reaches its sink. No value grants egress; `synthetic_loopback` refuses at the sink exactly as `record_and_deny` does and adds a response the policy declared.",
+      "enum": ["record_and_deny", "synthetic_loopback"]
+    },
+    "policy_time_mode": {
+      "description": "How the observation layer's clock answers. The scale is a rational and appears only for `scaled`.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode"],
+      "properties": {
+        "mode": { "enum": ["virtual", "scaled", "frozen", "host_real"] },
+        "args": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "numerator": { "type": "integer", "minimum": 0 },
+            "denominator": { "type": "integer", "minimum": 1 }
+          }
+        }
+      }
+    },
 
     "sha256": {
       "type": "string",

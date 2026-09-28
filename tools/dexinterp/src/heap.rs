@@ -113,9 +113,11 @@ impl Object {
         const HEADER: u64 = 16;
         let payload: u64 = match &self.kind {
             ObjectKind::Instance { fields } => sum_slots(fields),
-            ObjectKind::Array { component, elements } => {
-                sum_slots(elements).max(elements.len() as u64 * u64::from(component.element_width()))
-            }
+            ObjectKind::Array {
+                component,
+                elements,
+            } => sum_slots(elements)
+                .max(elements.len() as u64 * u64::from(component.element_width())),
             ObjectKind::Str { text } => 16 + text.len() as u64,
             ObjectKind::Class { descriptor } => 16 + descriptor.len() as u64,
             ObjectKind::MethodType { proto } => 16 + proto.len() as u64,
@@ -161,10 +163,15 @@ fn sum_slots(values: &[Value]) -> u64 {
 ///   matching Java's semantics, so a self-deadlock in single-threaded code is
 ///   simply not detected. Real code reaches this through `synchronized` methods
 ///   on objects that a framework callback re-enters.
-/// * `monitor-exit` on a monitor this thread does not hold is reported as a
-///   [`Malformed`](crate::error::Malformed) rather than an
-///   `IllegalMonitorStateException`, because no verifier checks monitor state
-///   and silently ignoring the imbalance would hide a real bug in the app.
+/// * `monitor-exit` on a monitor this thread does not hold, and a frame that
+///   returns while still holding one, are both reported as
+///   [`Malformed::UnbalancedMonitor`](crate::error::Malformed::UnbalancedMonitor)
+///   rather than an `IllegalMonitorStateException`, because no verifier is run
+///   here (see `docs/decisions/0003-execution-engine.md`) and silently ignoring
+///   the imbalance would hide a real bug in the app. The Dalvik verifier does
+///   track monitor state along every path, so a real APK cannot reach either
+///   case — which is why both are findings about the *file* and belong in the
+///   `engine_fault` bucket rather than the `exception_raised` one.
 ///
 /// See `docs/decisions/0003-execution-engine.md` for why a single-threaded
 /// interpreter was chosen anyway.
@@ -208,7 +215,10 @@ pub struct Heap {
 impl Heap {
     /// An empty heap.
     pub fn new() -> Heap {
-        Heap { objects: Vec::new(), bytes: 0 }
+        Heap {
+            objects: Vec::new(),
+            bytes: 0,
+        }
     }
 
     /// Allocate an object, returning its handle. `None` if the object count
@@ -226,7 +236,12 @@ impl Heap {
                 return Err(limit);
             }
         }
-        let obj = Object { class, kind, monitor: Monitor::default(), detail_message: None };
+        let obj = Object {
+            class,
+            kind,
+            monitor: Monitor::default(),
+            detail_message: None,
+        };
         let size = obj.storage_bytes();
         if let Some(limit) = max_bytes {
             let want = self.bytes.saturating_add(size);
@@ -294,6 +309,12 @@ impl Heap {
 
 #[cfg(test)]
 mod tests {
+    // The crate forbids `unwrap` on anything that came out of a file, and that
+    // ban is what keeps a malformed DEX from killing the process. It has no
+    // business in a test: every value unwrapped below was built by the test
+    // itself, and a test that cannot reach its own fixture should fail loudly
+    // rather than contort itself around a type it has already proven.
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
     use super::*;
 
     fn heap_with(kinds: Vec<(ClassId, ObjectKind)>) -> Heap {
@@ -307,9 +328,23 @@ mod tests {
 
     #[test]
     fn handles_are_one_based_so_zero_is_never_a_live_handle() {
-        let mut h = heap_with(vec![(ClassId(0), ObjectKind::Class { descriptor: "LFoo;".into() })]);
+        let mut h = heap_with(vec![(
+            ClassId(0),
+            ObjectKind::Class {
+                descriptor: "LFoo;".into(),
+            },
+        )]);
         // `heap_with` already allocated one, so the next handle is 2.
-        let r = h.alloc(ClassId(0), ObjectKind::Class { descriptor: "LBar;".into() }, None, None).unwrap();
+        let r = h
+            .alloc(
+                ClassId(0),
+                ObjectKind::Class {
+                    descriptor: "LBar;".into(),
+                },
+                None,
+                None,
+            )
+            .unwrap();
         assert_eq!(r, Ref(2));
         assert_eq!(h.get(Ref(1)).map(|o| &o.class), Some(&ClassId(0)));
         assert!(h.get(Ref(0)).is_none(), "Ref(0) must never resolve");
@@ -317,7 +352,12 @@ mod tests {
 
     #[test]
     fn strings_are_real_objects_and_readable_back() {
-        let h = heap_with(vec![(ClassId(3), ObjectKind::Str { text: "hello ☃".into() })]);
+        let h = heap_with(vec![(
+            ClassId(3),
+            ObjectKind::Str {
+                text: "hello ☃".into(),
+            },
+        )]);
         assert_eq!(h.string_of(Value::Ref(Ref(1))), Some("hello ☃"));
         assert_eq!(h.string_of(Value::Null), None);
         assert_eq!(h.string_of(Value::Int(1)), None);
@@ -331,7 +371,10 @@ mod tests {
         assert_eq!(m.depth, 2);
         assert!(m.exit());
         assert!(m.exit());
-        assert!(!m.exit(), "exiting a monitor that is not held must be reported");
+        assert!(
+            !m.exit(),
+            "exiting a monitor that is not held must be reported"
+        );
         assert_eq!(m.entries, 2);
         assert_eq!(m.exits, 3);
     }
@@ -339,7 +382,9 @@ mod tests {
     #[test]
     fn limits_refuse_rather_than_grow() {
         let mut h = Heap::new();
-        let k = ObjectKind::Class { descriptor: "Lx;".into() };
+        let k = ObjectKind::Class {
+            descriptor: "Lx;".into(),
+        };
         assert!(h.alloc(ClassId(0), k.clone(), Some(1), None).is_ok());
         let e = h.alloc(ClassId(0), k.clone(), Some(1), None).unwrap_err();
         assert_eq!(e, 1, "the error carries the limit, not a message");
@@ -350,13 +395,17 @@ mod tests {
     fn storage_model_distinguishes_wide_from_narrow() {
         let narrow = Object {
             class: ClassId(0),
-            kind: ObjectKind::Instance { fields: vec![Value::Int(0), Value::Int(0)] },
+            kind: ObjectKind::Instance {
+                fields: vec![Value::Int(0), Value::Int(0)],
+            },
             monitor: Monitor::default(),
             detail_message: None,
         };
         let wide = Object {
             class: ClassId(0),
-            kind: ObjectKind::Instance { fields: vec![Value::Long(0)] },
+            kind: ObjectKind::Instance {
+                fields: vec![Value::Long(0)],
+            },
             monitor: Monitor::default(),
             detail_message: None,
         };

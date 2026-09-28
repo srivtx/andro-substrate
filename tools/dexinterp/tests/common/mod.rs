@@ -133,9 +133,17 @@ impl Emit {
         self.u16(b)
     }
 
-    /// `32x` — `ØØØØ|op AAAA`, `BBBB`.
+    /// `32x` — `AA|op BBBB`, the opcode in the *low* byte of the first unit.
+    ///
+    /// The AOSP format table writes the fields most-significant first, so `32x`
+    /// reads `AA` in the high byte and `op` in the low one — the same order as
+    /// every other format whose first byte is the opcode (`11x` is `op AA`,
+    /// `22x` is `AA op` once read little-endian, `12x` is `B|A|op`). Putting the
+    /// opcode in the high byte instead produces a method whose every instruction
+    /// is the wrong one, and the first symptom is an out-of-range register
+    /// number made out of the opcode byte.
     pub fn op32x(&mut self, op: u8, a: u16, b: u16) -> &mut Self {
-        self.u16(((op as u16) << 8) | (a & 0xffff));
+        self.u16(((a & 0xff) << 8) | (op as u16));
         self.u16(b)
     }
 
@@ -299,12 +307,30 @@ impl Emit {
 
     /// A `code_item` body with the given register frame.
     pub fn code(mut self, registers: u16, ins: u16, outs: u16) -> CodeBody {
-        CodeBody { registers_size: registers, ins_size: ins, outs_size: outs, insns: self.finish(), tries: Vec::new() }
+        CodeBody {
+            registers_size: registers,
+            ins_size: ins,
+            outs_size: outs,
+            insns: self.finish(),
+            tries: Vec::new(),
+        }
     }
 
     /// A `code_item` body with a try table.
-    pub fn code_tries(mut self, registers: u16, ins: u16, outs: u16, tries: Vec<TryCatch>) -> CodeBody {
-        CodeBody { registers_size: registers, ins_size: ins, outs_size: outs, insns: self.finish(), tries }
+    pub fn code_tries(
+        mut self,
+        registers: u16,
+        ins: u16,
+        outs: u16,
+        tries: Vec<TryCatch>,
+    ) -> CodeBody {
+        CodeBody {
+            registers_size: registers,
+            ins_size: ins,
+            outs_size: outs,
+            insns: self.finish(),
+            tries,
+        }
     }
 
     /// Append an already-built emitter's bytes, so a test can compose helpers.
@@ -339,19 +365,32 @@ pub fn catch_all(start: u32, count: u32, handler: u32) -> TryCatch {
     TryCatch {
         start_addr: start,
         insn_count: count,
-        handler: CatchHandler { handlers: vec![(None, handler)] },
+        handler: CatchHandler {
+            handlers: vec![(None, handler)],
+        },
     }
 }
 
 /// A typed `TryCatch`, with an optional catch-all, which the encoding requires to
 /// come last.
-pub fn catches(start: u32, count: u32, clauses: &[(&str, u32)], catch_all: Option<u32>) -> TryCatch {
-    let mut handlers: Vec<(Option<String>, u32)> =
-        clauses.iter().map(|(t, a)| (Some(t.to_string()), *a)).collect();
+pub fn catches(
+    start: u32,
+    count: u32,
+    clauses: &[(&str, u32)],
+    catch_all: Option<u32>,
+) -> TryCatch {
+    let mut handlers: Vec<(Option<String>, u32)> = clauses
+        .iter()
+        .map(|(t, a)| (Some(t.to_string()), *a))
+        .collect();
     if let Some(a) = catch_all {
         handlers.push((None, a));
     }
-    TryCatch { start_addr: start, insn_count: count, handler: CatchHandler { handlers } }
+    TryCatch {
+        start_addr: start,
+        insn_count: count,
+        handler: CatchHandler { handlers },
+    }
 }
 
 // ========================================================== the dex builder
@@ -389,6 +428,7 @@ pub struct Synthetic {
     writer: DexWriter,
     declared: Vec<Declared>,
     extra: Vec<ClassDef>,
+    extra_instance_fields: Vec<FieldDef>,
 }
 
 impl Default for Synthetic {
@@ -400,7 +440,12 @@ impl Default for Synthetic {
 impl Synthetic {
     /// A synthetic dex whose host class `Lt;` extends `Ljava/lang/Object;`.
     pub fn new() -> Synthetic {
-        let mut s = Synthetic { writer: DexWriter::new(), declared: Vec::new(), extra: Vec::new() };
+        let mut s = Synthetic {
+            writer: DexWriter::new(),
+            declared: Vec::new(),
+            extra: Vec::new(),
+            extra_instance_fields: Vec::new(),
+        };
         s.declare("<init>", &[], "V", 1, 1);
         s
     }
@@ -457,6 +502,18 @@ impl Synthetic {
         self.extra.push(class);
     }
 
+    /// Declare an extra instance field on the host class.
+    ///
+    /// Interning a field is not enough for the engine to store it: a field is
+    /// only addressable if it appears in the class's `class_data_item`, because
+    /// the instance layout is built from *that* list. A coverage suite therefore
+    /// has to be able to declare fields rather than merely name them.
+    pub fn field(&mut self, name: &str, ty: &str) {
+        self.writer.add_field(HOST, name, ty);
+        self.extra_instance_fields
+            .push(FieldDef::instance(name, ty));
+    }
+
     /// Borrow the writer, for interning references before the freeze.
     pub fn writer(&mut self) -> &mut DexWriter {
         &mut self.writer
@@ -476,6 +533,9 @@ impl Synthetic {
             .with_field(FieldDef::instance("sh", "S"))
             .with_field(FieldDef::instance("by", "B"))
             .with_field(FieldDef::instance("o", "Ljava/lang/Object;"));
+        for f in &self.extra_instance_fields {
+            c = c.with_field(f.clone());
+        }
         for d in &self.declared {
             let params: Vec<&str> = d.params.iter().map(|s| s.as_str()).collect();
             c = c.with_method(MethodDef {
@@ -516,8 +576,114 @@ impl Synthetic {
             }
             self.writer.set_code(HOST, &name, body)?;
         }
-        self.writer.emit()
+        let bytes = self.writer.emit()?;
+        let repaired = repair_type_lists(bytes)
+            .unwrap_or_else(|e| panic!("synthetic dex did not survive type_list repair: {e}"));
+        Ok(repaired)
     }
+}
+
+// ======================================================== the writer repair
+
+/// Re-encode every `type_list` in `bytes` with two-byte elements, in place.
+///
+/// # Why this exists
+///
+/// `dexcore::DexWriter` writes each `ushort` element of a `type_list` as **four**
+/// bytes (`u32::to_le_bytes`) where the specification — and `dexcore`'s own
+/// reader, and every real d8 output — use two:
+///
+/// ```text
+/// type_list ::= size ubyte[4]          # 4 bytes
+///               list ushort[size]      # 2 bytes each
+/// ```
+///
+/// The consequence is silent and severe: every element *after the first* reads
+/// back as type index 0. A two-parameter prototype written as `(II)I` comes out
+/// of the file as `(IB)I` in these tests, purely because `"B"` happens to sort
+/// first among the interned type descriptors. One-element lists are unaffected
+/// (the low two bytes of a four-byte little-endian value are the value), which
+/// is exactly why the bug survived `dexcore`'s own 138 tests: a round-trip test
+/// that only ever uses zero- and one-parameter methods cannot see it.
+///
+/// The defect is in `dexcore`, which this crate must not modify, so the harness
+/// repairs the bytes instead of working around them by avoiding multi-parameter
+/// prototypes. Doing it in place is possible because the *slot* the writer
+/// reserved is always large enough: it laid out `4 + 4*size` bytes where the
+/// correct list needs `4 + 2*size`, so rewriting the first `2*size` bytes and
+/// leaving the remainder as padding moves nothing. Every other offset in the
+/// file — code items, class data, the `map_list` — stays valid.
+///
+/// `type_lists_written_by_dexcore_round_trip` is the self-check: it re-reads the
+/// repaired file and asserts the prototypes match what the test asked for, so
+/// the day `dexcore` is fixed this function's no-op case fails loudly rather
+/// than the repair silently doing nothing.
+fn repair_type_lists(mut bytes: Vec<u8>) -> Result<Vec<u8>, String> {
+    let u32_at = |b: &[u8], at: usize| -> Result<u32, String> {
+        let s = b
+            .get(at..at + 4)
+            .ok_or_else(|| format!("4-byte read at {at} is past the end"))?;
+        Ok(u32::from_le_bytes([s[0], s[1], s[2], s[3]]))
+    };
+    // Header field offsets, from the `header_item` layout. `magic` is
+    // `ubyte[8]` and `signature` is `ubyte[20]`, which is what puts
+    // `proto_ids_size` at 72 rather than at 56.
+    const PROTO_IDS_SIZE: usize = 72;
+    const PROTO_IDS_OFF: usize = 76;
+    const CLASS_DEFS_SIZE: usize = 96;
+    const CLASS_DEFS_OFF: usize = 100;
+
+    let proto_size = u32_at(&bytes, PROTO_IDS_SIZE)? as usize;
+    let proto_off = u32_at(&bytes, PROTO_IDS_OFF)? as usize;
+    let class_size = u32_at(&bytes, CLASS_DEFS_SIZE)? as usize;
+    let class_off = u32_at(&bytes, CLASS_DEFS_OFF)? as usize;
+
+    // Every `type_list` the file references: a prototype's parameters and a
+    // class's interfaces. They are interned by content, so the same offset can
+    // appear many times; repairing it twice would be harmless but pointless.
+    let mut offsets: Vec<u32> = Vec::new();
+    for i in 0..proto_size {
+        let base = proto_off + i * 12;
+        let off = u32_at(&bytes, base + 8)?;
+        if off != 0 {
+            offsets.push(off);
+        }
+    }
+    for i in 0..class_size {
+        let base = class_off + i * 32;
+        let off = u32_at(&bytes, base + 12)?;
+        if off != 0 {
+            offsets.push(off);
+        }
+    }
+    offsets.sort_unstable();
+    offsets.dedup();
+
+    for &off in &offsets {
+        let at = off as usize;
+        let size = u32_at(&bytes, at)? as usize;
+        if size < 2 {
+            // Zero- and one-element lists already read correctly; a correct
+            // writer's one-element list is also left untouched, so this is a
+            // no-op once `dexcore` is fixed.
+            continue;
+        }
+        // The writer reserved four bytes per element. Refuse rather than guess
+        // if that much is not actually there.
+        if at + 4 + size * 4 > bytes.len() {
+            return Err(format!(
+                "type_list at {at} declares {size} elements but the file is shorter"
+            ));
+        }
+        for k in 0..size {
+            let src = at + 4 + k * 4;
+            let value = u16::from_le_bytes([bytes[src], bytes[src + 1]]);
+            let dst = at + 4 + k * 2;
+            bytes[dst] = value as u8;
+            bytes[dst + 1] = (value >> 8) as u8;
+        }
+    }
+    Ok(bytes)
 }
 
 /// Intern the references the host class and the standard target methods need.
@@ -528,41 +694,108 @@ impl Synthetic {
 pub fn intern_standard(s: &mut Synthetic) {
     let w = s.writer();
     for c in [
-        "I", "J", "D", "F", "Z", "B", "C", "S", "V",
-        "[I", "[J", "[D", "[F", "[B", "[C", "[S", "[Z",
-        "[Ljava/lang/Object;", "[Ljava/lang/String;",
-        "Ljava/lang/Object;", "Ljava/lang/String;", "Ljava/lang/Class;",
-        "Ljava/lang/Throwable;", "Ljava/lang/Exception;",
-        "Ljava/lang/RuntimeException;", "Ljava/lang/Error;",
-        "Ljava/lang/NullPointerException;", "Ljava/lang/ArithmeticException;",
+        "I",
+        "J",
+        "D",
+        "F",
+        "Z",
+        "B",
+        "C",
+        "S",
+        "V",
+        "[I",
+        "[J",
+        "[D",
+        "[F",
+        "[B",
+        "[C",
+        "[S",
+        "[Z",
+        "[Ljava/lang/Object;",
+        "[Ljava/lang/String;",
+        "Ljava/lang/Object;",
+        "Ljava/lang/String;",
+        "Ljava/lang/Class;",
+        "Ljava/lang/Throwable;",
+        "Ljava/lang/Exception;",
+        "Ljava/lang/RuntimeException;",
+        "Ljava/lang/Error;",
+        "Ljava/lang/NullPointerException;",
+        "Ljava/lang/ArithmeticException;",
         "Ljava/lang/ArrayIndexOutOfBoundsException;",
-        "Ljava/lang/ClassCastException;", "Ljava/lang/NegativeArraySizeException;",
-        "Ljava/lang/ArrayStoreException;", "Ljava/lang/UnsupportedOperationException;",
-        "Ljava/lang/IllegalStateException;", "Ljava/lang/IllegalArgumentException;",
-        "Ljava/lang/NoSuchMethodError;", "Ljava/lang/NoSuchFieldError;",
-        "Ljava/lang/AbstractMethodError;", "Ljava/lang/BootstrapMethodError;",
-        "Ljava/lang/invoke/MethodHandle;", "Ljava/lang/reflect/MethodType;",
-        SUB, IFACE,
+        "Ljava/lang/ClassCastException;",
+        "Ljava/lang/NegativeArraySizeException;",
+        "Ljava/lang/ArrayStoreException;",
+        "Ljava/lang/UnsupportedOperationException;",
+        "Ljava/lang/IllegalStateException;",
+        "Ljava/lang/IllegalArgumentException;",
+        "Ljava/lang/NoSuchMethodError;",
+        "Ljava/lang/NoSuchFieldError;",
+        "Ljava/lang/AbstractMethodError;",
+        "Ljava/lang/BootstrapMethodError;",
+        "Ljava/lang/invoke/MethodHandle;",
+        "Ljava/lang/reflect/MethodType;",
+        SUB,
+        IFACE,
     ] {
         w.add_type(c);
     }
     for f in [
-        ("i", "I"), ("j", "J"), ("d", "D"), ("f", "F"), ("b", "Z"),
-        ("c", "C"), ("sh", "S"), ("by", "B"), ("o", "Ljava/lang/Object;"),
-        ("S", "I"), ("SD", "D"), ("SA", "Ljava/lang/String;"),
+        ("i", "I"),
+        ("j", "J"),
+        ("d", "D"),
+        ("f", "F"),
+        ("b", "Z"),
+        ("c", "C"),
+        ("sh", "S"),
+        ("by", "B"),
+        ("o", "Ljava/lang/Object;"),
+        ("S", "I"),
+        ("SD", "D"),
+        ("SA", "Ljava/lang/String;"),
     ] {
         w.add_field(HOST, f.0, f.1);
     }
     w.add_method("Ljava/lang/Object;", "<init>", &[], "V");
     w.add_method("Ljava/lang/String;", "length", &[], "I");
-    w.add_method("Ljava/lang/String;", "replace", &["Ljava/lang/CharSequence;", "Ljava/lang/CharSequence;"], "Ljava/lang/String;");
-    w.add_method("Ljava/lang/Throwable;", "<init>", &["Ljava/lang/String;"], "V");
-    w.add_method("Ljava/lang/Exception;", "<init>", &["Ljava/lang/String;"], "V");
+    w.add_method(
+        "Ljava/lang/String;",
+        "replace",
+        &["Ljava/lang/CharSequence;", "Ljava/lang/CharSequence;"],
+        "Ljava/lang/String;",
+    );
+    w.add_method(
+        "Ljava/lang/Throwable;",
+        "<init>",
+        &["Ljava/lang/String;"],
+        "V",
+    );
+    w.add_method(
+        "Ljava/lang/Exception;",
+        "<init>",
+        &["Ljava/lang/String;"],
+        "V",
+    );
     w.add_method("Ljava/lang/Error;", "<init>", &["Ljava/lang/String;"], "V");
     w.add_method("Ljava/lang/Object;", "hashCode", &[], "I");
-    w.add_method("Ljava/lang/invoke/MethodHandle;", "invoke", &["[Ljava/lang/Object;"], "Ljava/lang/Object;");
-    w.add_method("Ljava/lang/invoke/MethodHandle;", "invokeExact", &["[Ljava/lang/Object;"], "Ljava/lang/Object;");
-    w.add_method("Ljava/lang/invoke/MethodType;", "methodType", &["Ljava/lang/Class;", "[Ljava/lang/Class;"], "Ljava/lang/invoke/MethodType;");
+    w.add_method(
+        "Ljava/lang/invoke/MethodHandle;",
+        "invoke",
+        &["[Ljava/lang/Object;"],
+        "Ljava/lang/Object;",
+    );
+    w.add_method(
+        "Ljava/lang/invoke/MethodHandle;",
+        "invokeExact",
+        &["[Ljava/lang/Object;"],
+        "Ljava/lang/Object;",
+    );
+    w.add_method(
+        "Ljava/lang/invoke/MethodType;",
+        "methodType",
+        &["Ljava/lang/Class;", "[Ljava/lang/Class;"],
+        "Ljava/lang/invoke/MethodType;",
+    );
     // Interned so a test can build a `const-method-type` for it: a proto only
     // enters the pool through a method that uses it.
     w.add_method(HOST, "getStringFromInt", &["I"], "Ljava/lang/String;");
@@ -591,7 +824,29 @@ pub fn intern_standard(s: &mut Synthetic) {
     w.add_method(HOST, "notThere", &["I"], "I");
     w.add_method(IFACE, "size", &[], "I");
     w.add_method(HOST, "notThere0", &[], "I");
-    for t in ["hello", "a", "b", "x", "", "from the shim", "hello ☃", "naïve"] {
+    // The subclasses' constructors. A test that builds a `Lu;` and calls its
+    // `vMeth` through a vtable has to name `Lu;.<init>` in the pool, and
+    // `method_at` refuses an index that was never interned rather than inventing
+    // one — which is the right behaviour for a test harness too, because a
+    // silently wrong index would produce a wrong result rather than a failure.
+    w.add_method(SUB, "<init>", &[], "V");
+    w.add_method("Lj;", "<init>", &[], "V");
+    // Long- and double-typed parameters, so a test can put a wide value in the
+    // argument window without hand-counting slots.
+    w.add_method(HOST, "takesLong", &["J"], "I");
+    w.add_method(HOST, "takesDouble", &["D"], "I");
+    w.add_method(HOST, "takesObject", &["Ljava/lang/Object;"], "I");
+    for t in [
+        "hello",
+        "a",
+        "b",
+        "x",
+        "",
+        "from the shim",
+        "hello ☃",
+        "naïve",
+        "from the callee",
+    ] {
         w.add_string(t);
     }
     for t in ["[[I", "[[D", "[Z", "[C", "[S", "[B", "[F", "[[[I"] {
@@ -621,22 +876,26 @@ pub fn string_at(idx: &IndexMap, s: &str) -> u16 {
 
 /// Resolve a type index in a frozen pool.
 pub fn ty_at(idx: &IndexMap, d: &str) -> u16 {
-    idx.type_(d).expect("type must be interned before the freeze")
+    idx.type_(d)
+        .expect("type must be interned before the freeze")
 }
 
 /// Resolve a field index in a frozen pool.
 pub fn field_at(idx: &IndexMap, class: &str, name: &str, ty: &str) -> u16 {
-    idx.field(class, name, ty).expect("field must be interned before the freeze")
+    idx.field(class, name, ty)
+        .expect("field must be interned before the freeze")
 }
 
 /// Resolve a method index in a frozen pool.
 pub fn method_at(idx: &IndexMap, class: &str, name: &str, params: &[&str], ret: &str) -> u16 {
-    idx.method(class, name, params, ret).expect("method must be interned before the freeze")
+    idx.method(class, name, params, ret)
+        .expect("method must be interned before the freeze")
 }
 
 /// Resolve a proto index in a frozen pool.
 pub fn proto_at(idx: &IndexMap, params: &[&str], ret: &str) -> u32 {
-    idx.proto(params, ret).expect("proto must be interned before the freeze")
+    idx.proto(params, ret)
+        .expect("proto must be interned before the freeze")
 }
 
 // ================================================================== the shim
@@ -665,7 +924,9 @@ impl Recorder {
 
     /// Make `class->name` raise `class` with `message`.
     pub fn throw(&self, key: &str, class: &'static str, message: &str) {
-        self.throws.borrow_mut().insert(key.to_string(), (class, Some(message.to_string())));
+        self.throws
+            .borrow_mut()
+            .insert(key.to_string(), (class, Some(message.to_string())));
     }
 
     /// Answer a field read or write.
@@ -675,7 +936,9 @@ impl Recorder {
 
     /// Resolve a call site whose bootstrap method is named `bootstrap`.
     pub fn resolve_call_site(&self, bootstrap: &str, r: ResolvedCallSite) {
-        self.call_sites.borrow_mut().insert(bootstrap.to_string(), r);
+        self.call_sites
+            .borrow_mut()
+            .insert(bootstrap.to_string(), r);
     }
 
     /// Claim a class exists.
@@ -701,7 +964,10 @@ impl Recorder {
         let key = format!("{}->{}{}", call.class, call.name, call.signature);
         self.log.borrow_mut().push(key.clone());
         if let Some((class, message)) = self.throws.borrow().get(&key) {
-            return HostOutcome::Throw(ThrowSpec { class, message: message.clone() });
+            return HostOutcome::Throw(ThrowSpec {
+                class,
+                message: message.clone(),
+            });
         }
         match self.answers.borrow().get(&key) {
             Some(v) => HostOutcome::Value(v.clone()),
@@ -832,7 +1098,10 @@ pub fn assert_kind<T: std::fmt::Debug>(result: &Result<T, ExecError>, expected: 
 /// Assert the terminal condition rather than the discriminant, for the tests
 /// whose point is that the conditions stay apart.
 #[track_caller]
-pub fn assert_termination<T: std::fmt::Debug>(result: &Result<T, ExecError>, expected: Termination) {
+pub fn assert_termination<T: std::fmt::Debug>(
+    result: &Result<T, ExecError>,
+    expected: Termination,
+) {
     match result {
         Ok(v) => panic!("expected {expected:?}, but the call returned {v:?}"),
         Err(e) => assert_eq!(e.termination(), expected, "got: {e}"),

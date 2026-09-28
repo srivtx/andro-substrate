@@ -38,6 +38,7 @@ use serde_json::Value as J;
 use crate::dispatch::{Shim, ShimCaller, Value};
 use crate::event::SubstrateEvent;
 use crate::layout::{NodeKind, Orientation, Size, TextPolicy, View};
+use crate::policy::SubstratePolicy;
 use crate::recording::{build, CaptureFacts, Extras};
 use crate::registry;
 use crate::vfs::VPath;
@@ -68,15 +69,33 @@ pub struct ScenarioOutput {
     pub box_tree: Option<J>,
     /// The VFS listing at the end of the run.
     pub vfs_listing: Vec<(String, u64, u32)>,
+    /// The substrate policy the run was under. Carried out so a caller cannot
+    /// hold a document without knowing which substrate produced it — the whole
+    /// point of the policy family is that the two travel together.
+    pub substrate_policy: SubstratePolicy,
     /// The document, ready to serialise.
     pub document: J,
 }
 
-/// Run the scenario and build the document.
+/// Run the scenario under the default substrate policy and build the document.
 pub fn run() -> Result<ScenarioOutput, crate::error::ShimError> {
-    let mut shim = Shim::new(
+    run_with(SubstratePolicy::default())
+}
+
+/// Run the identical script under an explicit substrate policy.
+///
+/// **The script is byte-for-byte the same function.** That is the whole basis of
+/// the differential: the only thing that differs between two runs is the
+/// `SubstratePolicy` value, so every difference in the two recordings is
+/// attributable to it. A differential that used a different script per policy
+/// would prove nothing, and the refactor that introduced one would be invisible.
+pub fn run_with(
+    substrate_policy: SubstratePolicy,
+) -> Result<ScenarioOutput, crate::error::ShimError> {
+    let mut shim = Shim::with_policy(
         "pro.rudloff.search_to_browser",
         FIXTURE_CLASSES.iter().map(|s| s.to_string()).collect(),
+        substrate_policy,
     )?;
     shim.set_path_policy(crate::redact::PathPolicy::Full);
     shim.set_text_policy(TextPolicy::ShapeOnly);
@@ -98,7 +117,7 @@ pub fn run() -> Result<ScenarioOutput, crate::error::ShimError> {
         box_tree: Some(serde_json::to_value(&box_tree).unwrap_or(J::Null)),
         vfs_listing,
     };
-    let mut facts = CaptureFacts::fixture();
+    let mut facts = CaptureFacts::fixture_with(substrate_policy);
     facts.shim_dex_sha256 = crate::emit::emit().map(|e| e.digest).unwrap_or_default();
     let document = build(&facts, &events, &extras)?;
 
@@ -106,6 +125,7 @@ pub fn run() -> Result<ScenarioOutput, crate::error::ShimError> {
         events,
         box_tree: extras.box_tree,
         vfs_listing: extras.vfs_listing,
+        substrate_policy,
         document,
     })
 }
@@ -181,7 +201,12 @@ fn step_3_identity(shim: &mut Shim) {
     let info = shim
         .invoke("Landroid/content/pm/ApplicationInfo;", "<init>", "()V", &[])
         .expect("ApplicationInfo");
-    let _ = shim.invoke("Landroid/content/pm/ApplicationInfo;", "isDebuggable", "()Z", &[info]);
+    let _ = shim.invoke(
+        "Landroid/content/pm/ApplicationInfo;",
+        "isDebuggable",
+        "()Z",
+        &[info],
+    );
     // A `static final int` constant, read the way an app reads it.
     let _ = shim.read_static("Landroid/content/pm/ApplicationInfo;", "FLAG_DEBUGGABLE");
 }
@@ -212,12 +237,7 @@ fn step_4_kernel_probes(shim: &mut Shim) {
 fn step_5_package_manager(shim: &mut Shim) {
     shim.clock_mut().advance(1);
     let ctx = shim
-        .invoke(
-            "Landroid/content/pm/PackageManager;",
-            "<init>",
-            "()V",
-            &[],
-        )
+        .invoke("Landroid/content/pm/PackageManager;", "<init>", "()V", &[])
         .unwrap_or_else(|_| shim.ref_for("Landroid/content/pm/PackageManager;"));
     let _ = shim.invoke(
         "Landroid/content/pm/PackageManager;",
@@ -246,7 +266,11 @@ fn step_5_package_manager(shim: &mut Shim) {
         "Landroid/content/pm/PackageManager;",
         "queryIntentActivities",
         "(Landroid/content/Intent;I)Ljava/util/List;",
-        &[ctx.clone(), Value::Ref("Landroid/content/Intent;".into(), 1), Value::Int(0)],
+        &[
+            ctx.clone(),
+            Value::Ref("Landroid/content/Intent;".into(), 1),
+            Value::Int(0),
+        ],
     );
     for feature in [
         "android.hardware.camera",
@@ -302,7 +326,12 @@ fn build_login_tree() -> View {
     );
     root.layout_params.width = crate::layout::Dimension::MatchParent;
 
-    let mut title = View::text("title", "TextView", NodeKind::TextView, "Sign in to continue");
+    let mut title = View::text(
+        "title",
+        "TextView",
+        NodeKind::TextView,
+        "Sign in to continue",
+    );
     title.layout_params.width = crate::layout::Dimension::MatchParent;
     root.add(title);
 
@@ -319,7 +348,12 @@ fn build_login_tree() -> View {
     password.layout_params.width = crate::layout::Dimension::MatchParent;
     root.add(password);
 
-    let mut row = View::group("row", "LinearLayout", NodeKind::LinearLayout, Orientation::Horizontal);
+    let mut row = View::group(
+        "row",
+        "LinearLayout",
+        NodeKind::LinearLayout,
+        Orientation::Horizontal,
+    );
     let mut ok = View::text("ok", "Button", NodeKind::Button, "Continue");
     ok.layout_params.weight = 1.0;
     row.add(ok);
@@ -335,27 +369,45 @@ fn build_login_tree() -> View {
 fn step_7_message_queue(shim: &mut Shim) {
     shim.clock_mut().advance(1);
     let looper = shim
-        .invoke("Landroid/os/Looper;", "getMainLooper", "()Landroid/os/Looper;", &[])
+        .invoke(
+            "Landroid/os/Looper;",
+            "getMainLooper",
+            "()Landroid/os/Looper;",
+            &[],
+        )
         .expect("getMainLooper");
     let handler = shim
-        .invoke("Landroid/os/Handler;", "<init>", "(Landroid/os/Looper;)V", &[looper])
+        .invoke(
+            "Landroid/os/Handler;",
+            "<init>",
+            "(Landroid/os/Looper;)V",
+            &[looper],
+        )
         .expect("Handler");
     for _ in 0..3 {
         let _ = shim.invoke(
             "Landroid/os/Handler;",
             "post",
             "(Ljava/lang/Object;)Z",
-            &[handler.clone(), Value::Ref("Ljava/lang/Runnable;".into(), 1)],
+            &[
+                handler.clone(),
+                Value::Ref("Ljava/lang/Runnable;".into(), 1),
+            ],
         );
     }
     let queue = shim.ref_for("Landroid/os/MessageQueue;");
     let _ = shim.invoke("Landroid/os/MessageQueue;", "size", "()I", &[queue]);
-    let _ = shim.invoke(
-        "Landroid/os/Looper;",
-        "loop",
-        "()V",
-        &[],
-    );
+    // Two reads of the substrate's clock, and one sleep, so the `time` axis has
+    // something to transform. Under `frozen` both reads answer 0 and the sleep
+    // advances nothing the app can see; under `scaled` they are multiplied.
+    for name in ["uptimeMillis", "elapsedRealtime"] {
+        let _ = shim.invoke("Landroid/os/SystemClock;", name, "()J", &[]);
+    }
+    let _ = shim.invoke("Ljava/lang/System;", "currentTimeMillis", "()J", &[]);
+    shim.clock_mut().advance(5);
+    let _ = shim.invoke("Ljava/lang/Thread;", "sleep", "(J)V", &[Value::Long(50)]);
+    let _ = shim.invoke("Landroid/os/SystemClock;", "elapsedRealtime", "()J", &[]);
+    let _ = shim.invoke("Landroid/os/Looper;", "loop", "()V", &[]);
 }
 
 /// 8. The egress denial, with the redaction on show.
@@ -440,12 +492,41 @@ fn step_8_egress(shim: &mut Shim) {
             "Ljava/io/OutputStream;",
             "write",
             "([BII)V",
-            &[sink, Value::Bytes(vec![0u8; 512]), Value::Int(0), Value::Int(512)],
+            &[
+                sink,
+                Value::Bytes(vec![0u8; 512]),
+                Value::Int(0),
+                Value::Int(512),
+            ],
         );
     }
     shim.clock_mut().advance(2);
-    // The terminal. Throws.
-    let _ = shim.invoke("Ljava/net/URLConnection;", "connect", "()V", std::slice::from_ref(&conn));
+    // The terminal. Throws under the default network axis; returns normally
+    // under `synthetic_loopback`. The script does not branch on either.
+    let _ = shim.invoke(
+        "Ljava/net/URLConnection;",
+        "connect",
+        "()V",
+        std::slice::from_ref(&conn),
+    );
+    // The two reads a denied substrate refuses and a loopback substrate answers.
+    // Under the default both throw `IOException`; under loopback one returns 200
+    // and the other returns a handle onto a zero-length declared buffer. This is
+    // the sharpest single contrast in the differential: an app that treats 200
+    // as success never enters its failure path, and no policy in this crate can
+    // make that the app's own doing.
+    let _ = shim.invoke(
+        "Ljava/net/HttpURLConnection;",
+        "getResponseCode",
+        "()I",
+        std::slice::from_ref(&conn),
+    );
+    let _ = shim.invoke(
+        "Ljava/net/HttpURLConnection;",
+        "getInputStream",
+        "()Ljava/io/InputStream;",
+        std::slice::from_ref(&conn),
+    );
     // A second attempt, because an app that retries is a finding and one that
     // does not is a different finding.
     shim.clock_mut().advance(1);
@@ -467,7 +548,9 @@ fn step_8_egress(shim: &mut Shim) {
         "(Ljava/lang/String;)V",
         &[
             wv,
-            Value::Str(format!("https://cdn.substrate.invalid/app.js?v={CANARY_QUERY_VALUE}")),
+            Value::Str(format!(
+                "https://cdn.substrate.invalid/app.js?v={CANARY_QUERY_VALUE}"
+            )),
         ],
     );
 }

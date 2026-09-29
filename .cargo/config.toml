@@ -1,0 +1,26 @@
+# One shared build directory for the whole workspace.
+#
+# Seven independent `target/` directories cost 6.4 GB on this machine, which is
+# 27% of the free space on a 228 GB disk. Sharing one target directory across
+# the crates reuses dependency builds -- dexcore and dexinterp are both
+# dependencies of the compiler, shim, runtime and harness, so the duplicated
+# builds of those were pure waste.
+[build]
+target-dir = "target"
+
+# This machine has 8 cores and 16 GB of RAM, and macOS was already carrying
+# 4.2 GB of swap. Cargo's default of `jobs = num_cpus` starts 8 concurrent
+# rustc processes, which peak around 800 MB each: roughly 6.4 GB for the build
+# alone, against 7.5 GB free. That pushes the machine into swap, and once swap
+# is exhausted macOS compacts and evicts, which reads as the whole desktop
+# lagging rather than as a slow build.
+#
+# Two jobs caps the build at roughly 1.6 GB. Wall-clock time roughly doubles;
+# the machine stays usable. Raise it only when nothing else is running.
+jobs = 2
+
+# Keep the build out of swap entirely -- a paged-out rustc is slower than one
+# that never started, so failing fast beats thrashing.
+[profile.dev]
+debug = 1
+incremental = true

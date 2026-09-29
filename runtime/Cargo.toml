@@ -1,0 +1,52 @@
+[package]
+name = "substrate-runtime"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+description = "Runtime substrate for andro-substrate: resource table, value types, binary XML inflation and asset access"
+license = "Apache-2.0"
+publish = false
+
+[lib]
+name = "substrate_runtime"
+path = "src/lib.rs"
+
+[dependencies]
+# `rust_backend` keeps this pure Rust with no C toolchain, which the whole
+# toolchain has to build to `wasm32-unknown-unknown`. Same constraint and same
+# reasoning as `analysis/` and `harness/`.
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
+
+# Owned by the `runtime/multidex/` subsystem. `shim` is a dependency because the
+# multidex class space has to hand off to the shim's classloader with the
+# supersede rule from docs/decisions/0005 unchanged, and that is only
+# checkable against the real type.
+dexcore = { path = "../tools/dexcore" }
+shim = { path = "../shim" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[dev-dependencies]
+# Used only to diff our binary-XML reader against a second, independent reader
+# over the same bytes. Nothing in the shipped path depends on it.
+dexcore = { path = "../tools/dexcore" }
+
+# Integration tests for `runtime/multidex/`. They live in that subsystem's own
+# directory rather than `tests/`, because each subsystem owns one directory and
+# `tests/` would be shared. `autotests` is left at its default so a
+# package-root `tests/` directory added by another owner is still discovered.
+[[test]]
+name = "multidex_load_order"
+path = "multidex/tests/load_order.rs"
+
+[[test]]
+name = "multidex_resolution"
+path = "multidex/tests/resolution.rs"
+
+[[test]]
+name = "multidex_negative"
+path = "multidex/tests/negative.rs"
+
+[[test]]
+name = "multidex_shim_supersede"
+path = "multidex/tests/shim_supersede.rs"

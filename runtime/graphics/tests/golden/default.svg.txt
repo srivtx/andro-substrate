@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:substrate="https://andro-substrate.invalid/graphics/1" width="360" height="772" viewBox="0 0 360 772" data-substrate-provenance="reconstruction-of-shim-box-tree" data-substrate-is-android="false" data-app-draw-code-executed="false" data-backend="1" data-measure-model="zero-stub/v1 (unused)" data-text-policy="withheld" data-gfx-ids-total="11" data-gfx-reproduced="0" data-gfx-observed-satisfied="0" data-report-audit-mismatches="0" data-ink-fabricated="0" data-ink-coverage="0.0000" data-viewport-rect="x=0 y=132 w=360 h=640">
+  <title>RECONSTRUCTION — shim box tree, NOT an Android frame. App onDraw code was never executed. 0 reproduced of 11. no ink for 100.0% of the shim&apos;s leaf area; 3 text run(s) withheld by the shim&apos;s TextPolicy</title>
+  <desc>
+    THIS FILE IS NOT A SCREENSHOT OF AN APP.
+    RECONSTRUCTION — shim box tree, NOT an Android frame. App onDraw code was never executed. 0 reproduced of 11. no ink for 100.0% of the shim&apos;s leaf area; 3 text run(s) withheld by the shim&apos;s TextPolicy
+    Provenance of each element is on its data-prov attribute:
+      shim-exact = exactly the shim&apos;s layout value; not a device measurement
+      derived = a consequence of the shim&apos;s layout, not of the app&apos;s drawing
+      fabricated = invented here; a device would differ
+      absent = nothing emitted, deliberately
+    25 steps (0 ink, 0 of them fabricated), 3 withheld text runs covering 100.0% of the leaf area, 0 reproduced of 11 SUB.GFX assumptions
+    Capability report:
+      SUB.GFX.EGL_CONTEXT verdict=absent emission=not-emitted origin=absent observed=absent :: no GPU context: this layer emits a text serialisation, not a drawing
+      SUB.GFX.GLES_VERSION verdict=absent emission=not-emitted origin=absent observed=absent :: no GLES to ask; reporting a version would fabricate a capability probe
+      SUB.GFX.VULKAN verdict=absent emission=not-emitted origin=absent observed=absent :: no Vulkan instance; WebGPU is not an equivalent and is not claimed as one
+      SUB.GFX.EXTENSIONS verdict=absent emission=not-emitted origin=absent observed=absent :: no extension string: an empty one is read as &quot;nothing supported&quot; and a wrong one is a lie
+      SUB.GFX.RENDERER_STRING verdict=absent emission=not-emitted origin=absent observed=absent :: no GPU string emitted; the host&apos;s would be a fingerprinting side channel and not the device&apos;s anyway
+      SUB.GFX.SURFACE verdict=absent emission=not-emitted origin=absent observed=absent :: no Surface/BufferQueue; bitmaps reach here undecoded, and this layer cannot encode them either
+      SUB.GFX.HW_COMPOSITION verdict=absent emission=not-emitted origin=absent observed=absent :: no compositor: writing a display list is not presenting a frame
+      SUB.GFX.FRAME_BUDGET verdict=absent emission=not-emitted origin=absent observed=absent :: no vsync and no deadline; 16.7 ms would be a fabricated number, so none is reported
+      SUB.GFX.SCREEN_ON verdict=absent emission=not-emitted origin=absent observed=absent :: no PowerManager: a tab has no screen to be on or off
+      SUB.GFX.CAMERA_PIPE verdict=absent emission=not-emitted origin=absent observed=absent :: no camera HAL and no camera2 pipeline
+      SUB.GFX.TEXT_RENDER verdict=substituted emission=substituted origin=fabricated observed=substituted :: runs can be emitted, but no font is loaded: advances and baselines are this layer&apos;s
+  </desc>
+  <metadata>
+    <substrate:display-list version="1">
+      <substrate:banner>RECONSTRUCTION — shim box tree, NOT an Android frame. App onDraw code was never executed. 0 reproduced of 11. no ink for 100.0% of the shim&apos;s leaf area; 3 text run(s) withheld by the shim&apos;s TextPolicy</substrate:banner>
+      <substrate:geometry-origin>shim::layout::BoxNode</substrate:geometry-origin>
+      <substrate:geometry-trust>exact-relative-to-the-shim-only</substrate:geometry-trust>
+      <substrate:app-draw-code-executed>false</substrate:app-draw-code-executed>
+      <substrate:measure-model>zero-stub/v1 (unused)</substrate:measure-model>
+      <substrate:text-policy>withheld</substrate:text-policy>
+      <substrate:viewport dp-w="360" dp-h="640" density="1"/>
+      <substrate:counts steps="25" ink="0" ink-fabricated="0" annotations="10" text-runs="0" text-withheld="3" withheld-chars="37" images-drawn="0" images-absent="0" clip-regions="1" leaf-area-dp2="22592" unknown-ink-dp2="22592" ink-coverage="0.0000"/>
+      <substrate:capability backend="headless" reproduced="0" observed-satisfied="0" audit-mismatches="0">
+        <substrate:assumption id="SUB.GFX.EGL_CONTEXT" verdict="absent" emission="not-emitted" origin="absent" observed="absent">no GPU context: this layer emits a text serialisation, not a drawing</substrate:assumption>
+        <substrate:assumption id="SUB.GFX.GLES_VERSION" verdict="absent" emission="not-emitted" origin="absent" observed="absent">no GLES to ask; reporting a version would fabricate a capability probe</substrate:assumption>
+        <substrate:assumption id="SUB.GFX.VULKAN" verdict="absent" emission="not-emitted" origin="absent" observed="absent">no Vulkan instance; WebGPU is not an equivalent and is not claimed as one</substrate:assumption>
+        <substrate:assumption id="SUB.GFX.EXTENSIONS" verdict="absent" emission="not-emitted" origin="absent" observed="absent">no extension string: an empty one is read as &quot;nothing supported&quot; and a wrong one is a lie</substrate:assumption>
+        <substrate:assumption id="SUB.GFX.RENDERER_STRING" verdict="absent" emission="not-emitted" origin="absent" observed="absent">no GPU string emitted; the host&apos;s would be a fingerprinting side channel and not the device&apos;s anyway</substrate:assumption>
+        <substrate:assumption id="SUB.GFX.SURFACE" verdict="absent" emission="not-emitted" origin="absent" observed="absent">no Surface/BufferQueue; bitmaps reach here undecoded, and this layer cannot encode them either</substrate:assumption>
+        <substrate:assumption id="SUB.GFX.HW_COMPOSITION" verdict="absent" emission="not-emitted" origin="absent" observed="absent">no compositor: writing a display list is not presenting a frame</substrate:assumption>
+        <substrate:assumption id="SUB.GFX.FRAME_BUDGET" verdict="absent" emission="not-emitted" origin="absent" observed="absent">no vsync and no deadline; 16.7 ms would be a fabricated number, so none is reported</substrate:assumption>
+        <substrate:assumption id="SUB.GFX.SCREEN_ON" verdict="absent" emission="not-emitted" origin="absent" observed="absent">no PowerManager: a tab has no screen to be on or off</substrate:assumption>
+        <substrate:assumption id="SUB.GFX.CAMERA_PIPE" verdict="absent" emission="not-emitted" origin="absent" observed="absent">no camera HAL and no camera2 pipeline</substrate:assumption>
+        <substrate:assumption id="SUB.GFX.TEXT_RENDER" verdict="substituted" emission="substituted" origin="fabricated" observed="substituted">runs can be emitted, but no font is loaded: advances and baselines are this layer&apos;s</substrate:assumption>
+      </substrate:capability>
+      <substrate:headline>headless backend: 0 of 11 SUB.GFX assumptions reproduced (0 observed satisfied, 0 claim/observation mismatches, 11 probed)</substrate:headline>
+    </substrate:display-list>
+  </metadata>
+  <style>.shim-box{fill:none;stroke:#2f6f9f;stroke-width:1;stroke-dasharray:3 2}
+.shim-box-invisible{fill:none;stroke:#9a9a9a;stroke-width:1;stroke-dasharray:1 3}
+.withheld{fill:url(#pat-withheld);stroke:#b06a00;stroke-width:1}
+.image-absent{fill:url(#pat-absent);stroke:#8a2f2f;stroke-width:1.5}
+.unknown-ink{fill:url(#pat-unknown);stroke:none;opacity:0.5}
+.legend-text{font-family:monospace;font-size:10px;fill:#111}
+.legend-bg{fill:#f4f1e8;stroke:#333;stroke-width:1}
+.legend-head{font-family:monospace;font-size:11px;font-weight:bold;fill:#111}
+  </style>
+  <defs>
+    <pattern id="pat-unknown" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#ffffff"/><path d="M0,0 L8,0 L0,8 Z" fill="#d9d9d9"/></pattern>
+    <pattern id="pat-withheld" width="6" height="6" patternUnits="userSpaceOnUse"><rect width="6" height="6" fill="#fff4e0"/><path d="M0,6 L6,0" stroke="#d98c1a" stroke-width="1.5"/></pattern>
+    <pattern id="pat-absent" width="6" height="6" patternUnits="userSpaceOnUse"><rect width="6" height="6" fill="#f6e4e4"/><path d="M0,0 L6,6 M6,0 L0,6" stroke="#a33" stroke-width="1"/></pattern>
+    <filter id="blend-over" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB" data-note="Porter-Duff SRC_OVER: source over destination"><feFlood flood-color="#fff" flood-opacity="1" result="k"/><feComposite in="SourceGraphic" in2="k" operator="over"/></filter>
+    <filter id="blend-in" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB" data-note="Porter-Duff SRC_IN: source where destination is opaque"><feFlood flood-color="#fff" flood-opacity="1" result="k"/><feComposite in="SourceGraphic" in2="k" operator="in"/></filter>
+    <filter id="blend-out" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB" data-note="Porter-Duff SRC_OUT: source where destination is transparent"><feFlood flood-color="#fff" flood-opacity="1" result="k"/><feComposite in="SourceGraphic" in2="k" operator="out"/></filter>
+    <filter id="blend-atop" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB" data-note="Porter-Duff SRC_ATOP: source over destination, both masked to the union"><feFlood flood-color="#fff" flood-opacity="1" result="k"/><feComposite in="SourceGraphic" in2="k" operator="atop"/></filter>
+    <filter id="blend-xor" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB" data-note="Porter-Duff XOR: the symmetric difference"><feFlood flood-color="#fff" flood-opacity="1" result="k"/><feComposite in="SourceGraphic" in2="k" operator="xor"/></filter>
+    <filter id="blend-multiply" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB" data-note="Compositing blend, NOT Skia MULTIPLY: premultiplied here, unpremultiplied there"><feFlood flood-color="#fff" flood-opacity="1" result="k"/><feComposite in="SourceGraphic" in2="k" operator="multiply"/></filter>
+    <filter id="blend-screen" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB" data-note="Compositing blend, NOT Skia SCREEN: premultiplied here, unpremultiplied there"><feFlood flood-color="#fff" flood-opacity="1" result="k"/><feComposite in="SourceGraphic" in2="k" operator="screen"/></filter>
+    <filter id="blend-darken" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB" data-note="Compositing blend, NOT Skia DARKEN: premultiplied here, unpremultiplied there"><feFlood flood-color="#fff" flood-opacity="1" result="k"/><feComposite in="SourceGraphic" in2="k" operator="darken"/></filter>
+    <filter id="blend-lighten" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB" data-note="Compositing blend, NOT Skia LIGHTEN: premultiplied here, unpremultiplied there"><feFlood flood-color="#fff" flood-opacity="1" result="k"/><feComposite in="SourceGraphic" in2="k" operator="lighten"/></filter>
+  </defs>
+  <clipPath id="clip-viewport"><rect x="0" y="132" width="360" height="640"/></clipPath>
+  <g id="provenance-banner" data-prov="absent">
+    <rect id="banner-bg" x="0" y="0" width="360" height="132" fill="#7a1010"/>
+    <text class="legend-head" x="6" y="14" fill="#ffffff">RECONSTRUCTION OF THE SHIM&apos;S LAYOUT — NOT AN ANDROID FRAME</text>
+    <text class="legend-text" x="6" y="27" fill="#ffffff">The app&apos;s onDraw code was never executed. Geometry below is the shim&apos;s box tree, exact relative to the shim only.</text>
+    <text class="legend-text" x="6" y="40" fill="#ffffff">Text was withheld by the shim&apos;s TextPolicy: a rendering cannot be shown for a string the tree does not contain.</text>
+    <text class="legend-text" x="6" y="53" fill="#ffffff">0 reproduced of 11 SUB.GFX assumptions.</text>
+    <text class="legend-text" x="6" y="66" fill="#ffffff">view 360x640 dp at density 1; a browser&apos;s rasteriser is not Skia, so even the filled shapes below are not device pixels.</text>
+  </g>
+
+  <g id="app-reconstruction" data-prov="derived" transform="translate(0,132)" clip-path="url(#clip-viewport)">
+    <g id="s0" data-prov="derived" data-op="push"/>
+      <g id="s1" data-prov="derived" data-op="push"/>
+        <g id="s2" data-prov="derived" data-op="translate" transform="translate(0, 0)"/>
+          <g id="s3" data-prov="derived" data-op="clip-rect" data-asked-antialias="false" clip-path="url(#cs3)">
+            <clipPath id="cs3"><rect x="0" y="0" width="360" height="88"/></clipPath>
+            <rect id="s4" data-prov="shim-exact" data-op="box-outline" data-view="root" data-kind="linearlayout" data-state="visible" class="shim-box" x="0" y="0" width="360" height="88"/>
+            <g id="s5" data-prov="derived" data-op="push"/>
+              <g id="s6" data-prov="derived" data-op="translate" transform="translate(4, 4)"/>
+                <rect id="s7" data-prov="absent" data-op="unknown-ink" data-reason="the shim&apos;s BoxNode carries geometry only; the app&apos;s onDraw never ran here" class="unknown-ink" x="0" y="0" width="352" height="24"/>
+                <rect id="s8" data-prov="shim-exact" data-op="box-outline" data-view="title" data-kind="textview" data-state="visible" class="shim-box" x="0" y="0" width="352" height="24"/>
+                <g id="s9" data-prov="shim-exact" data-op="text-withheld" data-view="title" data-chars="7" data-classes="letter=6,space=1" data-shape="plain">
+                  <rect class="withheld" x="0" y="0" width="352" height="24"/>
+                  <text class="legend-text" x="2" y="10">7 chars withheld (plain)</text>
+                </g>
+                <g id="s10" data-prov="derived" data-op="pop"/>
+              <g id="s11" data-prov="derived" data-op="push"/>
+                <g id="s12" data-prov="derived" data-op="translate" transform="translate(4, 28)"/>
+                  <rect id="s13" data-prov="absent" data-op="unknown-ink" data-reason="the shim&apos;s BoxNode carries geometry only; the app&apos;s onDraw never ran here" class="unknown-ink" x="0" y="0" width="352" height="32"/>
+                  <rect id="s14" data-prov="shim-exact" data-op="box-outline" data-view="email" data-kind="edittext" data-state="visible" class="shim-box" x="0" y="0" width="352" height="32"/>
+                  <g id="s15" data-prov="shim-exact" data-op="text-withheld" data-view="email" data-chars="22" data-classes="letter=20,punct=2" data-shape="email">
+                    <rect class="withheld" x="0" y="0" width="352" height="32"/>
+                    <text class="legend-text" x="2" y="10">22 chars withheld (email)</text>
+                  </g>
+                  <g id="s16" data-prov="derived" data-op="pop"/>
+                <g id="s17" data-prov="derived" data-op="push"/>
+                  <g id="s18" data-prov="derived" data-op="translate" transform="translate(4, 60)"/>
+                    <rect id="s19" data-prov="absent" data-op="unknown-ink" data-reason="the shim&apos;s BoxNode carries geometry only; the app&apos;s onDraw never ran here" class="unknown-ink" x="0" y="0" width="120" height="24"/>
+                    <rect id="s20" data-prov="shim-exact" data-op="box-outline" data-view="go" data-kind="button" data-state="visible" class="shim-box" x="0" y="0" width="120" height="24"/>
+                    <g id="s21" data-prov="shim-exact" data-op="text-withheld" data-view="go" data-chars="8" data-classes="letter=8" data-shape="plain">
+                      <rect class="withheld" x="0" y="0" width="120" height="24"/>
+                      <text class="legend-text" x="2" y="10">8 chars withheld (plain)</text>
+                    </g>
+                    <g id="s22" data-prov="derived" data-op="pop"/>
+                  <g id="s23" data-prov="derived" data-op="pop"/>
+                <g id="s24" data-prov="derived" data-op="pop"/>
+  </g>
+  <g id="provenance-legend" data-prov="derived" transform="translate(0,772)">
+    <rect x="6" y="5" width="10" height="8" fill="url(#pat-unknown)" stroke="#333"/>
+    <text class="legend-text" x="20" y="12">no ink: the app&apos;s drawing was not available</text>
+    <rect x="186" y="5" width="10" height="8" fill="url(#pat-withheld)" stroke="#333"/>
+    <text class="legend-text" x="200" y="12">text the shim&apos;s box tree withheld</text>
+    <rect x="6" y="17" width="10" height="8" fill="url(#pat-absent)" stroke="#333"/>
+    <text class="legend-text" x="20" y="24">image never decoded</text>
+    <rect x="186" y="17" width="10" height="8" fill="url(#pat-box)" stroke="#333"/>
+    <text class="legend-text" x="200" y="24">view boundary from the shim&apos;s tree (not app ink)</text>
+  </g>
+</svg>

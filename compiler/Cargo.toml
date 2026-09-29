@@ -1,0 +1,36 @@
+[package]
+name = "andro-substrate-compiler"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+description = "DEX to WebAssembly compiler front end: the lowered IR and the dexcore -> IR lowering for andro-substrate"
+license = "Apache-2.0"
+publish = false
+
+[lib]
+name = "andro_compiler"
+path = "src/lib.rs"
+
+# The reachability driver. Its source lives inside `src/reach/` because that is
+# the directory that owns it; `path` is the only reason it is declared here.
+[[bin]]
+name = "reach-report"
+path = "src/reach/bin/reach_report.rs"
+
+[dependencies]
+dexcore = { path = "../tools/dexcore" }
+wasm-encoder = "0.245"
+wasmparser = "0.245"
+
+[dev-dependencies]
+# The oracle. Only the tests use it: `lower/tests/differential.rs` evaluates the
+# IR's arithmetic against `dexinterp::ops`, which is the same primitive table the
+# engine itself executes. Nothing in `ir.rs` or `lower/` links against it, so the
+# compiler's own dependency graph stays `dexcore` and nothing but `dexcore`.
+dexinterp = { path = "../tools/dexinterp" }
+wasmi = "2"
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1

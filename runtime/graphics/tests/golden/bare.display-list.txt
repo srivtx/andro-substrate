@@ -1,0 +1,59 @@
+!display-list/1
+#generator=runtime::graphics
+#provenance=RECONSTRUCTION-OF-SHIM-BOX-TREE
+#this-is=NOT-ANDROID
+#app-draw-code-executed=false
+#banner=RECONSTRUCTION — shim box tree, NOT an Android frame. App onDraw code was never executed. 0 reproduced of 11. no ink for 0.0% of the shim's leaf area
+#geometry-origin=shim::layout::BoxNode (exact relative to the shim, not to a device)
+#measure-model=zero-stub/v1 (unused)
+#text-policy=withheld
+#viewport-dp=360x640
+#density=1
+#steps=15
+#prov shim-exact=0 derived=15 fabricated=0 absent=0
+#ink-steps=0
+#ink-fabricated=0
+#annotations=0
+#text-runs=0
+#text-withheld=0
+#withheld-chars=0
+#images-drawn=0
+#images-absent=0
+#clip-regions=1
+#leaf-area-dp2=22592
+#unknown-ink-dp2=0
+#ink-coverage=1.0000
+#gfx-ids-total=11
+#gfx-reproduced=0
+#gfx-observed-satisfied=0
+#report-audit-mismatches=0
+!capability backend=headless
+  SUB.GFX.EGL_CONTEXT verdict=absent emission=not-emitted origin=absent observed=absent :: no GPU context: this layer emits a text serialisation, not a drawing
+  SUB.GFX.GLES_VERSION verdict=absent emission=not-emitted origin=absent observed=absent :: no GLES to ask; reporting a version would fabricate a capability probe
+  SUB.GFX.VULKAN verdict=absent emission=not-emitted origin=absent observed=absent :: no Vulkan instance; WebGPU is not an equivalent and is not claimed as one
+  SUB.GFX.EXTENSIONS verdict=absent emission=not-emitted origin=absent observed=absent :: no extension string: an empty one is read as "nothing supported" and a wrong one is a lie
+  SUB.GFX.RENDERER_STRING verdict=absent emission=not-emitted origin=absent observed=absent :: no GPU string emitted; the host's would be a fingerprinting side channel and not the device's anyway
+  SUB.GFX.SURFACE verdict=absent emission=not-emitted origin=absent observed=absent :: no Surface/BufferQueue; bitmaps reach here undecoded, and this layer cannot encode them either
+  SUB.GFX.HW_COMPOSITION verdict=absent emission=not-emitted origin=absent observed=absent :: no compositor: writing a display list is not presenting a frame
+  SUB.GFX.FRAME_BUDGET verdict=absent emission=not-emitted origin=absent observed=absent :: no vsync and no deadline; 16.7 ms would be a fabricated number, so none is reported
+  SUB.GFX.SCREEN_ON verdict=absent emission=not-emitted origin=absent observed=absent :: no PowerManager: a tab has no screen to be on or off
+  SUB.GFX.CAMERA_PIPE verdict=absent emission=not-emitted origin=absent observed=absent :: no camera HAL and no camera2 pipeline
+  SUB.GFX.TEXT_RENDER verdict=substituted emission=substituted origin=fabricated observed=substituted :: runs can be emitted, but no font is loaded: advances and baselines are this layer's
+!end-capability
+!frame dp=360x640 density=1
+  0 push  prov=derived
+  1 push  prov=derived
+  2 translate dx=0 dy=0 prov=derived
+  3 clip-rect rect=[0,0 360x88] effective=[0,0 360x88] aa=0 prov=derived
+  4 push  prov=derived
+  5 translate dx=4 dy=4 prov=derived
+  6 pop  prov=derived
+  7 push  prov=derived
+  8 translate dx=4 dy=28 prov=derived
+  9 pop  prov=derived
+  10 push  prov=derived
+  11 translate dx=4 dy=60 prov=derived
+  12 pop  prov=derived
+  13 pop  prov=derived
+  14 pop  prov=derived
+!end-frame

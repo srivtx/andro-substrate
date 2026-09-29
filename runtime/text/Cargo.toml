@@ -1,0 +1,28 @@
+[package]
+name = "substrate-text"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+description = "Text measurement, shaping and line layout for andro-substrate: a licensed font registry, a measurement seam with bidi, paragraph layout and ellipsising, and a calibration harness that measures its own error against a real Android device"
+license = "Apache-2.0"
+publish = false
+
+# Standalone crate, not a member of the `runtime/` package. `runtime/Cargo.toml`
+# and `runtime/src/lib.rs` belong to B1, and `compiler/IR.md` says an agent that
+# needs them changed files a comment in its own report rather than editing them.
+# Integration is one line on B1's side; see runtime/text/README.md, "Integration".
+[workspace]
+
+[lib]
+name = "substrate_text"
+path = "src/lib.rs"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
